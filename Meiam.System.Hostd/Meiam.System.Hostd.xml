@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Meiam.System.Hostd</name>
+    </assembly>
+    <members>
+        <member name="M:Meiam.System.Hostd.Controllers.BaseController.toResponse(Meiam.System.Model.StatusCodeType)">
+            <summary>
+            返回封装
+            </summary>
+            <param name="statusCode"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.BaseController.toResponse(Meiam.System.Model.StatusCodeType,System.String)">
+            <summary>
+            返回封装
+            </summary>
+            <param name="statusCode"></param>
+            <param name="retMessage"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.BaseController.toResponse``1(``0)">
+            <summary>
+            返回封装
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.BaseController._locks">
+            <summary>
+            项目锁,防止并发问题
+            </summary>
+        </member>
+        <member name="T:Meiam.System.Hostd.Controllers.Bisuness.IQCController">
+            <summary>
+            IQC
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Bisuness.IQCController._logger">
+            <summary>
+            日志管理接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Bisuness.IQCController._iqcService">
+            <summary>
+            项目Bom接口
+            </summary>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.InspectReport(Meiam.System.Model.Dto.InspectInputDto)">
+            <summary>
+            拉力机检测报告
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.CPKReport(Meiam.System.Model.Dto.InspectInputDto)">
+            <summary>
+            CPK数据报告
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
+            <summary>
+            日志接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.System.LogsController._logger">
+            <summary>
+            日志管理接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.System.LogsController._logsService">
+            <summary>
+            日志接口
+            </summary>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.System.LogsController.Query(Meiam.System.Model.Dto.LogsQueryDto)">
+            <summary>
+            查询日志列表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Global.GlobalExceptions.WriteLog(System.String,System.Exception)">
+            <summary>
+            自定义返回格式
+            </summary>
+            <param name="throwMsg"></param>
+            <param name="ex"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Meiam.System.Hostd.Middleware.RequestMiddleware">
+            <summary>
+            中间件
+            记录请求和响应数据
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Middleware.RequestMiddleware.logger">
+            <summary>
+            日志接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Queue.SubscriberService._logger">
+            <summary>
+            日志管理接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Queue.SubscriberService._smsServices">
+            <summary>
+            阿里云短信接口
+            </summary>
+        </member>
+        <member name="M:Meiam.System.Hostd.Queue.SubscriberService.QueueSMSCaptcha(Meiam.System.Model.QueueSMSCaptchaDto)">
+            <summary>
+            发送短信队列
+            </summary>
+            <param name="captcha"></param>
+        </member>
+    </members>
+</doc>

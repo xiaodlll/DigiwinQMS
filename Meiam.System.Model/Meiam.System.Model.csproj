@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Dto\System\AuthorizeDto.cs" />
+  </ItemGroup>
+
+
+    <ItemGroup>
+	    <ProjectReference Include="..\Meiam.System.Core\Meiam.System.Core.csproj" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <Folder Include="Dto\Basic\" />
+      <Folder Include="View\Basic\" />
+      <Folder Include="View\System\" />
+    </ItemGroup>
+
+
+</Project>
