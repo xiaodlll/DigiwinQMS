@@ -119,7 +119,22 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult CPKReport([FromBody] InspectInputDto parm) {
+        public IActionResult CPKReport([FromBody] CPKInputDto parm) {
+
+            if (string.IsNullOrEmpty(parm.INSPECT_DEV2ID))
+            {
+                return toResponse(StatusCodeType.Error, $"INSPECT_DEV2ID不能为空！");
+            }
+
+            if (string.IsNullOrEmpty(parm.UserName))
+            {
+                return toResponse(StatusCodeType.Error, $"UserName不能为空！");
+            }
+
+
+
+            //byte[] fileContents = _iqcService.getcpk(listToSave);
+
 
             //byte[] fileContents = _iqcService.GetCPKReport(parm);
             byte[] fileContents = null;

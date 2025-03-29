@@ -176,5 +176,85 @@ namespace Meiam.System.Interfaces
         }
         #endregion
 
+        #region
+        public byte[] GetCPKfile(string iNSPECT_DEV2ID,string userName) {
+            
+            string INSPECT_CODE;//检验单号
+            string INSPECT_PUR; //检验来源
+
+            # region 获得检验单号和检验来源
+            string sql = @"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE,'') AS INSPECT_CODE,ISNULL(INSPECT_DEV2.INSPECT_PUR,'') As INSPECT_PUR    
+                        FROM INSPECT_DEV2 
+                        LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV2.INSPECT_FLOWID
+                        LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV2.COLUM002ID
+                        WHERE INSPECT_DEV2ID=@INSPECT_DEV2ID";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@INSPECT_DEV2ID", iNSPECT_DEV2ID)
+            };
+
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            if (dataTable.Rows.Count > 0)
+            {
+                INSPECT_CODE = dataTable.Rows[0][0].ToString();
+                INSPECT_PUR = dataTable.Rows[0][1].ToString();
+            }
+            else
+            {
+                throw new Exception("未获取到检验单号和检验来源");
+            }
+            #endregion
+
+            #region 判断检验单是否已经完成
+            //如果 检验单号 不为空 并且 检验来源 不为空 @动态表名 =“INSPECT_”+@INSPECT_PUR
+            //@动态表面ID栏位 = @动态表名 +“ID”
+            //    SELECT STATE FROM @动态表名 WHERE @动态表面ID栏位 = @INSPECT_CODE
+            //    如果 STATE =“已完成”
+            //    返回错误：”检验单已完成，无法再次产生检验报告” 提出API
+            if (!string.IsNullOrEmpty(INSPECT_CODE) && !string.IsNullOrEmpty(INSPECT_PUR))
+            {
+                string table= "INSPECT_"+ INSPECT_PUR;
+                string surfaceId = table + "ID";
+                string state = "";
+
+                sql = @"SELECT STATE FROM @table WHERE @surfaceId=@INSPECT_CODE";
+                // 定义参数
+                parameters = new SugarParameter[]
+                {
+                    new SugarParameter("@table", table),
+                    new SugarParameter("@surfaceId", surfaceId),
+                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
+                };
+                // 执行 SQL 命令
+                dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+                if (dataTable.Rows.Count > 0)
+                {
+                    state = dataTable.Rows[0][0].ToString();
+                }
+                else
+                {
+                    throw new Exception("未获取到检验单状态");
+                }
+
+                if (state == "已完成")
+                {
+                    throw new Exception("检验单已完成，无法再次产生检验报告");
+                }
+            }
+            else
+            {
+                throw new Exception("检验单号或检验来源为空");
+            }
+            #endregion
+
+            return null;
+        }
+
+        #endregion
+
     }
 }
