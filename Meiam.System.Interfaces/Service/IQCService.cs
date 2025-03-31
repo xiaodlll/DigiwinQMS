@@ -277,19 +277,19 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                         throw new Exception($"{sampleId}检验内容编码{COLUM001CODEs}和检测值{AvgValues}数量不匹配");
                     }
 
-                    sql = @$"INSERT INSPECT_ZONE (INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO {COLUM001CODEs} ) VALUES  (
-'{parm.UserName}'                        --传参@userName
-,CONVERT(varchar(20),GETDATE(),120)
-,newid()
-,'{INSPECT_PUR}'                      --@INSPECT_PUR
-,'{COLUM002ID}'                       --@COLUM002ID
-,'{ITEMID}'                           --@ITEMID
-,'{LOTID}'                            --@LOTID
-,'{INSPECT_CODE}'                     --@INSPECT_CODE 检验单号
-,'{number++}'                         --样本序号 (第1个SAMPLEID 给1，第2个给2,依次类推)
-,'0'                                 --固定给 0
-{AvgValues} )";
-                    Db.Ado.ExecuteCommand(sql);
+                    //sql = @$"INSERT INSPECT_ZONE (INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO {COLUM001CODEs} ) VALUES  (
+                    //    '{parm.UserName}'                        --传参@userName
+                    //    ,CONVERT(varchar(20),GETDATE(),120)
+                    //    ,newid()
+                    //    ,'{INSPECT_PUR}'                      --@INSPECT_PUR
+                    //    ,'{COLUM002ID}'                       --@COLUM002ID
+                    //    ,'{ITEMID}'                           --@ITEMID
+                    //    ,'{LOTID}'                            --@LOTID
+                    //    ,'{INSPECT_CODE}'                     --@INSPECT_CODE 检验单号
+                    //    ,'{number++}'                         --样本序号 (第1个SAMPLEID 给1，第2个给2,依次类推)
+                    //    ,'0'                                 --固定给 0
+                    //    {AvgValues} )";
+                    //Db.Ado.ExecuteCommand(sql);
                 }
 
                 // 提交事务
@@ -558,11 +558,11 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             //执行存储过程
             //如果 返回值前两位 =“错误”，则 退出API，将返回值返回
             // 执行 SQL 命令
-            string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
-            if (INPECT_CODE.Contains("错误"))
-            {
-                throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
-            }
+            //string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
+            //if (INPECT_CODE.Contains("错误"))
+            //{
+            //    throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
+            //}
 
             #endregion
 
@@ -610,7 +610,8 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                 new SugarParameter("@COLUM002ID", COLUM002ID)
             };
             // 执行 SQL 命令
-            int count_COLUM002 = Db.Ado.GetInt(sql, parameters);
+            dataTable = Db.Ado.GetDataTable(sql, parameters);
+            int count_COLUM002 = dataTable.Rows.Count;
 
             //得到 @第一个样本ID
             sql = @"SELECT TOP 1 SAMPLEID FROM INSPECT_2D  WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID";
@@ -618,7 +619,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             {
                 new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID)
             };
-            int SAMPLEID = Db.Ado.GetInt(sql, parameters);
+            int sampleId = Db.Ado.GetInt(sql, parameters);
 
             //如果 INSPECT_2D异常结果集 记录数> 0 则
             //返回错误：“当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致”
@@ -631,11 +632,21 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             parameters = new SugarParameter[]
             {
                 new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                new SugarParameter("@SAMPLEID", SAMPLEID),
+                new SugarParameter("@SAMPLEID", sampleId),
                 new SugarParameter("@COLUM002ID", COLUM002ID)
             };
             // 执行 SQL 命令
-            int count_INSPECT_2D = Db.Ado.GetInt(sql, parameters);
+            dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            int count_INSPECT_2D = dataTable.Rows.Count;
+
+            #region 七．进一步检验
+
+            if (count_INSPECT_2D > 0)
+            {
+                throw new Exception("当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致");
+            }
+            #endregion
 
             #endregion
 
@@ -668,13 +679,6 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             #endregion
 
-            #region 七．进一步检验
-            if (count_INSPECT_2D > 0)
-            {
-                throw new Exception("当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致");
-            }
-            #endregion
-
             #region 八．更新检验内容的CODE给 INSPECT_2D
             //如果 @COLUM002结果集 记录数 > 0 并且 @INSPECT_2D异常结果集 记录数 > 0
             if (count_COLUM002>0 && count_INSPECT_2D>0)
@@ -692,7 +696,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                 parameters = new SugarParameter[]
                 {
                     new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                    new SugarParameter("@SAMPLEID", SAMPLEID),
+                    new SugarParameter("@SAMPLEID", sampleId),
                     new SugarParameter("@COLUM002ID", COLUM002ID)
                     
                 };
@@ -706,63 +710,68 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             //如果 @COLUM002结果集 记录数 = 0 或者为NULL
             if (count_COLUM002 == 0)
             {
-                #region 1.根据@COLUM002ID 产生检验内容（COLUM001）
-                string CREATEUSER = "system";
-                string TENID = "001";
-                string COLUM001ID = "";
-                string @CUSTOMID = "";
-                string RE = "";
-                string MAX_VALUE = "";  //--INSPECT_2D.VALUE2
-                string STD_VALUE = "";  //标准值: INSPECT_2D.VALUE1
-                string COLUM001NAME = "";//--INSPECT_2D.LOCATION
-                string INSPECT_LEVELID = "";
-                string OPTIONS = "";
-                string COLUM001CODE = "";//--第一个A01，第二个A02，依次类推
-                string MIN_VALUE = "";  //INSPECT_2D.VALUE3
-                string REMARK1 = "二次元";
-                string AC = "";
-                string INSPECT_AQLCODE = "";
-                string REMARK = "";
-                string REMARK2 = "";
-                string COLUM0A10 = "Num";
-                string INSPECT_PLANID = "c6cae8ea-24e0-4fbe-ac6e-775843549e5b";
-                string INSPECT_2DID;
-                //根据 @COLUM002ID 产生检验内容（COLUM001）
-                //--得到第一个样本的所有检验内容
-                sql = @$"SELECT VALUE2,VALUE1,LOCATION,VALUE3,INSPECT_2DID,* FROM  INSPECT_2D
-                WHERE  INSPECT_DEV2ID = @INSPECT_DEV2ID  AND SAMPLEID = @SAMPLEID";
-
-                parameters = new SugarParameter[]
+                try
                 {
-                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                    new SugarParameter("@SAMPLEID", SAMPLEID),
-                };
-                // 执行 SQL 命令
-                dataTable = Db.Ado.GetDataTable(sql, parameters);
+                    // 开启事务
+                    Db.Ado.BeginTran();
 
-                if (dataTable.Rows.Count > 0)
-                {
-                    for (int i=0; i < dataTable.Rows.Count; i++)
+                    #region 1.根据@COLUM002ID 产生检验内容（COLUM001）
+                    string CREATEUSER = "system";
+                    string TENID = "001";
+                    string COLUM001ID = "";
+                    string @CUSTOMID = "";
+                    string RE = "";
+                    string MAX_VALUE = "";  //--INSPECT_2D.VALUE2
+                    string STD_VALUE = "";  //标准值: INSPECT_2D.VALUE1
+                    string COLUM001NAME = "";//--INSPECT_2D.LOCATION
+                    string INSPECT_LEVELID = "";
+                    string OPTIONS = "";
+                    string COLUM001CODE = "";//--第一个A01，第二个A02，依次类推
+                    string MIN_VALUE = "";  //INSPECT_2D.VALUE3
+                    string REMARK1 = "二次元";
+                    string AC = "";
+                    string INSPECT_AQLCODE = "";
+                    string REMARK = "";
+                    string REMARK2 = "";
+                    string COLUM0A10 = "Num";
+                    string INSPECT_PLANID = "c6cae8ea-24e0-4fbe-ac6e-775843549e5b";
+                    string INSPECT_2DID;
+                    //根据 @COLUM002ID 产生检验内容（COLUM001）
+                    //--得到第一个样本的所有检验内容
+                    sql = @$"SELECT VALUE2,VALUE1,LOCATION,VALUE3,INSPECT_2DID,* FROM  INSPECT_2D
+                        WHERE  INSPECT_DEV2ID = @INSPECT_DEV2ID  AND SAMPLEID = @SAMPLEID";
+
+                    parameters = new SugarParameter[]
                     {
-                        STD_VALUE = dataTable.Rows[i]["VALUE1"].ToString(); 
-                        MAX_VALUE = dataTable.Rows[i]["VALUE2"].ToString(); 
-                        MIN_VALUE = dataTable.Rows[i]["VALUE3"].ToString(); 
-                        COLUM001NAME = dataTable.Rows[i]["LOCATION"].ToString(); 
-                        COLUM001CODE = "A" + (i + 1).ToString("D2");
-                        INSPECT_2DID= dataTable.Rows[i]["INSPECT_2DID"].ToString();
-                        COLUM001ID = Guid.NewGuid().ToString();
+                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
+                    new SugarParameter("@SAMPLEID", sampleId),
+                    };
+                    // 执行 SQL 命令
+                    dataTable = Db.Ado.GetDataTable(sql, parameters);
 
-                        sql = @$"INSERT INTO COLUM001(COLUM001CREATEDATE, COLUM001CREATEUSER, TENID, COLUM001ID, 
-                        CUSTOMID, RE, MAX_VALUE, STD_VALUE, COLUM001NAME, INSPECT_LEVELID, OPTIONS, 
-                        COLUM001CODE, MIN_VALUE, COLUM002ID, REMARK1, AC, INSPECT_AQLCODE, REMARK, REMARK2, 
-                        COLUM0A10, INSPECT_PLANID) 
-                        VALUES( 
-                        CONVERT(VARCHAR(20), GETDATE(), 120), @CREATEUSER, @TENID, @COLUM001ID, @CUSTOMID, 
-                        @RE, @MAX_VALUE, @STD_VALUE, @COLUM001NAME, @INSPECT_LEVELID, @OPTIONS, @COLUM001CODE, 
-                        @MIN_VALUE, @COLUM002ID, @REMARK1, @AC, @INSPECT_AQLCODE, @REMARK, @REMARK2, @COLUM0A10, @INSPECT_PLANID)";
-
-                        parameters = new SugarParameter[]
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        for (int i = 0; i < dataTable.Rows.Count; i++)
                         {
+                            STD_VALUE = dataTable.Rows[i]["VALUE1"].ToString();
+                            MAX_VALUE = dataTable.Rows[i]["VALUE2"].ToString();
+                            MIN_VALUE = dataTable.Rows[i]["VALUE3"].ToString();
+                            COLUM001NAME = dataTable.Rows[i]["LOCATION"].ToString();
+                            COLUM001CODE = "A" + (i + 1).ToString("D2");
+                            INSPECT_2DID = dataTable.Rows[i]["INSPECT_2DID"].ToString();
+                            COLUM001ID = Guid.NewGuid().ToString();
+
+                            sql = @$"INSERT INTO COLUM001(COLUM001CREATEDATE, COLUM001CREATEUSER, TENID, COLUM001ID, 
+                                CUSTOMID, RE, MAX_VALUE, STD_VALUE, COLUM001NAME, INSPECT_LEVELID, OPTIONS, 
+                                COLUM001CODE, MIN_VALUE, COLUM002ID, REMARK1, AC, INSPECT_AQLCODE, REMARK, REMARK2, 
+                                COLUM0A10, INSPECT_PLANID) 
+                                VALUES( 
+                                CONVERT(VARCHAR(20), GETDATE(), 120), @CREATEUSER, @TENID, @COLUM001ID, @CUSTOMID, 
+                                @RE, @MAX_VALUE, @STD_VALUE, @COLUM001NAME, @INSPECT_LEVELID, @OPTIONS, @COLUM001CODE, 
+                                @MIN_VALUE, @COLUM002ID, @REMARK1, @AC, @INSPECT_AQLCODE, @REMARK, @REMARK2, @COLUM0A10, @INSPECT_PLANID)";
+
+                            parameters = new SugarParameter[]
+                            {
                             new SugarParameter("@CREATEUSER", CREATEUSER),
                             new SugarParameter("@TENID", TENID),
                             new SugarParameter("@COLUM001ID", COLUM001ID),
@@ -783,27 +792,35 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                             new SugarParameter("@REMARK2", REMARK2),
                             new SugarParameter("@COLUM0A10", COLUM0A10),
                             new SugarParameter("@INSPECT_PLANID", INSPECT_PLANID),
-                        };
-                        // 执行 SQL 命令
-                        Db.Ado.ExecuteCommand(sql, parameters);
+                            };
+                            // 执行 SQL 命令
+                            Db.Ado.ExecuteCommand(sql, parameters);
 
-                        #region 2.回写A01的编码给原始资料
-                        sql = @$"UPDATE INSPECT_2D SET COLUM001CODE = @COLUM001CODE WHERE INSPECT_2DID = @INSPECT_2DID";
-                        parameters = new SugarParameter[]
-                        {
+                            #region 2.回写A01的编码给原始资料
+                            sql = @$"UPDATE INSPECT_2D SET COLUM001CODE = @COLUM001CODE WHERE INSPECT_2DID = @INSPECT_2DID";
+                            parameters = new SugarParameter[]
+                            {
                             new SugarParameter("@COLUM001CODE", COLUM001CODE),
                             new SugarParameter("@INSPECT_2DID", INSPECT_2DID),
-                        };
-                        // 执行 SQL 命令
-                        Db.Ado.ExecuteCommand(sql, parameters);
+                            };
+                            // 执行 SQL 命令
+                            Db.Ado.ExecuteCommand(sql, parameters);
 
-                        //Db.Ado.ExecuteCommand(@$"UPDATE INSPECT_2D SET COLUM001CODE ='{COLUM001CODE}' WHERE INSPECT_2DID = '{INSPECT_2DID}'");
-                        #endregion
+                            //Db.Ado.ExecuteCommand(@$"UPDATE INSPECT_2D SET COLUM001CODE ='{COLUM001CODE}' WHERE INSPECT_2DID = '{INSPECT_2DID}'");
+                            #endregion
+                        }
                     }
-                }
-                #endregion
+                    #endregion
 
-                
+                    // 提交事务
+                    Db.Ado.CommitTran();
+                }
+                catch (Exception)
+                {
+                    // 回滚事务
+                    Db.Ado.RollbackTran();
+                    throw;
+                }
             }
             #endregion
 
@@ -813,66 +830,77 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             //2.如果 @CNT > 0 则
             if (actCNT > 0)
             {
-                //2.1 删除QMS中的记录：@COLUM002ID @INSPECT_CODE
-                sql = @$" DELETE INSPECT_ZONE WHERE COLUM002ID = @COLUM002ID AND INSPECTCODE = @INSPECT_CODE";
-                parameters = new SugarParameter[]
+                try
                 {
+                    // 开启事务
+                    Db.Ado.BeginTran();
+
+                    //2.1 删除QMS中的记录：@COLUM002ID @INSPECT_CODE
+                    sql = @$" DELETE INSPECT_ZONE WHERE COLUM002ID = @COLUM002ID AND INSPECTCODE = @INSPECT_CODE";
+                    parameters = new SugarParameter[]
+                    {
                     new SugarParameter("@COLUM002ID", COLUM002ID),
                     new SugarParameter("@INSPECT_CODE", INSPECT_CODE),
-                };
-                Db.Ado.ExecuteCommand(sql, parameters);
-                //2.2 开始同步记录
-                //循环每个SAMPLEID
-                sql = @$" SELECT  SAMPLEID  FROM INSPECT_2D WHERE  INSPECT_DEV2ID=@INSPECT_DEV2ID GROUP BY SAMPLEID";
-                parameters = new SugarParameter[]
-                {
-                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                };
-                dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-                if (dataTable.Rows.Count > 0)
-                {
-                    for (int i = 0; i < dataTable.Rows.Count; i++)
+                    };
+                    Db.Ado.ExecuteCommand(sql, parameters);
+                    //2.2 开始同步记录
+                    //循环每个SAMPLEID
+                    sql = @$" SELECT  SAMPLEID  FROM INSPECT_2D WHERE  INSPECT_DEV2ID=@INSPECT_DEV2ID GROUP BY SAMPLEID";
+                    parameters = new SugarParameter[]
                     {
-                        SAMPLEID = Convert.ToInt32(dataTable.Rows[i]["SAMPLEID"]);
+                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
+                    };
+                    dataTable = Db.Ado.GetDataTable(sql, parameters);
 
-                        #region 1 循环结果集
-                        sql = @$"SELECT COLUM001CODE  AS 检验内容编码, MAX(VALUE)  AS 检验值
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        for (int i = 0; i < dataTable.Rows.Count; i++)
+                        {
+                            #region 1 循环结果集
+                            sql = @$"SELECT COLUM001CODE  AS 检验内容编码, MAX(VALUE)  AS 检验值
                             FROM INSPECT_2D WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID
                             AND SAMPLEID = @SAMPLEID
                             GROUP BY COLUM001CODE
                             ORDER BY COLUM001CODE";
-                        parameters = new SugarParameter[]
-                        {
-                            new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                            new SugarParameter("@SAMPLEID", SAMPLEID),
-                        };
-                        var dataTable1 = Db.Ado.GetDataTable(sql, parameters);
-
-                        string sel_Col = "";
-                        string sel_VALUES = "";
-
-                        if (dataTable1.Rows.Count > 0)
-                        {
-                            for (int j = 0; j < dataTable1.Rows.Count; j++)
+                            parameters = new SugarParameter[]
                             {
-                                sel_Col += "," + dataTable1.Rows[j]["检验内容编码"].ToString();
-                                sel_VALUES += "," +"'"+ dataTable1.Rows[j]["检验值"].ToString() +"'";
+                            new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
+                            new SugarParameter("@SAMPLEID",  Convert.ToInt32(dataTable.Rows[i]["SAMPLEID"])),
+                            };
+                            var dataTable1 = Db.Ado.GetDataTable(sql, parameters);
+
+                            string sel_Col = "";
+                            string sel_VALUES = "";
+
+                            if (dataTable1.Rows.Count > 0)
+                            {
+                                for (int j = 0; j < dataTable1.Rows.Count; j++)
+                                {
+                                    sel_Col += "," + dataTable1.Rows[j]["检验内容编码"].ToString();
+                                    sel_VALUES += "," + "'" + dataTable1.Rows[j]["检验值"].ToString() + "'";
+                                }
                             }
-                        }
-                        #endregion
-                        #region 2.插入检验结果
-                        sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER, INSPECT_ZONECREATEDATE, INSPECT_ZONEID, INSPECTTYPE, COLUM002ID, 
+                            #endregion
+                            #region 2.插入检验结果
+                            sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER, INSPECT_ZONECREATEDATE, INSPECT_ZONEID, INSPECTTYPE, COLUM002ID, 
                             CUSTOM_ITEMID, LOTNO, INSPECTCODE, PCSCODE, ISAUTO{sel_Col}) 
                             VALUES(
                             '{userName}',CONVERT(varchar(20), GETDATE(), 120), '{Guid.NewGuid().ToString()}','{INSPECT_PUR}', '{COLUM002ID}',
                             '{ITEMID}','{LOTID}','{INSPECT_CODE}','{i.ToString()}','1'{sel_VALUES})";
 
-                        Db.Ado.ExecuteCommand(sql);
+                            Db.Ado.ExecuteCommand(sql);
 
-                        #endregion
+                            #endregion
+                        }
                     }
-
+                    // 事务提交
+                    Db.Ado.CommitTran();
+                }
+                catch (Exception)
+                {
+                    // 回滚事务
+                    Db.Ado.RollbackTran();
+                    throw;
                 }
             }
 
@@ -886,27 +914,32 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             {
                 generateQty = inspect_Qyt - actCNT;
             }
-            GET_INSPECT_RANK(COLUM002ID, INSPECT_CODE, inspect_Qyt, INSPECT_PUR, userName);
+            generateQty = 1;//临时 这个次数多的话有问题  wjj
+
+            GET_INSPECT_RANK(COLUM002ID, INSPECT_CODE, generateQty, INSPECT_PUR, userName);
 
             #endregion
 
             #region 十二．产生【CPK-扩展项目】的随机值
             //1.得到CPK - 扩展项结果集
-            sql = @$"SELECT COLUM002ID FROM COLUM002 WHERE INSPECT_FLOWID = @INSPECT_FLOWID WHERE COC_ATTR ='COC_ATTR_002'";
+            sql = @$"SELECT COLUM002ID FROM COLUM002 WHERE INSPECT_FLOWID = @INSPECT_FLOWID and COC_ATTR ='COC_ATTR_002'";
             parameters = new SugarParameter[]
             {
                 new SugarParameter("@INSPECT_FLOWID", INSPECT_FLOWID)
             };
             // 执行 SQL 命令
             dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            string kz_COLUM002ID = string.Empty;
+
             //2.循环CPK - 扩展项结果集
             if (dataTable.Rows.Count > 0)
             {
                 for (int i = 0; i < dataTable.Rows.Count; i++)
                 {
-                    COLUM002ID = dataTable.Rows[i]["COLUM002ID"].ToString();
+                    kz_COLUM002ID = dataTable.Rows[i]["COLUM002ID"].ToString();
                     //1.获得应检样本量
-                    inspect_Qyt = Db.Ado.GetInt(@$"EXEC GET_INPECT_CNT  '{COLUM002ID}','{lot_Qyt}'");
+                    inspect_Qyt = Db.Ado.GetInt(@$"EXEC GET_INPECT_CNT  '{kz_COLUM002ID}','{lot_Qyt}'");
                     //2.产生检验随机值
                     //传入参数：
                     //@COLUM002ID(检验项目)--CPK - 扩展项结果集.@COLUM002ID
@@ -914,9 +947,25 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                     //@产生样本数--@CPK - 扩展项目应检样本数
                     //@INSPECT_PUR--检验类别(前文获取过）
                     //@userName
-                    GET_INSPECT_RANK(COLUM002ID, INSPECT_CODE, inspect_Qyt, INSPECT_PUR, userName);
+                    GET_INSPECT_RANK(kz_COLUM002ID, INSPECT_CODE, inspect_Qyt, INSPECT_PUR, userName);
                 }
             }
+            #endregion
+
+            #region 十三．产生CPK报告
+
+            #region 得到区块1的 
+
+            DataSet block1DateSet = GetCPKBlock1(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
+
+            #endregion
+
+            #region 得到区块2的 DataSetlist
+
+            List<DataSet> block2DateSetList = GetCPKBlock2(INSPECT_FLOWID, INSPECT_CODE, INSPECT_PUR);
+
+            #endregion
+
             #endregion
 
             return null;
@@ -964,26 +1013,27 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             table = "INSPECT_" + INSPECT_PUR;
             surfaceId = table + "ID";
 
-            sql = @$"SELECT top 1 ITEMID,LOTID FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
-            // 定义参数
-            parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
-            };
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
+            //wjj
+            //sql = @$"SELECT top 1 ITEMID,LOTID FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
+            //// 定义参数
+            //parameters = new SugarParameter[]
+            //{
+            //    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
+            //};
+            //// 执行 SQL 命令
+            //dataTable = Db.Ado.GetDataTable(sql, parameters);
 
-            if (dataTable.Rows.Count > 0)
-            {
-                itemId = dataTable.Rows[0]["ITEMID"].ToString();
-                lotId = dataTable.Rows[0]["lotId"].ToString();
-            }
+            //if (dataTable.Rows.Count > 0)
+            //{
+            //    itemId = dataTable.Rows[0]["ITEMID"].ToString();
+            //    lotId = dataTable.Rows[0]["lotId"].ToString();
+            //}
             #endregion
 
             #region 1.获得结果集A：
             sql = @$"SELECT ISNULL(STD_VALUE,0) as STD_VALUE,ISNULL(MIN_VALUE,0) as MIN_VALUE,
 		        ISNULL(MAX_VALUE,0) as MAX_VALUE,ISNULL(ADD_VALUE,0) as ADD_VALUE,ISNULL(COLUM001CODE,'') as COLUM001CODE
-                FROM COLUM001 WHERE COLUM002ID = @COLUM002ID";
+                FROM COLUM001 WHERE COLUM002ID = @COLUM002ID and Colum001CODE like'A%'";
             parameters = new SugarParameter[]
             {
                 new SugarParameter("@COLUM002ID", COLUM002ID)
@@ -1049,8 +1099,8 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                 //样本ID：@已存在记录数 + 循环次数
                 sampleId = exist_Qyt+sampleCount.ToString();
 
-                sql = @$"INSERT INSPECT_ZONE(NSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,
-                            CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,COLUM001ID,ISAUTO{sel_Col}) 
+                sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,
+                            CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO{sel_Col}) 
                             VALUES(
                             '{userName}',CONVERT(varchar(20), GETDATE(), 120), '{Guid.NewGuid().ToString()}','{INSPECT_PUR}', '{COLUM002ID}',
                             '{itemId}','{lotId}','{INSPECT_CODE}','{sampleId}','1'{sel_VALUES})";
@@ -1066,7 +1116,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
         #endregion
 
-        #region GET_INSPECT_LIST
+        #region GET_INSPECT_LIST 返回 第15行的列名+32后数据
 
         //@COLUM002ID       --需要查询的检验项目
         //@INSPECT_CODE     --检验单号
@@ -1130,8 +1180,6 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
         #region 
         public DataTable GET_STD_VALUE_LIST(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
         {
-            DataTable dataTableR = new DataTable(); // 创建 DataTable 实例
-
             string sql = @$"SELECT COLUM001CODE,STD_VALUE,MIN_VALUE,MAX_VALUE,REMARK1
                     FROM COLUM001 WHERE COLUM002ID = @COLUM002ID and Colum001CODE like'A%'";
             var parameters = new SugarParameter[]
@@ -1139,11 +1187,97 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                 new SugarParameter("@COLUM002ID", COLUM002ID)
             };
             // 执行 SQL 命令
-            dataTableR = Db.Ado.GetDataTable(sql, parameters);
+            DataTable originalTable = Db.Ado.GetDataTable(sql, parameters);
 
-            return dataTableR; // 返回填充的数据表  
+            // 创建一个新的 transposedTable 并将原始 originalTable 的行列转置到新的 transposedTable 中
+            DataTable transposedTable = TransposeDataTable(originalTable);
+
+            return transposedTable;
         }
         #endregion
+
+
+        public DataSet GetCPKBlock1(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
+        {
+            // 获取两个 DataTable
+            //第15行的列名+32后数据
+            DataTable inspectListTable = GET_INSPECT_LIST(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
+
+            //获得标准值结果集：
+            DataTable stdValueListTable = GET_STD_VALUE_LIST(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
+
+            // 创建一个新的 DataSet
+            DataSet dataSet = new DataSet("CombinedDataSet");
+
+            DataTable inspectListTable1 = inspectListTable.Copy(); // 复制 DataTabl
+            DataTable stdValueListTable1 = stdValueListTable.Copy(); // 复制 DataTabl
+
+            // 将 DataTable 添加到 DataSet
+            dataSet.Tables.Add(inspectListTable1);
+            dataSet.Tables.Add(stdValueListTable1);
+
+            return dataSet;
+        }
+
+        public List<DataSet> GetCPKBlock2(string INSPECT_FLOWID,string INSPECT_CODE, string INSPECT_PUR)
+        {
+            // 创建一个 DataSet 列表并将生成的 DataSet 放进去
+            List<DataSet> dataSetList = new List<DataSet>
+            {
+            };
+
+            //得到CPK - 扩展项结果集
+            string sql = @$"SELECT COLUM002ID FROM COLUM002 WHERE INSPECT_FLOWID = @INSPECT_FLOWID and COC_ATTR ='COC_ATTR_002'";
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@INSPECT_FLOWID", INSPECT_FLOWID)
+            };
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            string COLUM002ID = string.Empty;
+
+            //2.循环CPK - 扩展项结果集
+            if (dataTable.Rows.Count > 0)
+            {
+                for (int i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    COLUM002ID = dataTable.Rows[i]["COLUM002ID"].ToString();
+
+                    DataSet block1DateSet = GetCPKBlock1(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
+
+                    dataSetList.Add(block1DateSet);
+                }
+            }
+
+            return dataSetList;
+        }
+
+        private DataTable TransposeDataTable(DataTable originalTable)
+        {
+            DataTable transposedTable = new DataTable();
+
+            // 添加列
+            for (int i = 0; i <= originalTable.Rows.Count; i++)
+            {
+                transposedTable.Columns.Add(i.ToString());
+            }
+
+            // 添加行
+            for (int j = 0; j < originalTable.Columns.Count; j++)
+            {
+                DataRow newRow = transposedTable.NewRow();
+                newRow[0] = originalTable.Columns[j].ColumnName;
+                for (int k = 1; k <= originalTable.Rows.Count; k++)
+                {
+                    newRow[k] = originalTable.Rows[k - 1][j];
+                }
+                transposedTable.Rows.Add(newRow);
+            }
+
+            return transposedTable;
+        }
+
     }
 
 }
