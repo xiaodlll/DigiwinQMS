@@ -53,7 +53,7 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.CPKReport(Meiam.System.Model.Dto.InspectInputDto)">
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.CPKReport(Meiam.System.Model.Dto.CPKInputDto)">
             <summary>
             CPK数据报告
             </summary>

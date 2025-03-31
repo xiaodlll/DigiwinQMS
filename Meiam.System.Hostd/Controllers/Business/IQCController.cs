@@ -131,13 +131,13 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                 return toResponse(StatusCodeType.Error, $"UserName不能为空！");
             }
 
-
+            byte[] fileContents = _iqcService.GetCPKfile(parm.INSPECT_DEV2ID, parm.UserName);
 
             //byte[] fileContents = _iqcService.getcpk(listToSave);
 
 
             //byte[] fileContents = _iqcService.GetCPKReport(parm);
-            byte[] fileContents = null;
+            //byte[] fileContents = null;
             // 3. 返回文件流
             var fileName = $"零件清单_{DateTime.Now:yyyyMMdd}.jpg";
             return File(fileContents, "image/jpeg", fileName);
