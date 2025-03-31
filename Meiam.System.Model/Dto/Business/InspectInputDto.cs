@@ -19,19 +19,11 @@ namespace Meiam.System.Model.Dto {
         public string INSPECT_DEV1ID { get; set; }
 
         /// <summary>
-        /// 描述 : 检验单号 
+        /// 描述 : 用户名 
         /// 空值 : False
         /// 默认 : 
         /// </summary>
-        [Display(Name = "检验单号")]
-        public string INSPECT_IQCCODE { get; set; }
-
-        /// <summary>
-        /// 描述 : 应检样本数 
-        /// 空值 : False
-        /// 默认 : 
-        /// </summary>
-        [Display(Name = "应检样本数")]
-        public int YSAMPLE { get; set; }
+        [Display(Name = "用户名")]
+        public string UserName { get; set; }
     }
 }

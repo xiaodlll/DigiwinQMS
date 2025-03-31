@@ -26,6 +26,7 @@ namespace Meiam.System.Interfaces
         byte[] GetCPKfile(string INSPECT_DEV2ID, string userName);
         void GET_INSPECT_RANK(string COLUM002ID, string INSPECT_CODE,int intSampleCount,string INSPECT_PUR,string userName);
 
+        byte[] GetInspectReport(InspectInputDto parm);
         #endregion
     }
 }

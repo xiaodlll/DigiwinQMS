@@ -101,7 +101,6 @@ namespace Meiam.System.Model {
         /// 默认 : 
         /// </summary>
         [Display(Name = "X-AXIS")]
-        [SugarColumn(ColumnName = "X-AXIS")]
         public string X_AXIS { get; set; }
 
         /// <summary>
@@ -110,7 +109,6 @@ namespace Meiam.System.Model {
         /// 默认 : 
         /// </summary>
         [Display(Name = "Y-AXIS")]
-        [SugarColumn(ColumnName = "Y-AXIS")]
         public string Y_AXIS { get; set; }
 
         /// <summary>

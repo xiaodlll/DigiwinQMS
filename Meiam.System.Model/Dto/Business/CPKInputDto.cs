@@ -19,7 +19,7 @@ namespace Meiam.System.Model.Dto {
         public string INSPECT_DEV2ID { get; set; }
 
         /// <summary>
-        /// 描述 : 检验单号 
+        /// 描述 : 用户名 
         /// 空值 : False
         /// 默认 : 
         /// </summary>

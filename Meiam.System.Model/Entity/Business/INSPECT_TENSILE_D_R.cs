@@ -37,8 +37,23 @@ namespace Meiam.System.Model {
         /// 默认 : 
         /// </summary>
         [Display(Name = "INSPECT_TENSILE_DID")]
-        [SugarColumn(IsPrimaryKey = true)]
         public string INSPECT_TENSILE_DID { get; set; }
+
+        /// <summary>
+        /// 描述 : INSPECT_DEV1ID 
+        /// 空值 : 可根据实际情况设置
+        /// 默认 : 
+        /// </summary>
+        [Display(Name = "INSPECT_DEV1ID")]
+        public string INSPECT_DEV1ID { get; set; }
+
+        /// <summary>
+        /// 描述 : SAMPLEID
+        /// 空值 : False
+        /// 默认 : 
+        /// </summary>
+        [Display(Name = "SAMPLEID")]
+        public string SAMPLEID { get; set; }
 
         /// <summary>
         /// 描述 : MaxValue 

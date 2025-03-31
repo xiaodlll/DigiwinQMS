@@ -29,6 +29,8 @@ using System.Text.RegularExpressions;
 using SqlSugar.Extensions;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Reflection.Emit;
+using System.Data;
+using Meiam.System.Common;
 
 namespace Meiam.System.Interfaces
 {
@@ -38,15 +40,189 @@ namespace Meiam.System.Interfaces
         }
 
         #region CustomInterface 
-        public void SaveToInspectDetail(IEnumerable<INSPECT_TENSILE_D> inspectData){
-            try {
+        public byte[] GetInspectReport(InspectInputDto parm)
+        {
+            string INSPECT_CODE;//检验单号
+            string INSPECT_PUR; //检验来源
+            string COLUM002ID;//检验项目ID
+            string ITEMID;//物料编码
+            string LOTID;//批次号
+            string INSPECT_DATE;
+            string COLUM001ID;//COLUM001ID
+            #region 获得检验单号和检验来源
+            string sql = @"SELECT TOP 1 ISNULL(INSPECT_DEV1.INSPECT_CODE,''),ISNULL(INSPECT_DEV1.INSPECT_PUR,''),
+INSPECT_DEV1.COLUM002ID,INSPECT_DEV1.ITEMID,INSPECT_DEV1.LOTID,INSPECT_DEV1.INSPECT_DATE,INSPECT_DEV1.COLUM001ID
+FROM INSPECT_DEV1 
+LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV1.INSPECT_FLOWID
+LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV1.COLUM002ID
+WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@INSPECT_DEV1ID", parm.INSPECT_DEV1ID)
+            };
+
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            if (dataTable.Rows.Count > 0)
+            {
+                INSPECT_CODE = dataTable.Rows[0][0].ToString();
+                INSPECT_PUR = dataTable.Rows[0][1].ToString();
+                COLUM002ID = dataTable.Rows[0][2].ToString();
+                ITEMID = dataTable.Rows[0][3].ToString();
+                LOTID = dataTable.Rows[0][4].ToString();
+                INSPECT_DATE = DateTime.Parse(dataTable.Rows[0][5].ToString()).ToString("yyyyMMddHHmmss");
+                COLUM001ID = dataTable.Rows[0][6].ToString();
+            }
+            else
+            {
+                throw new Exception("未获取到检验单号和检验来源");
+            }
+            #endregion
+
+            #region 判断检验单是否已经完成
+            //如果 检验单号 不为空 并且 检验来源 不为空 @动态表名 =“INSPECT_”+@INSPECT_PUR
+            //@动态表面ID栏位 = @动态表名 +“ID”
+            //    SELECT STATE FROM @动态表名 WHERE @动态表面ID栏位 = @INSPECT_CODE
+            //    如果 STATE =“已完成”
+            //    返回错误：”检验单已完成，无法再次产生检验报告” 提出API
+            string table = string.Empty;
+            string surfaceId = string.Empty;
+            if (!string.IsNullOrEmpty(INSPECT_CODE) && !string.IsNullOrEmpty(INSPECT_PUR))
+            {
+                table = "INSPECT_" + INSPECT_PUR;
+                surfaceId = table + "ID";
+                string state = "";
+
+                sql = @$"SELECT STATE FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
+                // 定义参数
+                parameters = new SugarParameter[]
+                {
+                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
+                };
+                // 执行 SQL 命令
+                dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+                if (dataTable.Rows.Count > 0)
+                {
+                    state = dataTable.Rows[0][0].ToString();
+                }
+                else
+                {
+                    throw new Exception("未获取到检验单状态");
+                }
+
+                if (state == "已完成")
+                {
+                    throw new Exception("检验单已完成，无法再次产生检验报告");
+                }
+            }
+            else
+            {
+                throw new Exception("检验单号或检验来源为空");
+            }
+            #endregion
+
+            #region 获取应检样本数
+            int lot_Qyt = 0;
+            sql = @$"SELECT top 1 LOT_QTY FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
+            // 定义参数
+            parameters = new SugarParameter[]
+            {
+                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
+            };
+            // 执行 SQL 命令
+            dataTable = Db.Ado.GetDataTable(sql, parameters);
+            if (dataTable.Rows.Count > 0)
+            {
+                lot_Qyt = int.Parse(dataTable.Rows[0][0].ToString());
+            }
+            else
+            {
+                throw new Exception("未获取到检验批次数量LOT_QTY");
+            }
+
+            //1. 获得应检样本量
+            int inspect_Qyt = Db.Ado.GetInt(@$"GET_INPECT_CNT  '{COLUM002ID}','{lot_Qyt}'");
+            if (inspect_Qyt == 0)
+                inspect_Qyt = 1;//测试1笔
+            //2.获得@实际记录量
+            int actCount = Db.Ado.GetInt(@$"SELECT COUNT(1) FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
+
+            //3.如果@实际记录量<应检样本量
+            if (actCount < inspect_Qyt)
+            {
+                //历史样本数
+                int historyCount = Db.Ado.GetInt(@$"Select COUNT(1) FROM INSPECT_TENSILE 
+LEFT JOIN INSPECT_DEV1 ON INSPECT_TENSILE.INSPECT_DEV1ID=INSPECT_DEV1.INSPECT_DEV1ID
+WHERE INSPECT_DEV1.ITEMID='{ITEMID}'  AND INSPECT_TENSILE.INSPECT_DEV1<>'{parm.INSPECT_DEV1ID}'");
+                if (historyCount < inspect_Qyt - actCount)
+                {
+                    throw new Exception("历史数据记录笔数不满足，无法产生报告");
+                }
+            }
+
+            //1. 获取编码
+            string INPECT_CODE = Db.Ado.GetString(@$"DEV2_GET_INPECT_CODE '{parm.INSPECT_DEV1ID}','{lot_Qyt}'");
+            if (INPECT_CODE.Contains("错误"))
+            {
+                throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
+            }
+            #endregion
+
+            //重新获取主资料
+            var dtMain = Db.Ado.GetDataTable(@$"SELECT 
+INSPECT_DEV1.INSPECT_CODE   -- 检验单号  
+,INSPECT_DEV1.INSPECT_PUR     -- 检验来源    IQC OQC
+,INSPECT_FLOW.ITEMID		      -- 物料编码    (有个低代码待办)
+,INSPECT_DEV1.LOTID			      -- 批次号      
+,INSPECT_DEV1.DOC_CODE		      -- 来源单号  
+,INSPECT_DEV1.COLUM002ID
+,COLUM002.COC_ATTR           --特殊设定
+,INSPECT_DEV1.INSPECT_FLOWID	
+FROM INSPECT_DEV1 
+LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV1.INSPECT_FLOWID
+LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV1.COLUM002ID
+WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
+
+            List<INSPECT_TENSILE_D> listToSave = new List<INSPECT_TENSILE_D>();
+            //实际检测集合
+            var dtActiveMain = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt} *,FLAG=0 FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
+            foreach (DataRow item in dtActiveMain.Rows)
+            {
+                listToSave.Add(GetDetailByInspect(item));
+            }
+            //四.如果@应检样本数>@实际记录笔
+            if (inspect_Qyt > dtActiveMain.Rows.Count)
+            {
+                var dtRandomAddData = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt - dtActiveMain.Rows.Count} *，FLAG=1
+FROM INSPECT_TENSILE
+LEFT JOIN INSPECT_DEV1 
+ON INSPECT_TENSILE.INSPECT_DEV1ID = INSPECT_DEV1.INSPECT_DEV1ID
+WHERE INSPECT_DEV1.ITEMID ='{ITEMID}'
+AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
+                foreach (DataRow item in dtRandomAddData.Rows)
+                {
+                    listToSave.Add(GetDetailByInspect(item));
+                }
+            }
+
+            #region SaveToInspectDetail
+            try
+            {
                 // 开启事务
                 Db.Ado.BeginTran();
+
+                Db.Ado.ExecuteCommand($"DELETE INSPECT_TENSILE_D WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
+                Db.Ado.ExecuteCommand($"DELETE INSPECT_TENSILE_D_R WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
+
                 // 批量插入数据
-                Db.Insertable<INSPECT_TENSILE_D>(inspectData).ExecuteCommand();
+                Db.Insertable<INSPECT_TENSILE_D>(listToSave).ExecuteCommand();
 
                 List<INSPECT_TENSILE_D_R> listInspectDataR = new List<INSPECT_TENSILE_D_R>();
-                foreach (var detail in inspectData) {
+                foreach (var detail in listToSave)
+                {
                     // 去除字符串首尾的花括号
                     string trimmedInput = detail.Y_AXIS.Trim('{', '}');
                     // 按逗号分割字符串
@@ -57,9 +233,12 @@ namespace Meiam.System.Interfaces
                     decimal min = numbers.Min();
                     decimal avg = numbers.Average();
 
-                    var drItem = new INSPECT_TENSILE_D_R() {
+                    var drItem = new INSPECT_TENSILE_D_R()
+                    {
                         INSPECT_TENSILE_D_RID = Guid.NewGuid().ToString(),
                         INSPECT_TENSILE_DID = detail.INSPECT_TENSILE_DID,
+                        INSPECT_DEV1ID = detail.INSPECT_DEV1ID,
+                        SAMPLEID = detail.SAMPLEID,
                         MaxValue = max,
                         MinValue = min,
                         AvgValue = avg
@@ -69,29 +248,148 @@ namespace Meiam.System.Interfaces
 
                 Db.Insertable<INSPECT_TENSILE_D_R>(listInspectDataR).ExecuteCommand();
 
+                //将【INSPECT_TENSILE_D_R】中的平均值作为检验结果同步给QMS
+                Db.Ado.ExecuteCommand($"DELETE INSPECT_ZONE WHERE COLUM002ID='{COLUM002ID}' AND INSPECTCODE='{INSPECT_CODE}'");
+
+                var dtSAMPLEID = Db.Ado.GetDataTable(@$"SELECT SAMPLEID FROM INSPECT_TENSILE_D_R WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}' GROUP BY SAMPLEID");
+                int number = 1;
+                foreach (DataRow item in dtSAMPLEID.Rows)
+                {
+                    string sampleId = item[0].ToString();
+                    //1. 获得@检验内容编码
+                    DataTable dtCOLUM001CODE = Db.Ado.GetDataTable($"SELECT COLUM001CODE FROM COLUM001 WHERE COLUM001ID='{COLUM001ID}'");
+                    string COLUM001CODEs = string.Empty;
+                    foreach (DataRow dr in dtCOLUM001CODE.Rows)
+                    {
+                        COLUM001CODEs += "," + dr[0].ToString();
+                    }
+                    COLUM001CODEs = COLUM001CODEs.TrimEnd(',');
+                    //2. 获得@检验值
+                    DataTable dtAvgValue = Db.Ado.GetDataTable($"SELECT AvgValue FROM INSPECT_TENSILE_D_R WHERE  INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}' AND SAMPLEID ='{sampleId}'");
+                    string AvgValues = string.Empty;
+                    foreach (DataRow dr in dtAvgValue.Rows)
+                    {
+                        AvgValues += ",'" + dr[0].ToString() + "'";
+                    }
+                    AvgValues = AvgValues.TrimEnd(',');
+                    if(dtCOLUM001CODE.Rows.Count!= dtAvgValue.Rows.Count)
+                    {
+                        throw new Exception($"{sampleId}检验内容编码{COLUM001CODEs}和检测值{AvgValues}数量不匹配");
+                    }
+
+                    sql = @$"INSERT INSPECT_ZONE (INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO {COLUM001CODEs} ) VALUES  (
+'{parm.UserName}'                        --传参@userName
+,CONVERT(varchar(20),GETDATE(),120)
+,newid()
+,'{INSPECT_PUR}'                      --@INSPECT_PUR
+,'{COLUM002ID}'                       --@COLUM002ID
+,'{ITEMID}'                           --@ITEMID
+,'{LOTID}'                            --@LOTID
+,'{INSPECT_CODE}'                     --@INSPECT_CODE 检验单号
+,'{number++}'                         --样本序号 (第1个SAMPLEID 给1，第2个给2,依次类推)
+,'0'                                 --固定给 0
+{AvgValues} )";
+                    Db.Ado.ExecuteCommand(sql);
+                }
+
                 // 提交事务
                 Db.Ado.CommitTran();
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 // 回滚事务
                 Db.Ado.RollbackTran();
                 throw;
             }
+            #endregion
+
+            byte[] fileContents = GetInspectImage(listToSave);
+
+            //返回文件流
+            var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.jpg";
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"TENSILE\{ITEMID}\{fileName}");
+
+            //保存到SCANDOC
+            SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID);
+
+            return fileContents;
         }
-        public byte[] GetInspectImage(List<INSPECT_TENSILE_D> listInspectData){
+        private INSPECT_TENSILE_D GetDetailByInspect(DataRow item)
+        {
+            var newItem = new INSPECT_TENSILE_D();
+            newItem.INSPECT_TENSILE_DID = Guid.NewGuid().ToString();
+            var mapping = new Dictionary<string, string>
+            {
+                { "X-AXIS", "X_AXIS" },
+                { "Y-AXIS", "Y_AXIS" }
+            };
+            var properties = typeof(INSPECT_TENSILE_D).GetProperties();
+            foreach (var prop in properties)
+            {
+                string columnName = prop.Name; // 默认按类的属性名查找
+                if (mapping.ContainsValue(prop.Name)) // 如果属性名在映射字典的值中，获取对应的数据库列名
+                {
+                    columnName = mapping.FirstOrDefault(x => x.Value == prop.Name).Key;
+                }
+
+                // 赋值逻辑
+                if (item.Table.Columns.Contains(columnName) && item[columnName] != DBNull.Value)
+                {
+                    Type propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                    object value = Convert.ChangeType(item[columnName], propType);
+                    prop.SetValue(newItem, value);
+                }
+            }
+            //newItem.INSPECT_DEV1ID = item["INSPECT_DEV1ID"].ToString();
+            return newItem;
+        }
+        
+        private byte[] GetInspectImage(List<INSPECT_TENSILE_D> listInspectData){
             byte[] result = null;
 
             // 创建一个 PlotModel 对象，它代表整个图表
             var plotModel = new PlotModel {
-                Title = "拉力机检测图"
+                Title = "拉力机检测图",
+                Background = OxyColors.White
             };
+            var legend = new Legend
+            {
+                LegendPlacement = LegendPlacement.Inside, // 图例放在绘图区域外部
+                LegendPosition = LegendPosition.TopLeft,  // 设置左上角
+                LegendOrientation = LegendOrientation.Vertical, // 纵向排列
+                LegendBackground = OxyColors.White, // 背景色
+            };
+
+            plotModel.Legends.Add(legend); // 添加图例
+
+            int xMax = 1; int yMax = 1;
+            foreach (var detail in listInspectData)
+            {
+                string trimmedInput = detail.X_AXIS.Trim('{', '}');
+                string[] numberStrings = trimmedInput.Split(',');
+                double[] dataArraysX = Array.ConvertAll(numberStrings, double.Parse);
+
+                trimmedInput = detail.Y_AXIS.Trim('{', '}');
+                numberStrings = trimmedInput.Split(',');
+                double[] dataArraysY = Array.ConvertAll(numberStrings, double.Parse);
+                // 更新 xMax 和 yMax
+                if (dataArraysX.Length > 0)
+                    xMax = Math.Max(xMax, (int)dataArraysX.Max());
+
+                if (dataArraysY.Length > 0)
+                    yMax = Math.Max(yMax, (int)dataArraysY.Max());
+            }
+
+            // 计算 Max 的 110%，并取整数
+            xMax = (int)Math.Ceiling(xMax * 1.1);
+            yMax = (int)Math.Ceiling(yMax * 1.1);
 
             // 创建一个线性坐标轴作为 X 轴
             plotModel.Axes.Add(new LinearAxis {
-                Position = AxisPosition.Bottom,
-                Title = "变形(mm)",
-                Minimum = 0,
-                Maximum = 1.15
+            Position = AxisPosition.Bottom,
+            Title = "变形(mm)",
+            Minimum = 0,
+            Maximum = xMax
             });
 
             // 创建一个线性坐标轴作为 Y 轴
@@ -99,7 +397,7 @@ namespace Meiam.System.Interfaces
                 Position = AxisPosition.Left,
                 Title = "力(gt)",
                 Minimum = 0,
-                Maximum = 200
+                Maximum = yMax
             });
 
             int i = 1;
@@ -122,14 +420,16 @@ namespace Meiam.System.Interfaces
                 var lineSeries = new LineSeries {
                     Title = $"Plot{i++}",
                     MarkerType = MarkerType.Circle,
-                    MarkerSize = 1,
+                    MarkerSize = 0.2,
                     MarkerStroke = randomColor,
-                MarkerFill = OxyColors.White,
+                    StrokeThickness = 1,
+                    MarkerFill = OxyColors.White,
                 Color = randomColor
                 };
 
                 for (int j = 0; j < dataArraysX.Length; j++) {
-                    lineSeries.Points.Add(new DataPoint(dataArraysX[j], dataArraysY[j]));
+                    DataPoint p = new DataPoint(dataArraysX[j], dataArraysY[j]);
+                    lineSeries.Points.Add(p);
                 }
 
                 // 将曲线添加到图表模型中
@@ -137,7 +437,7 @@ namespace Meiam.System.Interfaces
             }
 
             // 保存图表为 PNG 图片
-            var exporter = new PngExporter { Width = 800, Height = 600, Resolution = 100 };
+            var exporter = new PngExporter { Width = 800, Height = 600, Resolution = 50 };
             using (MemoryStream stream = new MemoryStream()) {
                 exporter.Export(plotModel, stream);
                 stream.Position = 0;
@@ -146,32 +446,18 @@ namespace Meiam.System.Interfaces
             }
             return result;
         }
-
-        public bool ExistScanDoc(string docType, string peopleId){
-            string sql = @"SELECT COUNT(*) FROM SCANDOC WHERE DOCTYPE=@DOCTYPE AND PEOPLEID=@PEOPLEID";
-
-            // 定义参数
-            var parameters = new SugarParameter[]
-            {
-                new SugarParameter("@DOCTYPE", docType),
-                new SugarParameter("@PEOPLEID", peopleId)
-            };
-
-            // 执行 SQL 命令
-            int count = Db.Ado.GetInt(sql, parameters);
-            return count > 0;
-        }
-
-        public void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId) {
+        private void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV1ID) {
             FileInfo file = new FileInfo(scandocName);
             if (!file.Directory.Exists) {
                 file.Directory.Create();
             }
             File.WriteAllBytes(scandocName, fileContents);
 
+            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE INSPECT_DEV1ID='{INSPECT_DEV1ID}'");
+
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID)";
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -179,7 +465,8 @@ namespace Meiam.System.Interfaces
                 new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
                 new SugarParameter("@SCANDOCNAME", scandocName),
                 new SugarParameter("@DOCTYPE", docType),
-                new SugarParameter("@PEOPLEID", peopleId)
+                new SugarParameter("@PEOPLEID", peopleId),
+                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID)
             };
 
             // 执行 SQL 命令

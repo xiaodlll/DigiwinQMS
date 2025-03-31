@@ -128,7 +128,19 @@ namespace Meiam.System.Model {
         /// </summary>
         [Display(Name = "INSPECT_DEV1ID")]
         public string INSPECT_DEV1ID { get; set; }
-        
 
+        public string INSPECT_TENSILE0A17 { get; set; }
+
+        public string INSPECT_TENSILECREATEUSER { get; set; }
+
+        public DateTime INSPECT_TENSILECREATEDATE { get; set; }
+
+        public DateTime INSPECT_TENSILEMODIFYDATE { get; set; }
+
+        public string INSPECT_TENSILEMODIFYUSER { get; set; }
+
+        public string APPEOPLE02 { get; set; }
+
+        public string DEVID { get; set; }
     }
 }
