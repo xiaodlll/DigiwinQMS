@@ -555,7 +555,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             #endregion
 
             #region 三．执行存储过程  
-            //执行存储过程
+            //执行存储过程 wjj 临时
             //如果 返回值前两位 =“错误”，则 退出API，将返回值返回
             // 执行 SQL 命令
             //string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
@@ -1013,7 +1013,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             table = "INSPECT_" + INSPECT_PUR;
             surfaceId = table + "ID";
 
-            //wjj
+            //wjj 此处table 可能无列LOTID问题
             //sql = @$"SELECT top 1 ITEMID,LOTID FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
             //// 定义参数
             //parameters = new SugarParameter[]
