@@ -18,11 +18,6 @@ namespace Meiam.System.Interfaces
     public interface IIQCService : IBaseService<INSPECT_TENSILE> {
 
         #region CustomInterface 
-        void SaveToInspectDetail(IEnumerable<INSPECT_TENSILE_D> inspectData);
-        bool ExistScanDoc(string docType, string peopleId);
-        void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId);
-        byte[] GetInspectImage(List<INSPECT_TENSILE_D> listInspectData);
-
         byte[] GetCPKfile(string INSPECT_DEV2ID, string userName);
         void GET_INSPECT_RANK(string COLUM002ID, string INSPECT_CODE,int intSampleCount,string INSPECT_PUR,string userName);
 
