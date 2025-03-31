@@ -194,7 +194,8 @@ namespace Meiam.System.Interfaces
             string INSPECT_CODE;//检验单号
             string INSPECT_PUR; //检验来源
 
-            GET_INSPECT_LIST("INSPECT_ZONE_021", "IQC_2025030003", "IQC");
+            //测试
+            //GET_INSPECT_LIST("INSPECT_ZONE_021", "IQC_2025030003", "IQC");
 
             # region 一．获得检验单号和检验来源
             string sql = @"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE,'') AS INSPECT_CODE,ISNULL(INSPECT_DEV2.INSPECT_PUR,'') As INSPECT_PUR    
