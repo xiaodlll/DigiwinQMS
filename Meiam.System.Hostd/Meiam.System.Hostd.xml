@@ -59,6 +59,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.Test">
+            <summary>
+            CPK数据报告测试Excel
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
