@@ -39,7 +39,7 @@ namespace Meiam.System.Interfaces
         public IQCService(IUnitOfWork unitOfWork) : base(unitOfWork) {
         }
 
-        #region CustomInterface 
+        #region GetInspectReport 
         public byte[] GetInspectReport(InspectInputDto parm)
         {
             string INSPECT_CODE;//检验单号
@@ -970,7 +970,6 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             return null;
         }
-        #endregion
 
         #region GET_INSPECT_RANK
         public void GET_INSPECT_RANK(string COLUM002ID, string INSPECT_CODE, int intSampleCount, string INSPECT_PUR, string userName)
@@ -1177,8 +1176,8 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
         }
         #endregion
 
-        #region 
-        public DataTable GET_STD_VALUE_LIST(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
+        #region GET_STD_VALUE_LIST
+        private DataTable GET_STD_VALUE_LIST(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
         {
             string sql = @$"SELECT COLUM001CODE,STD_VALUE,MIN_VALUE,MAX_VALUE,REMARK1
                     FROM COLUM001 WHERE COLUM002ID = @COLUM002ID and Colum001CODE like'A%'";
@@ -1195,9 +1194,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             return transposedTable;
         }
         #endregion
-
-
-        public DataSet GetCPKBlock1(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
+        private DataSet GetCPKBlock1(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
         {
             // 获取两个 DataTable
             //第15行的列名+32后数据
@@ -1218,8 +1215,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             return dataSet;
         }
-
-        public List<DataSet> GetCPKBlock2(string INSPECT_FLOWID, string INSPECT_CODE, string INSPECT_PUR)
+        private List<DataSet> GetCPKBlock2(string INSPECT_FLOWID, string INSPECT_CODE, string INSPECT_PUR)
         {
             // 创建一个 DataSet 列表并将生成的 DataSet 放进去
             List<DataSet> dataSetList = new List<DataSet>
@@ -1252,7 +1248,6 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             return dataSetList;
         }
-
         private DataTable TransposeDataTable(DataTable originalTable)
         {
             DataTable transposedTable = new DataTable();
@@ -1277,6 +1272,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             return transposedTable;
         }
+        #endregion
     }
 
 }
