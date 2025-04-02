@@ -487,12 +487,12 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                         LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV2.COLUM002ID
                         WHERE INSPECT_DEV2ID='{INSPECT_DEV2ID}'";
             // 执行 SQL 命令
-            var dataTable = Db.Ado.GetDataTable(sql);
+            DataTable dtDEV2 = Db.Ado.GetDataTable(sql);
 
-            if (dataTable.Rows.Count > 0)
+            if (dtDEV2.Rows.Count > 0)
             {
-                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
-                INSPECT_PUR = dataTable.Rows[0]["INSPECT_PUR"].ToString();
+                INSPECT_CODE = dtDEV2.Rows[0]["INSPECT_CODE"].ToString();
+                INSPECT_PUR = dtDEV2.Rows[0]["INSPECT_PUR"].ToString();
             }
             else
             {
@@ -517,11 +517,11 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
                 sql = @$"SELECT STATE FROM {table} WHERE {surfaceId}='{INSPECT_CODE}'";
                 // 执行 SQL 命令
-                dataTable = Db.Ado.GetDataTable(sql);
+                DataTable dtPUR = Db.Ado.GetDataTable(sql);
 
-                if (dataTable.Rows.Count > 0)
+                if (dtPUR.Rows.Count > 0)
                 {
-                    state = dataTable.Rows[0]["STATE"].ToString();
+                    state = dtPUR.Rows[0]["STATE"].ToString();
                 }
                 else
                 {
@@ -544,7 +544,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             //执行存储过程 wjj 临时
             //如果 返回值前两位 =“错误”，则 退出API，将返回值返回
             // 执行 SQL 命令
-            //string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
+            string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
             //if (INPECT_CODE.Contains("错误"))
             //{
             //    throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
@@ -571,14 +571,14 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                     LEFT JOIN COLUM002 ON COLUM002.COLUM002ID = INSPECT_DEV2.COLUM002ID
                     WHERE INSPECT_DEV2ID = '{INSPECT_DEV2ID}'";
             // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql);
+            DataTable dtMainDEV2 = Db.Ado.GetDataTable(sql);
 
-            if (dataTable.Rows.Count > 0)
+            if (dtMainDEV2.Rows.Count > 0)
             {
-                COLUM002ID = dataTable.Rows[0]["COLUM002ID"].ToString();
-                ITEMID = dataTable.Rows[0]["ITEMID"].ToString();
-                LOTID = dataTable.Rows[0]["LOTID"].ToString();
-                INSPECT_FLOWID = dataTable.Rows[0]["INSPECT_FLOWID"].ToString();
+                COLUM002ID = dtMainDEV2.Rows[0]["COLUM002ID"].ToString();
+                ITEMID = dtMainDEV2.Rows[0]["ITEMID"].ToString();
+                LOTID = dtMainDEV2.Rows[0]["LOTID"].ToString();
+                INSPECT_FLOWID = dtMainDEV2.Rows[0]["INSPECT_FLOWID"].ToString();
             }
 
             #endregion
@@ -587,8 +587,8 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             //得到 @COLUM002结果集
             sql = @$"SELECT * FROM COLUM002 where COLUM002ID = '{COLUM002ID}'";
             // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql);
-            int count_COLUM002 = dataTable.Rows.Count;
+            DataTable dtCOLUM002 = Db.Ado.GetDataTable(sql);
+            int count_COLUM002 = dtCOLUM002.Rows.Count;
 
             //得到 @第一个样本ID
             sql = @$"SELECT TOP 1 SAMPLEID FROM INSPECT_2D  WHERE INSPECT_DEV2ID = '{INSPECT_DEV2ID}'";
@@ -603,9 +603,8 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                 AND COLUM001.COLUM002ID = '{COLUM002ID}'  AND COLUM001.COLUM001CODE IS NOT NULL
                 ORDER BY LOCATION";
             // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql);
-
-            int count_INSPECT_2D = dataTable.Rows.Count;
+            DataTable dtSAMPLEID = Db.Ado.GetDataTable(sql);
+            int count_INSPECT_2D = dtSAMPLEID.Rows.Count;
 
             #region 七．进一步检验
 
@@ -623,10 +622,10 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             int lot_Qyt = 0;
             sql = @$"SELECT top 1 ISNULL(LOT_QTY,0)  FROM {table} WHERE {surfaceId}='{INSPECT_CODE}'";
             // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql);
-            if (dataTable.Rows.Count > 0)
+            DataTable dtLotQty = Db.Ado.GetDataTable(sql);
+            if (dtLotQty.Rows.Count > 0)
             {
-                lot_Qyt = int.Parse(dataTable.Rows[0][0].ToString());
+                lot_Qyt = int.Parse(dtLotQty.Rows[0][0].ToString());
             }
             else
             {
@@ -695,16 +694,16 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                     sql = @$"SELECT VALUE2,VALUE1,LOCATION,VALUE3,INSPECT_2DID,* FROM  INSPECT_2D
                         WHERE  INSPECT_DEV2ID = '{INSPECT_DEV2ID}'  AND SAMPLEID = {sampleId}";
                     // 执行 SQL 命令
-                    dataTable = Db.Ado.GetDataTable(sql);
+                    DataTable dtINSPECT_2D = Db.Ado.GetDataTable(sql);
 
-                    for (int i = 0; i < dataTable.Rows.Count; i++)
+                    for (int i = 0; i < dtINSPECT_2D.Rows.Count; i++)
                     {
-                        STD_VALUE = dataTable.Rows[i]["VALUE1"].ToString();
-                        MAX_VALUE = dataTable.Rows[i]["VALUE2"].ToString();
-                        MIN_VALUE = dataTable.Rows[i]["VALUE3"].ToString();
-                        COLUM001NAME = dataTable.Rows[i]["LOCATION"].ToString();
+                        STD_VALUE = dtINSPECT_2D.Rows[i]["VALUE1"].ToString();
+                        MAX_VALUE = dtINSPECT_2D.Rows[i]["VALUE2"].ToString();
+                        MIN_VALUE = dtINSPECT_2D.Rows[i]["VALUE3"].ToString();
+                        COLUM001NAME = dtINSPECT_2D.Rows[i]["LOCATION"].ToString();
                         COLUM001CODE = "A" + (i + 1).ToString("D2");
-                        INSPECT_2DID = dataTable.Rows[i]["INSPECT_2DID"].ToString();
+                        INSPECT_2DID = dtINSPECT_2D.Rows[i]["INSPECT_2DID"].ToString();
                         COLUM001ID = Guid.NewGuid().ToString();
 
                         //insert into TABLE COLUM001
@@ -761,11 +760,11 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                     //2.2 开始同步记录
                     //循环每个SAMPLEID
                     sql = @$" SELECT  SAMPLEID  FROM INSPECT_2D WHERE  INSPECT_DEV2ID='{INSPECT_DEV2ID}' GROUP BY SAMPLEID";
-                    dataTable = Db.Ado.GetDataTable(sql);
+                    DataTable dtSAMPLE = Db.Ado.GetDataTable(sql);
 
-                    for (int i = 0; i < dataTable.Rows.Count; i++)
+                    for (int i = 0; i < dtSAMPLE.Rows.Count; i++)
                     {
-                        int sampId = Convert.ToInt32(dataTable.Rows[i]["SAMPLEID"]);
+                        int sampId = Convert.ToInt32(dtSAMPLE.Rows[i]["SAMPLEID"]);
 
                         #region 1 循环结果集
                         sql = @$"SELECT COLUM001CODE  AS 检验内容编码, MAX(VALUE)  AS 检验值
@@ -773,19 +772,16 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                         AND SAMPLEID = {sampId}
                         GROUP BY COLUM001CODE
                         ORDER BY COLUM001CODE";
-                        var dataTable1 = Db.Ado.GetDataTable(sql);
+                        DataTable dtCodeValue = Db.Ado.GetDataTable(sql);
 
                         string sel_Col = string.Empty;
                         string sel_VALUES = string.Empty;
-
-                        if (dataTable1.Rows.Count > 0)
+                        for (int j = 0; j < dtCodeValue.Rows.Count; j++)
                         {
-                            for (int j = 0; j < dataTable1.Rows.Count; j++)
-                            {
-                                sel_Col += "," + dataTable1.Rows[j]["检验内容编码"].ToString();
-                                sel_VALUES += "," + "'" + dataTable1.Rows[j]["检验值"].ToString() + "'";
-                            }
+                            sel_Col += "," + dtCodeValue.Rows[j]["检验内容编码"].ToString();
+                            sel_VALUES += "," + "'" + dtCodeValue.Rows[j]["检验值"].ToString() + "'";
                         }
+
                         #endregion
                         #region 2.插入检验结果
                         sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER, INSPECT_ZONECREATEDATE, INSPECT_ZONEID, INSPECTTYPE, COLUM002ID, 
@@ -829,30 +825,27 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             //1.得到CPK - 扩展项结果集
             sql = @$"SELECT COLUM002ID FROM COLUM002 WHERE INSPECT_FLOWID = '{INSPECT_FLOWID}' and COC_ATTR ='COC_ATTR_002'";
             // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql);
+            DataTable dtCOLUM002ID = Db.Ado.GetDataTable(sql);
 
             string kz_COLUM002ID = string.Empty;
 
             //2.循环CPK - 扩展项结果集
-            if (dataTable.Rows.Count > 0)
+            for (int i = 0; i < dtCOLUM002ID.Rows.Count; i++)
             {
-                for (int i = 0; i < dataTable.Rows.Count; i++)
-                {
-                    kz_COLUM002ID = dataTable.Rows[i]["COLUM002ID"].ToString();
-                    //1.获得应检样本量
-                    inspect_Qyt = Db.Ado.GetInt(@$"EXEC GET_INPECT_CNT  '{kz_COLUM002ID}','{lot_Qyt}'");
-                    //2.产生检验随机值
-                    //传入参数：
-                    //@COLUM002ID(检验项目)--CPK - 扩展项结果集.@COLUM002ID
-                    //@INSPECT_CODE(检验单号)(前文获取过）
-                    //@产生样本数--@CPK - 扩展项目应检样本数
-                    //@INSPECT_PUR--检验类别(前文获取过）
-                    //@userName
-                    if (inspect_Qyt == 0) //进入这个应该有个前提吧，不然前面插入的数据会清除掉  wjj
-                        inspect_Qyt = 1;
+                kz_COLUM002ID = dtCOLUM002ID.Rows[i]["COLUM002ID"].ToString();
+                //1.获得应检样本量
+                inspect_Qyt = Db.Ado.GetInt(@$"EXEC GET_INPECT_CNT  '{kz_COLUM002ID}','{lot_Qyt}'");
+                //2.产生检验随机值
+                //传入参数：
+                //@COLUM002ID(检验项目)--CPK - 扩展项结果集.@COLUM002ID
+                //@INSPECT_CODE(检验单号)(前文获取过）
+                //@产生样本数--@CPK - 扩展项目应检样本数
+                //@INSPECT_PUR--检验类别(前文获取过）
+                //@userName
+                if (inspect_Qyt == 0) //进入这个应该有个前提吧，不然前面插入的数据会清除掉  wjj
+                    inspect_Qyt = 1;
 
-                    GET_INSPECT_RANK(kz_COLUM002ID, INSPECT_CODE, inspect_Qyt, INSPECT_PUR, userName);
-                }
+                GET_INSPECT_RANK(kz_COLUM002ID, INSPECT_CODE, inspect_Qyt, INSPECT_PUR, userName);
             }
             #endregion
 
@@ -879,129 +872,141 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
         #region GET_INSPECT_RANK
         public void GET_INSPECT_RANK(string COLUM002ID, string INSPECT_CODE, int intSampleCount, string INSPECT_PUR, string userName)
         {
-            #region 0.删除QMS中的随机记录
-            string sql = @$"DELETE FROM INSPECT_ZONE WHERE COLUM002ID = '{COLUM002ID}' AND INSPECTCODE = '{INSPECT_CODE}' AND ISAUTO = '1'";
-            Db.Ado.ExecuteCommand(sql);
-            #endregion
-
-            #region 2.获得已存在记录数：
-            int exist_Qyt = 0;
-            sql = @$"SELECT COUNT(1) FROM INSPECT_ZONE WHERE INSPECTCODE = '{INSPECT_CODE}'";
-            // 执行 SQL 命令
-            var dataTable = Db.Ado.GetDataTable(sql);
-            if (dataTable.Rows.Count > 0)
+            try
             {
-                exist_Qyt = int.Parse(dataTable.Rows[0][0].ToString());
-            }
-            #endregion
+                Db.Ado.BeginTran();
 
-            #region 3.获得@ITEMID，@LOTID
-            //@动态表名 =“INSPECT_”+@INSPECT_PUR
-            //@动态表面ID栏位 = @动态表名 +“ID” 
-            //SELECT @ITEMID = ITEMID，@LOTID = LOTID FROM @动态表名 WHERE @动态表面ID栏位 = @INSPECT_CODE
-            string table = string.Empty;
-            string surfaceId = string.Empty;
-            string itemId = string.Empty;
-            string lotId = string.Empty;
-
-            table = "INSPECT_" + INSPECT_PUR;
-            surfaceId = table + "ID";
-
-            //wjj 此处table 可能无列LOTID问题
-            //sql = @$"SELECT top 1 ITEMID,LOTID FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
-            //// 定义参数
-            //parameters = new SugarParameter[]
-            //{
-            //    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
-            //};
-            //// 执行 SQL 命令
-            //dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-            //if (dataTable.Rows.Count > 0)
-            //{
-            //    itemId = dataTable.Rows[0]["ITEMID"].ToString();
-            //    lotId = dataTable.Rows[0]["lotId"].ToString();
-            //}
-            #endregion
-
-            #region 1.获得结果集A：
-            sql = @$"SELECT STD_VALUE,MIN_VALUE, MAX_VALUE, ADD_VALUE,COLUM001CODE
-                FROM COLUM001 WHERE COLUM002ID = '{COLUM002ID}' and Colum001CODE like'A%'";
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql);
-            #endregion
-
-            # region 4 循环样本：
-            string sampleId = string.Empty;
-            int sampleCount = 1;
-
-            while (sampleCount <= intSampleCount)
-            {
-                #region 1.循环结果集A
-
-                string sel_Col = string.Empty;
-                string sel_VALUES = string.Empty;
-
-                for (int i = 0; i < dataTable.Rows.Count; i++)
-                {
-                    double std_VALUE = 0;
-                    double min_VALUE = 0;
-                    double max_VALUE = 0;
-                    double add_VALUE = 0;
-                    double lower_Value = 0; //下限值
-                    double upper_Value = 0; //上限值
-                    string COLUM001CODE = string.Empty;
-                    double act_Value = 0; //生成随机数 实际值
-
-                    if (dataTable.Rows[i]["STD_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dataTable.Rows[i]["STD_VALUE"].ToString()))
-                    {
-                        std_VALUE = Convert.ToDouble(dataTable.Rows[i]["STD_VALUE"]);
-                    }
-                    if (dataTable.Rows[i]["MIN_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dataTable.Rows[i]["MIN_VALUE"].ToString()))
-                    {
-                        min_VALUE = Convert.ToDouble(dataTable.Rows[i]["MIN_VALUE"]);
-                    }
-                    if (dataTable.Rows[i]["MAX_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dataTable.Rows[i]["MAX_VALUE"].ToString()))
-                    {
-                        max_VALUE = Convert.ToDouble(dataTable.Rows[i]["MAX_VALUE"]);
-                    }
-                    if (dataTable.Rows[i]["ADD_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dataTable.Rows[i]["ADD_VALUE"].ToString()))
-                    {
-                        add_VALUE = Convert.ToDouble(dataTable.Rows[i]["ADD_VALUE"]);
-                    }
-
-                    COLUM001CODE = dataTable.Rows[i]["COLUM001CODE"].ToString();
-
-                    lower_Value = std_VALUE - max_VALUE + add_VALUE;
-                    upper_Value = std_VALUE + min_VALUE - add_VALUE;
-
-                    //在范围内生成随机数  
-                    Random random = new Random();
-                    act_Value = lower_Value + (random.NextDouble() * (upper_Value - lower_Value));
-
-                    sel_Col += "," + COLUM001CODE;
-                    sel_VALUES += "," + "'" + act_Value.ToString() + "'";
-                }
-
-                #endregion
-
-                # region 2.插入检验结果
-                //样本ID：@已存在记录数 + 循环次数
-                sampleId = exist_Qyt + sampleCount.ToString();
-
-                sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,
-                            CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO{sel_Col}) 
-                            VALUES(
-                            '{userName}',CONVERT(varchar(20), GETDATE(), 120), '{Guid.NewGuid().ToString()}','{INSPECT_PUR}', '{COLUM002ID}',
-                            '{itemId}','{lotId}','{INSPECT_CODE}','{sampleId}','1'{sel_VALUES})";
-
+                #region 0.删除QMS中的随机记录
+                string sql = @$"DELETE FROM INSPECT_ZONE WHERE COLUM002ID = '{COLUM002ID}' AND INSPECTCODE = '{INSPECT_CODE}' AND ISAUTO = '1'";
                 Db.Ado.ExecuteCommand(sql);
-
                 #endregion
 
-                sampleCount++;
+                #region 2.获得已存在记录数：
+                int exist_Qyt = 0;
+                sql = @$"SELECT COUNT(1) FROM INSPECT_ZONE WHERE INSPECTCODE = '{INSPECT_CODE}'";
+                // 执行 SQL 命令
+                DataTable dtINSPECT_ZONE = Db.Ado.GetDataTable(sql);
+                if (dtINSPECT_ZONE.Rows.Count > 0)
+                {
+                    exist_Qyt = int.Parse(dtINSPECT_ZONE.Rows[0][0].ToString());
+                }
+                #endregion
+
+                #region 3.获得@ITEMID，@LOTID
+                //@动态表名 =“INSPECT_”+@INSPECT_PUR
+                //@动态表面ID栏位 = @动态表名 +“ID” 
+                //SELECT @ITEMID = ITEMID，@LOTID = LOTID FROM @动态表名 WHERE @动态表面ID栏位 = @INSPECT_CODE
+                string table = string.Empty;
+                string surfaceId = string.Empty;
+                string itemId = string.Empty;
+                string lotId = string.Empty;
+
+                table = "INSPECT_" + INSPECT_PUR;
+                surfaceId = table + "ID";
+
+                //wjj 此处table 可能无列LOTID问题
+                //sql = @$"SELECT top 1 ITEMID,LOTID FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
+                //// 定义参数
+                //parameters = new SugarParameter[]
+                //{
+                //    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
+                //};
+                //// 执行 SQL 命令
+                //dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+                //if (dataTable.Rows.Count > 0)
+                //{
+                //    itemId = dataTable.Rows[0]["ITEMID"].ToString();
+                //    lotId = dataTable.Rows[0]["lotId"].ToString();
+                //}
+                #endregion
+
+                #region 1.获得结果集A：
+                sql = @$"SELECT STD_VALUE,MIN_VALUE, MAX_VALUE, ADD_VALUE,COLUM001CODE
+                FROM COLUM001 WHERE COLUM002ID = '{COLUM002ID}' and Colum001CODE like'A%'";
+                // 执行 SQL 命令
+                DataTable dtCOLUM001 = Db.Ado.GetDataTable(sql);
+                #endregion
+
+                #region 4 循环样本：
+                string sampleId = string.Empty;
+                int sampleCount = 1;
+
+                while (sampleCount <= intSampleCount)
+                {
+                    #region 1.循环结果集A
+
+                    string sel_Col = string.Empty;
+                    string sel_VALUES = string.Empty;
+
+                    for (int i = 0; i < dtCOLUM001.Rows.Count; i++)
+                    {
+                        double std_VALUE = 0;
+                        double min_VALUE = 0;
+                        double max_VALUE = 0;
+                        double add_VALUE = 0;
+                        double lower_Value = 0; //下限值
+                        double upper_Value = 0; //上限值
+                        string COLUM001CODE = string.Empty;
+                        double act_Value = 0; //生成随机数 实际值
+
+                        if (dtCOLUM001.Rows[i]["STD_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dtCOLUM001.Rows[i]["STD_VALUE"].ToString()))
+                        {
+                            std_VALUE = Convert.ToDouble(dtCOLUM001.Rows[i]["STD_VALUE"]);
+                        }
+                        if (dtCOLUM001.Rows[i]["MIN_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dtCOLUM001.Rows[i]["MIN_VALUE"].ToString()))
+                        {
+                            min_VALUE = Convert.ToDouble(dtCOLUM001.Rows[i]["MIN_VALUE"]);
+                        }
+                        if (dtCOLUM001.Rows[i]["MAX_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dtCOLUM001.Rows[i]["MAX_VALUE"].ToString()))
+                        {
+                            max_VALUE = Convert.ToDouble(dtCOLUM001.Rows[i]["MAX_VALUE"]);
+                        }
+                        if (dtCOLUM001.Rows[i]["ADD_VALUE"] != DBNull.Value && !string.IsNullOrEmpty(dtCOLUM001.Rows[i]["ADD_VALUE"].ToString()))
+                        {
+                            add_VALUE = Convert.ToDouble(dtCOLUM001.Rows[i]["ADD_VALUE"]);
+                        }
+
+                        COLUM001CODE = dtCOLUM001.Rows[i]["COLUM001CODE"].ToString();
+
+                        lower_Value = std_VALUE - max_VALUE + add_VALUE;
+                        upper_Value = std_VALUE + min_VALUE - add_VALUE;
+
+                        //在范围内生成随机数  
+                        Random random = new Random();
+                        act_Value = lower_Value + (random.NextDouble() * (upper_Value - lower_Value));
+
+                        sel_Col += "," + COLUM001CODE;
+                        sel_VALUES += "," + "'" + act_Value.ToString() + "'";
+                    }
+
+                    #endregion
+
+                    #region 2.插入检验结果
+                    //样本ID：@已存在记录数 + 循环次数
+                    sampleId = exist_Qyt + sampleCount.ToString();
+
+                    sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,
+                        CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO{sel_Col}) 
+                        VALUES(
+                        '{userName}',CONVERT(varchar(20), GETDATE(), 120), '{Guid.NewGuid().ToString()}','{INSPECT_PUR}', '{COLUM002ID}',
+                        '{itemId}','{lotId}','{INSPECT_CODE}','{sampleId}','1'{sel_VALUES})";
+
+                    Db.Ado.ExecuteCommand(sql);
+
+                    #endregion
+
+                    sampleCount++;
+                }
+                #endregion
+
+                Db.Ado.CommitTran();
             }
-            #endregion 
+            catch (Exception)
+            {
+                Db.Ado.RollbackTran();
+                throw;
+            }
         }
 
         #endregion
