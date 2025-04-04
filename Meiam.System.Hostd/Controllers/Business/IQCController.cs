@@ -60,9 +60,13 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                 return toResponse(StatusCodeType.Error, $"UserName不能为空！");
             }
 
-            byte[] fileContents = _iqcService.GetInspectReport(parm);
+            _iqcService.GetInspectReport(parm);
 
-            return File(fileContents, "image/jpeg", "拉力机检测报告.jpg");
+            return toResponse(StatusCodeType.Success, "拉力机检测报告生成成功！");
+
+            //byte[] fileContents = _iqcService.GetInspectReport(parm);
+
+            //return File(fileContents, "image/jpeg", "拉力机检测报告.jpg");
         }
 
         /// <summary>
@@ -83,16 +87,17 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                 return toResponse(StatusCodeType.Error, $"UserName不能为空！");
             }
 
-            byte[] fileContents = _iqcService.GetCPKfile(parm.INSPECT_DEV2ID, parm.UserName);
+            _iqcService.GetCPKfile(parm.INSPECT_DEV2ID, parm.UserName);
+            return toResponse(StatusCodeType.Success, "CPK数据报告生成成功！");
 
             //byte[] fileContents = _iqcService.getcpk(listToSave);
 
 
             //byte[] fileContents = _iqcService.GetCPKReport(parm);
             //byte[] fileContents = null;
-            // 3. 返回文件流
-            var fileName = $"零件清单_{DateTime.Now:yyyyMMdd}.jpg";
-            return File(fileContents, "image/jpeg", fileName);
+            //// 3. 返回文件流
+            //var fileName = $"零件清单_{DateTime.Now:yyyyMMdd}.jpg";
+            //return File(fileContents, "image/jpeg", fileName);
         }
 
         /// <summary>

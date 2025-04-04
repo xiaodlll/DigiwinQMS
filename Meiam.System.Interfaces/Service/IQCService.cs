@@ -20,7 +20,6 @@ using OxyPlot.Core.Drawing;
 using OxyPlot.Legends;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Microsoft.Extensions.Options;
 using DotNetCore.CAP;
 using Mapster.Utils;
@@ -29,8 +28,11 @@ using System.Text.RegularExpressions;
 using SqlSugar.Extensions;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Reflection.Emit;
-using System.Data;
 using Meiam.System.Common;
+using Microsoft.AspNetCore.Mvc;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using NPOI.SS.Formula.Functions;
 
 namespace Meiam.System.Interfaces
 {
@@ -49,9 +51,20 @@ namespace Meiam.System.Interfaces
             string LOTID;//批次号
             string INSPECT_DATE;
             string COLUM001ID;//COLUM001ID
+            string INSPECT_SPEC;
+
+
+
+            //1. 获取编码
+            string INPECT_CODE = Db.Ado.GetString(@$"DEV1_GET_INPECT_CODE '{parm.INSPECT_DEV1ID}'");
+            if (INPECT_CODE.Contains("错误"))
+            {
+                throw new Exception($"DEV1_GET_INPECT_CODE获取异常：{INPECT_CODE}");
+            }
+
             #region 获得检验单号和检验来源
             string sql = @"SELECT TOP 1 ISNULL(INSPECT_DEV1.INSPECT_CODE,''),ISNULL(INSPECT_DEV1.INSPECT_PUR,''),
-INSPECT_DEV1.COLUM002ID,INSPECT_DEV1.ITEMID,INSPECT_DEV1.LOTID,INSPECT_DEV1.INSPECT_DATE,INSPECT_DEV1.COLUM001ID
+INSPECT_DEV1.COLUM002ID,INSPECT_DEV1.ITEMID,INSPECT_DEV1.LOTID,INSPECT_DEV1.INSPECT_DATE,INSPECT_DEV1.COLUM001ID,INSPECT_SPEC
 FROM INSPECT_DEV1 
 LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV1.INSPECT_FLOWID
 LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV1.COLUM002ID
@@ -74,6 +87,7 @@ WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID";
                 LOTID = dataTable.Rows[0][4].ToString();
                 INSPECT_DATE = DateTime.Parse(dataTable.Rows[0][5].ToString()).ToString("yyyyMMddHHmmss");
                 COLUM001ID = dataTable.Rows[0][6].ToString();
+                INSPECT_SPEC = dataTable.Rows[0][7].ToString();
             }
             else
             {
@@ -136,7 +150,7 @@ WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID";
             dataTable = Db.Ado.GetDataTable(sql, parameters);
             if (dataTable.Rows.Count > 0)
             {
-                lot_Qyt = int.Parse(dataTable.Rows[0][0].ToString());
+                int.TryParse(dataTable.Rows[0][0].ToString(), out lot_Qyt);
             }
             else
             {
@@ -156,18 +170,12 @@ WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID";
                 //历史样本数
                 int historyCount = Db.Ado.GetInt(@$"Select COUNT(1) FROM INSPECT_TENSILE 
 LEFT JOIN INSPECT_DEV1 ON INSPECT_TENSILE.INSPECT_DEV1ID=INSPECT_DEV1.INSPECT_DEV1ID
-WHERE INSPECT_DEV1.ITEMID='{ITEMID}'  AND INSPECT_TENSILE.INSPECT_DEV1<>'{parm.INSPECT_DEV1ID}'");
+WHERE INSPECT_DEV1.ITEMID='{ITEMID}'  AND INSPECT_TENSILE.INSPECT_DEV1ID<>'{parm.INSPECT_DEV1ID}'
+AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}'");
                 if (historyCount < inspect_Qyt - actCount)
                 {
                     throw new Exception("历史数据记录笔数不满足，无法产生报告");
                 }
-            }
-
-            //1. 获取编码
-            string INPECT_CODE = Db.Ado.GetString(@$"DEV2_GET_INPECT_CODE '{parm.INSPECT_DEV1ID}','{lot_Qyt}'");
-            if (INPECT_CODE.Contains("错误"))
-            {
-                throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
             }
             #endregion
 
@@ -201,7 +209,8 @@ FROM INSPECT_TENSILE
 LEFT JOIN INSPECT_DEV1 
 ON INSPECT_TENSILE.INSPECT_DEV1ID = INSPECT_DEV1.INSPECT_DEV1ID
 WHERE INSPECT_DEV1.ITEMID ='{ITEMID}'
-AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
+AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}'
+AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 foreach (DataRow item in dtRandomAddData.Rows)
                 {
                     listToSave.Add(GetDetailByInspect(item));
@@ -307,7 +316,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             //返回文件流
             var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.jpg";
-            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"TENSILE\{ITEMID}\{fileName}");
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"\Test\TENSILE\{ITEMID}\{fileName}");
 
             //保存到SCANDOC
             SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID);
@@ -463,7 +472,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
-                new SugarParameter("@SCANDOCNAME", scandocName),
+                new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],"")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
                 new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID)
@@ -480,8 +489,21 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             string INSPECT_CODE;//检验单号
             string INSPECT_PUR; //检验来源
 
+            //测试
+            //GET_INSPECT_LIST("INSPECT_ZONE_021", "IQC_2025030003", "IQC");
+            #region 三．执行存储过程  
+            //执行存储过程
+            //如果 返回值前两位 =“错误”，则 退出API，将返回值返回
+            // 执行 SQL 命令
+            string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}'");
+            if (INPECT_CODE.Contains("错误"))
+            {
+                throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
+            }
+            #endregion
+
             #region 一．获得检验单号和检验来源
-            string sql = @$"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE,'') AS INSPECT_CODE,ISNULL(INSPECT_DEV2.INSPECT_PUR,'') As INSPECT_PUR    
+            string sql = @"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE,'') AS INSPECT_CODE,ISNULL(INSPECT_DEV2.INSPECT_PUR,'') As INSPECT_PUR    
                         FROM INSPECT_DEV2 
                         LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV2.INSPECT_FLOWID
                         LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV2.COLUM002ID
@@ -540,11 +562,10 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             #endregion
 
             #region 三．执行存储过程  
-
-            //执行存储过程 wjj 临时
+            //执行存储过程
             //如果 返回值前两位 =“错误”，则 退出API，将返回值返回
             // 执行 SQL 命令
-            string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
+            //string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}','COC_ATTR_001'");
             //if (INPECT_CODE.Contains("错误"))
             //{
             //    throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
@@ -553,10 +574,10 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             #endregion
 
             #region 四．重新获得主档资料
-            string COLUM002ID = string.Empty;
-            string ITEMID = string.Empty;
-            string LOTID = string.Empty;
-            string INSPECT_FLOWID = string.Empty;
+            string COLUM002ID = "";
+            string ITEMID = "";
+            string LOTID = "";
+            string INSPECT_FLOWID = "";
 
             sql = @$"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE, '') AS INSPECT_CODE
                     ,ISNULL(INSPECT_DEV2.INSPECT_PUR, '') AS INSPECT_PUR  -- 检验来源 IQC OQC
@@ -565,7 +586,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                     ,ISNULL(INSPECT_DEV2.DOC_CODE, '') AS DOC_CODE-- 来源单号
                     ,ISNULL(INSPECT_DEV2.COLUM002ID, '') AS COLUM002ID
                     ,ISNULL(COLUM002.COC_ATTR, '') AS COC_ATTR--特殊设定
-                    ,ISNULL(INSPECT_DEV2.INSPECT_FLOWID, '') AS INSPECT_FLOWID
+                    ,ISNULL(INSPECT_DEV2.INSPECT_FLOWID, '') AS INSPECT_FLOWID,INSPECT_DATE
                     FROM INSPECT_DEV2
                     LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID = INSPECT_DEV2.INSPECT_FLOWID
                     LEFT JOIN COLUM002 ON COLUM002.COLUM002ID = INSPECT_DEV2.COLUM002ID
@@ -575,10 +596,10 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             if (dtMainDEV2.Rows.Count > 0)
             {
-                COLUM002ID = dtMainDEV2.Rows[0]["COLUM002ID"].ToString();
-                ITEMID = dtMainDEV2.Rows[0]["ITEMID"].ToString();
-                LOTID = dtMainDEV2.Rows[0]["LOTID"].ToString();
-                INSPECT_FLOWID = dtMainDEV2.Rows[0]["INSPECT_FLOWID"].ToString();
+                COLUM002ID = dataTable.Rows[0]["COLUM002ID"].ToString();
+                ITEMID = dataTable.Rows[0]["ITEMID"].ToString();
+                LOTID = dataTable.Rows[0]["LOTID"].ToString();
+                INSPECT_FLOWID = dataTable.Rows[0]["INSPECT_FLOWID"].ToString();
             }
 
             #endregion
@@ -590,9 +611,16 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             DataTable dtCOLUM002 = Db.Ado.GetDataTable(sql);
             int count_COLUM002 = dtCOLUM002.Rows.Count;
 
+            int dtColumn1Count = Db.Ado.GetInt(@$"SELECT count(*) FROM COLUM001 where COLUM002ID = '{COLUM002ID}' AND COLUM001CODE LIKE 'A%'");
+
             //得到 @第一个样本ID
             sql = @$"SELECT TOP 1 SAMPLEID FROM INSPECT_2D  WHERE INSPECT_DEV2ID = '{INSPECT_DEV2ID}'";
             int sampleId = Db.Ado.GetInt(sql);
+
+            if (sampleId == 0 && dtColumn1Count == 0)
+            {
+                throw new Exception("没有实测数据切检验内容为空!");
+            }
 
             //如果 INSPECT_2D异常结果集 记录数> 0 则
             //返回错误：“当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致”
@@ -608,7 +636,7 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             #region 七．进一步检验
 
-            if (count_INSPECT_2D > 0)
+            if (count_INSPECT_2D > 0 && dtColumn1Count != 0)
             {
                 throw new Exception("当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致");
             }
@@ -641,11 +669,8 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
             #endregion
 
             #region 八．更新检验内容的CODE给 INSPECT_2D
-            //如果 @COLUM002结果集 记录数 > 0 并且 @INSPECT_2D异常结果集 记录数 > 0
-            if (count_COLUM002 > 0 && count_INSPECT_2D > 0)
-            {
-                //（通过LOCATION关联检验内容，更新设备原始记录）
-                sql = @$"UPDATE INSPECT_2D SET
+            //（通过LOCATION关联检验内容，更新设备原始记录）
+            sql = @$"UPDATE INSPECT_2D SET
                         COLUM001CODE = COLUM001.COLUM001CODE,ADD_VALUE = COLUM001.ADD_VALUE
                         FROM INSPECT_2D
                         LEFT JOIN COLUM001 ON INSPECT_2D.LOCATION = COLUM001.COLUM001NAME
@@ -653,13 +678,22 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
                         AND SAMPLEID = {sampleId}
                         AND COLUM001.COLUM002ID = '{COLUM002ID}'
                         AND COLUM001.COLUM001CODE IS NOT NULL";
+                // 定义参数
+                parameters = new SugarParameter[]
+                {
+                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
+                    new SugarParameter("@SAMPLEID", sampleId),
+                    new SugarParameter("@COLUM002ID", COLUM002ID)
+
+                };
+
                 // 执行 SQL 命令
-                Db.Ado.ExecuteCommand(sql);
+                Db.Ado.ExecuteCommand(sql, parameters);
             }
             #endregion
 
             #region 九．将 INSPECT_2D 的检验内容（检验位置）传递给QMS
-            //如果 @COLUM002结果集 记录数 = 0 或者为NULL  wjj
+            //如果 @COLUM002结果集 记录数 = 0 或者为NULL
             if (count_COLUM002 == 0)
             {
                 try
@@ -865,7 +899,17 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             #endregion
 
-            return null;
+            //生成Excel
+            byte[] fileContents = GetExcelContent(block1DateSet, block2DateSetList);
+
+            //返回文件流
+            var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.xlsx";
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"\Test\2D\{ITEMID}\{fileName}");
+
+            //保存到SCANDOC
+            SaveToScanDoc("CPK报告", fileContents, filePath, INSPECT_CODE, INSPECT_DEV2ID);
+
+            return fileContents;
         }
 
 
@@ -1154,6 +1198,360 @@ AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}' ORDER BY NEWID()");
 
             return transposedTable;
         }
+        public byte[] GetExcelContent(DataSet dataSet1, List<DataSet> listDataSet1)
+        {
+            int columnCount = 0;
+            listDataSet1.IndexOf(dataSet1, 0);
+            foreach (var itemDs in listDataSet1)
+            {
+                columnCount += itemDs.Tables[0].Columns.Count;
+            }
+
+            // 创建工作簿
+            IWorkbook workbook = new XSSFWorkbook();
+            // 创建工作表
+            ISheet sheet = workbook.CreateSheet("Sheet1");
+
+            // 定义表头字体样式
+            ICellStyle headerCellStyle = workbook.CreateCellStyle();
+            IFont headerFont = workbook.CreateFont();
+            headerFont.FontHeightInPoints = 12;
+            headerFont.IsBold = true;
+            headerCellStyle.SetFont(headerFont);
+            // 设置表头边框样式
+            headerCellStyle.BorderTop = BorderStyle.Thin;
+            headerCellStyle.BorderBottom = BorderStyle.Thin;
+            headerCellStyle.BorderLeft = BorderStyle.Thin;
+            headerCellStyle.BorderRight = BorderStyle.Thin;
+            headerCellStyle.TopBorderColor = IndexedColors.Black.Index;
+            headerCellStyle.BottomBorderColor = IndexedColors.Black.Index;
+            headerCellStyle.LeftBorderColor = IndexedColors.Black.Index;
+            headerCellStyle.RightBorderColor = IndexedColors.Black.Index;
+
+            // 定义普通单元格边框样式
+            ICellStyle normalCellStyle = workbook.CreateCellStyle();
+            normalCellStyle.BorderTop = BorderStyle.Thin;
+            normalCellStyle.BorderBottom = BorderStyle.Thin;
+            normalCellStyle.BorderLeft = BorderStyle.Thin;
+            normalCellStyle.BorderRight = BorderStyle.Thin;
+            normalCellStyle.TopBorderColor = IndexedColors.Black.Index;
+            normalCellStyle.BottomBorderColor = IndexedColors.Black.Index;
+            normalCellStyle.LeftBorderColor = IndexedColors.Black.Index;
+            normalCellStyle.RightBorderColor = IndexedColors.Black.Index;
+
+            // 定义数字格式单元格样式
+            ICellStyle numberCellStyle = workbook.CreateCellStyle();
+            IDataFormat dataFormat = workbook.CreateDataFormat();
+            numberCellStyle.DataFormat = dataFormat.GetFormat("#,##0.0##"); // 例如 1,234.56
+            numberCellStyle.BorderTop = BorderStyle.Thin;
+            numberCellStyle.BorderBottom = BorderStyle.Thin;
+            numberCellStyle.BorderLeft = BorderStyle.Thin;
+            numberCellStyle.BorderRight = BorderStyle.Thin;
+            numberCellStyle.TopBorderColor = IndexedColors.Black.Index;
+            numberCellStyle.BottomBorderColor = IndexedColors.Black.Index;
+            numberCellStyle.LeftBorderColor = IndexedColors.Black.Index;
+            numberCellStyle.RightBorderColor = IndexedColors.Black.Index;
+
+            // 定义百分比格式单元格样式
+            ICellStyle percentCellStyle = workbook.CreateCellStyle();
+            IDataFormat dataFormat1 = workbook.CreateDataFormat();
+            percentCellStyle.DataFormat = dataFormat1.GetFormat("0.0#%"); // 
+            percentCellStyle.BorderTop = BorderStyle.Thin;
+            percentCellStyle.BorderBottom = BorderStyle.Thin;
+            percentCellStyle.BorderLeft = BorderStyle.Thin;
+            percentCellStyle.BorderRight = BorderStyle.Thin;
+            percentCellStyle.TopBorderColor = IndexedColors.Black.Index;
+            percentCellStyle.BottomBorderColor = IndexedColors.Black.Index;
+            percentCellStyle.LeftBorderColor = IndexedColors.Black.Index;
+            percentCellStyle.RightBorderColor = IndexedColors.Black.Index;
+
+
+            // 写入表头信息
+            string[] headers = {
+            "FAI&CPK Data Sheet - Rev 06", "Unnamed: 1", "Unnamed: 2", "RoHS  HF",
+            "Unnamed: 4", "Unnamed: 5", "Unnamed: 6", "Unnamed: 7",
+            "Unnamed: 8", "Unnamed: 9", "Unnamed: 10", "Unnamed: 11",
+            "Unnamed: 12", "Unnamed: 13", "Yiled<90%", "Unnamed: 15",
+            "Unnamed: 16", "Unnamed: 17"
+        };
+
+            int rowIndex = 0;
+            IRow headerRow = sheet.CreateRow(rowIndex++);
+            for (int i = 0; i < headers.Length; i++)
+            {
+                ICell cell = headerRow.CreateCell(i);
+                cell.SetCellValue(headers[i]);
+                cell.CellStyle = headerCellStyle;
+            }
+            List<string> columnDistributions = new List<string>() { "Distribution Type" };
+            for (int i = 0; i < columnCount; i++)
+            {
+                columnDistributions.Add("DoubleSides");
+            }
+
+            // 写入前几行的静态数据
+            string[][] staticData = {
+            new string[] { "Part Number :", "RGPZ - 322J ADH - P", null, null, "Revision :", "V1", "Supplier :", "Jiutai", null, "Inspector:", "张钰俊" },
+            new string[] { "Part Description :", "PSA", null, null, null, null, "Cavity / Tool # :", null, "50709", "Date:", "2025 - 01 - 16 00:00:00" },
+            new string[] { "Request Process" },
+            new string[] { "Dimension Description" },
+            new string[] { "Comments" },
+            new string[] { "Proposed +Tol" },
+            new string[] { "Proposed -Tol" },
+            new string[] { "Mean Shift Amount" },
+            new string[] { "Changed Mean" },
+            new string[] { "Proposed USL" },
+            new string[] { "Proposed LSL" },
+            new string[] { "Proposed Yield" },
+            columnDistributions.ToArray(),
+        };
+            for (int i = 0; i < staticData.Length; i++)
+            {
+                IRow row = sheet.CreateRow(rowIndex++);
+                for (int j = 0; j < staticData[i].Length; j++)
+                {
+                    ICell cell = row.CreateCell(j);
+                    if (staticData[i][j] != null)
+                    {
+                        cell.SetCellValue(staticData[i][j]);
+                        cell.CellStyle = normalCellStyle;
+                    }
+                }
+            }
+
+            List<string> columnDimNos = new List<string>() { "Dim. No." };
+            List<string> columnNominalDims = new List<string>() { "Nominal Dim." };
+            List<string> columnDimModels = new List<string>() { "Dim Model" };
+            List<string> columnTolMaxs = new List<string>() { "Tol. Max. (+)" };
+            List<string> columnTolMins = new List<string>() { "Tol. Min. (-)" };
+            foreach (var itemDs in listDataSet1)
+            {
+                foreach (DataColumn dc in itemDs.Tables[0].Columns)
+                {
+                    columnDimNos.Add(dc.ColumnName);
+                }
+                DataRow dr0 = itemDs.Tables[0].Rows[0];
+                DataRow dr1 = itemDs.Tables[0].Rows[1];
+                DataRow dr2 = itemDs.Tables[0].Rows[2];
+                DataRow dr3 = itemDs.Tables[0].Rows[3];
+                foreach (DataColumn dc in itemDs.Tables[0].Columns)
+                {
+                    columnNominalDims.Add(dr0[dc.ColumnName].ToString());
+                    columnDimModels.Add(dr1[dc.ColumnName].ToString());
+                    columnTolMaxs.Add(dr2[dc.ColumnName].ToString());
+                    columnTolMins.Add(dr3[dc.ColumnName].ToString());
+                }
+            }
+
+            // 写入 14 - 19 行的数据（DataTable1）
+            string[][] dataTable1 = {
+            columnDimNos.ToArray(),
+            columnNominalDims.ToArray(),
+            columnDimModels.ToArray(),
+            columnTolMaxs.ToArray(),
+            columnTolMins.ToArray(),
+            };
+            for (int i = 0; i < dataTable1.Length; i++)
+            {
+                IRow row = sheet.CreateRow(rowIndex++);
+                for (int j = 0; j < dataTable1[i].Length; j++)
+                {
+                    ICell cell = row.CreateCell(j);
+                    cell.SetCellValue(dataTable1[i][j]);
+                    cell.CellStyle = normalCellStyle;
+                }
+            }
+            List<string> columnUSLs = new List<string>() { "USL" };
+            List<string> columnLSLs = new List<string>() { "LSL" };
+            List<string> columnStdDevs = new List<string>() { "Std Dev" };
+            List<string> columnMeans = new List<string>() { "Mean" };
+            List<string> columnMaximums = new List<string>() { "Maximum" };
+            List<string> columnMinimums = new List<string>() { "Minimum" };
+            List<string> columnCps = new List<string>() { "Cp" };
+            List<string> columnCpkls = new List<string>() { "Cpkl" };
+            List<string> columnCpkus = new List<string>() { "Cpku" };
+            List<string> columnCpks = new List<string>() { "Cpk" };
+            List<string> columnProjectedYieldss = new List<string>() { "Projected Yields" };
+            List<string> columnMeanDrifts = new List<string>() { "Mean Drift" };
+            for (int i = 0; i < columnCount; i++)
+            {
+                columnUSLs.Add("");
+                columnLSLs.Add("");
+                columnStdDevs.Add("");
+                columnMeans.Add("");
+                columnMaximums.Add("");
+                columnMinimums.Add("");
+                columnCps.Add("");
+                columnCpkls.Add("");
+                columnCpkus.Add("");
+                columnCpks.Add("");
+                columnProjectedYieldss.Add("");
+                columnMeanDrifts.Add("");
+            }
+
+            // 写入 20 - 31 行的公式
+            string[][] formulasData = {
+            columnUSLs.ToArray(),
+            columnLSLs.ToArray(),
+            columnStdDevs.ToArray(),
+            columnMeans.ToArray(),
+            columnMaximums.ToArray(),
+            columnMinimums.ToArray(),
+            columnCps.ToArray(),
+            columnCpkls.ToArray(),
+            columnCpkus.ToArray(),
+            columnCpks.ToArray(),
+            columnProjectedYieldss.ToArray(),
+            columnMeanDrifts.ToArray(),
+        };
+            for (int i = 0; i < formulasData.Length; i++)
+            {
+                IRow row = sheet.CreateRow(rowIndex++);
+                for (int j = 0; j < formulasData[i].Length; j++)
+                {
+                    ICell cell = row.CreateCell(j);
+                    cell.SetCellValue(formulasData[i][j]);
+                    cell.CellStyle = normalCellStyle;
+                }
+            }
+            // 假设的公式示例，你需要根据实际情况修改
+            for (int col = 1; col < formulasData[0].Length; col++)
+            {
+                string colName = GetColumnName(col);
+                // USL
+                sheet.GetRow(19).GetCell(col).CellFormula = $"{colName}16+ABS({colName}18)";
+                // LSL
+                sheet.GetRow(20).GetCell(col).CellFormula = $"{colName}16-ABS({colName}19)";
+                // Std Dev
+                sheet.GetRow(21).GetCell(col).CellFormula = $"STDEV({colName}32:{colName}65194)";
+                // Mean
+                sheet.GetRow(22).GetCell(col).CellFormula = $"AVERAGE({colName}32:{colName}65194)";
+                // Maximum
+                sheet.GetRow(23).GetCell(col).CellFormula = $"MAX({colName}32:{colName}65194)";
+                // Minimum
+                sheet.GetRow(24).GetCell(col).CellFormula = $"MIN(({colName}20-{colName}23)/(3*{colName}22),({colName}23-{colName}21)/(3*{colName}22))";
+                // Cp
+                sheet.GetRow(25).GetCell(col).CellFormula = $"(({colName}20)-({colName}21))/(6*{colName}22)";
+                // Cpkl
+                sheet.GetRow(26).GetCell(col).CellFormula = $"({colName}23-{colName}21)/(3*{colName}22)";
+                // Cpku
+                sheet.GetRow(27).GetCell(col).CellFormula = $"({colName}20-{colName}23)/(3*{colName}22)";
+                // Cpk
+                sheet.GetRow(28).GetCell(col).CellFormula = $"MIN(({colName}20-{colName}23)/(3*{colName}22),({colName}23-{colName}21)/(3*{colName}22))";
+                // Projected Yields
+                sheet.GetRow(29).GetCell(col).CellFormula = $"IF({colName}14=\"DoubleSides\",NORMSDIST(({colName}20-{colName}23)/{colName}22)-NORMSDIST(({colName}21-{colName}23)/{colName}22),IF({colName}14=\"SingleSide-USL\",NORMSDIST(({colName}20-{colName}23)/{colName}22),IF({colName}14=\"SingleSide-LSL\",1-NORMSDIST((B21-B23)/B22),IF({colName}14=\"Actual Yield (n>=100)\",IF(COUNT({colName}32:{colName}65194)>=100,(COUNTIF({colName}32:{colName}65194,\"<=\"&B20)-COUNTIF({colName}32:{colName}65194,\"<\"&{colName}21))/COUNT({colName}32:{colName}65194),\"Too Few Records\"),\"Error\"))))";
+                // Mean Drift
+                sheet.GetRow(30).GetCell(col).CellFormula = $"{colName}23-({colName}20+{colName}21)/2";
+            }
+
+            for (int i = 0; i < formulasData.Length; i++)
+            {
+                IRow row = sheet.GetRow(i + 19);
+                for (int j = 0; j < formulasData[i].Length; j++)
+                {
+                    ICell cell = row.GetCell(j);
+                    if (i + 19 == 29)
+                    {
+                        cell.CellStyle = percentCellStyle;
+                    }
+                    else
+                    {
+                        cell.CellStyle = numberCellStyle;
+                    }
+                }
+            }
+            List<DataTable> tableList2 = new List<DataTable>();
+            foreach (var itemDs in listDataSet1)
+            {
+                tableList2.Add(itemDs.Tables[1]);
+            }
+
+            DataTable dataTable2 = MergeTablesHorizontallyWithIndex(tableList2);
+            // 写入 32 - 63 行的数据（DataTable2）
+            for (int i = 0; i < dataTable2.Rows.Count; i++)
+            {
+                IRow row = sheet.CreateRow(rowIndex++);
+                for (int j = 0; j < dataTable2.Columns.Count; j++)
+                {
+                    ICell cell = row.CreateCell(j);
+                    double textValue = 0;
+                    double.TryParse(dataTable2.Rows[i][j].ToString(),out textValue);
+                    cell.SetCellValue(textValue);
+                    cell.CellStyle = numberCellStyle;
+                }
+            }
+
+            byte[] fileContents;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                workbook.Write(ms);
+                fileContents = ms.ToArray(); // 将流转换为 byte[]
+            }
+
+            return fileContents;
+        }
+        string GetColumnName(int columnNumber)
+        {
+            int dividend = columnNumber + 1;
+            string columnName = "";
+            int modulo;
+
+            while (dividend > 0)
+            {
+                modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar(65 + modulo).ToString() + columnName;
+                dividend = (int)((dividend - modulo) / 26);
+            }
+
+            return columnName;
+        }
+
+        DataTable MergeTablesHorizontallyWithIndex(List<DataTable> tables)
+        {
+            if (tables == null || tables.Count == 0)
+                throw new ArgumentException("列表为空");
+
+            int rowCount = tables[0].Rows.Count;
+            if (tables.Any(t => t.Rows.Count != rowCount))
+                throw new InvalidOperationException("所有 DataTable 的行数必须一致");
+
+            DataTable result = new DataTable();
+
+            // 添加序号列
+            result.Columns.Add("序号", typeof(int));
+
+            // 添加其他列
+            int tableIndex = 0;
+            foreach (var table in tables)
+            {
+                foreach (DataColumn col in table.Columns)
+                {
+                    string columnName = $"{col.ColumnName}";
+                    result.Columns.Add(columnName, col.DataType);
+                }
+                tableIndex++;
+            }
+
+            // 添加数据
+            for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+            {
+                List<object> rowData = new List<object>();
+                rowData.Add(rowIndex + 1); // 序号从 1 开始
+
+                foreach (var table in tables)
+                {
+                    foreach (var value in table.Rows[rowIndex].ItemArray)
+                    {
+                        rowData.Add(value);
+                    }
+                }
+
+                result.Rows.Add(rowData.ToArray());
+            }
+
+            return result;
+        }
+
         #endregion
     }
 

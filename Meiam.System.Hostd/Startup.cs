@@ -124,6 +124,15 @@ namespace Meiam.System.Hostd
                 options.SuppressModelStateInvalidFilter = true;
             });
             Console.WriteLine("Global settings completed!");
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            });
 
             #endregion
 
@@ -140,6 +149,9 @@ namespace Meiam.System.Hostd
                 app.UseDeveloperExceptionPage();
             };
             #endregion
+
+            // 加上这句！
+            app.UseCors("AllowAll");
 
             #region 服务注入
             //// 跨域设置
