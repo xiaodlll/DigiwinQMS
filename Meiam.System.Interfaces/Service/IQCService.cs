@@ -204,7 +204,7 @@ WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
             //四.如果@应检样本数>@实际记录笔
             if (inspect_Qyt > dtActiveMain.Rows.Count)
             {
-                var dtRandomAddData = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt - dtActiveMain.Rows.Count} *，FLAG=1
+                var dtRandomAddData = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt - dtActiveMain.Rows.Count} *,FLAG=1
 FROM INSPECT_TENSILE
 LEFT JOIN INSPECT_DEV1 
 ON INSPECT_TENSILE.INSPECT_DEV1ID = INSPECT_DEV1.INSPECT_DEV1ID
@@ -316,7 +316,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             //返回文件流
             var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.jpg";
-            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"\Test\TENSILE\{ITEMID}\{fileName}");
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\TENSILE\{ITEMID}\{fileName}");
 
             //保存到SCANDOC
             SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID);
@@ -472,7 +472,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
-                new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],"")),
+                new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
                 new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID)
@@ -904,7 +904,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             //返回文件流
             var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.xlsx";
-            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"\Test\2D\{ITEMID}\{fileName}");
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\2D\{ITEMID}\{fileName}");
 
             //保存到SCANDOC
             SaveToScanDoc("CPK报告", fileContents, filePath, INSPECT_CODE, INSPECT_DEV2ID);
