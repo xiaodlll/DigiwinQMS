@@ -492,10 +492,10 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
         #region GetInspectBatchReport
         public void GetInspectBatchReport(InspectInputByCodeDto parm){
-            var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEVID FROM INSPECT_DEV WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
+            var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEV1ID FROM INSPECT_DEV1 WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
             foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
             {
-                string INSPECT_DEV1ID = dataRow["INSPECT_DEVID"].ToString();
+                string INSPECT_DEV1ID = dataRow["INSPECT_DEV1ID"].ToString();
                 GetInspectReport(new InspectInputDto() { INSPECT_DEV1ID = INSPECT_DEV1ID, UserName = parm.UserName });
             }
         }
@@ -1928,10 +1928,10 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         #region GetBatchCPKfile
         public void GetBatchCPKfile(InspectInputByCodeDto parm)
         {
-            var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEVID FROM INSPECT_DEV WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
+            var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEV2ID FROM INSPECT_DEV2 WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
             foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
             {
-                string INSPECT_DEV2ID = dataRow["INSPECT_DEVID"].ToString();
+                string INSPECT_DEV2ID = dataRow["INSPECT_DEV2ID"].ToString();
                 GetCPKfile(INSPECT_DEV2ID, parm.UserName);
             }
         }
