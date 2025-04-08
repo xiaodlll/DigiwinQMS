@@ -53,13 +53,25 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.InspectBatchReport(Meiam.System.Model.Dto.InspectInputByCodeDto)">
+            <summary>
+            批量拉力机检测报告
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.CPKReport(Meiam.System.Model.Dto.CPKInputDto)">
             <summary>
             CPK数据报告
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.Test">
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.CPKBatchReport(Meiam.System.Model.Dto.CPKInputByCodeDto)">
+            <summary>
+            批量CPK数据报告
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.TestCPKExcel">
             <summary>
             CPK数据报告测试Excel
             </summary>

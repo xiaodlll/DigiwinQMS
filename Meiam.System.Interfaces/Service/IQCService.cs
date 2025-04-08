@@ -1926,7 +1926,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         #endregion
 
         #region GetBatchCPKfile
-        public void GetBatchCPKfile(InspectInputByCodeDto parm)
+        public void GetBatchCPKfile(CPKInputByCodeDto parm)
         {
             var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEV2ID FROM INSPECT_DEV2 WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
             foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
