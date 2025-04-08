@@ -26,4 +26,36 @@ namespace Meiam.System.Model.Dto {
         [Display(Name = "用户名")]
         public string UserName { get; set; }
     }
+
+    /// <summary>
+    /// 批量拉力机检测报告
+    /// </summary>
+    public class CPKInputByCodeDto
+    {
+
+        /// <summary>
+        /// 描述 : DOC_CODE 
+        /// 空值 : False
+        /// 默认 : 
+        /// </summary>
+        [Display(Name = "DOC_CODE")]
+        public string DOC_CODE { get; set; }
+
+
+        /// <summary>
+        /// 描述 : INSPECT_DEV 
+        /// 空值 : False
+        /// 默认 : 
+        /// </summary>
+        [Display(Name = "INSPECT_DEV")]
+        public string INSPECT_DEV { get; set; }
+
+        /// <summary>
+        /// 描述 : 用户名 
+        /// 空值 : False
+        /// 默认 : 
+        /// </summary>
+        [Display(Name = "用户名")]
+        public string UserName { get; set; }
+    }
 }

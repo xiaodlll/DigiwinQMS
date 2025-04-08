@@ -18,9 +18,10 @@ namespace Meiam.System.Interfaces
     public interface IIQCService : IBaseService<INSPECT_TENSILE> {
 
         #region CustomInterface 
-        byte[] GetCPKfile(string INSPECT_DEV2ID, string userName);
-
-        byte[] GetInspectReport(InspectInputDto parm);
+        void GetCPKfile(string INSPECT_DEV2ID, string userName);
+        void GetInspectBatchReport(InspectInputByCodeDto parm);
+        void GetInspectReport(InspectInputDto parm);
+        void GetBatchCPKfile(CPKInputByCodeDto parm);
 
         void ReplaceFTIRPdf(FTIRInputDto parm);
         #endregion

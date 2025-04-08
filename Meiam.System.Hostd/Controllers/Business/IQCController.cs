@@ -70,6 +70,35 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
         }
 
         /// <summary>
+        /// 批量拉力机检测报告
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult InspectBatchReport([FromBody] InspectInputByCodeDto parm)
+        {
+            if (string.IsNullOrEmpty(parm.DOC_CODE))
+            {
+                return toResponse(StatusCodeType.Error, $"DOC_CODE不能为空！");
+            }
+            if (string.IsNullOrEmpty(parm.INSPECT_DEV))
+            {
+                return toResponse(StatusCodeType.Error, $"INSPECT_DEV不能为空！");
+            }
+            if (string.IsNullOrEmpty(parm.UserName))
+            {
+                return toResponse(StatusCodeType.Error, $"UserName不能为空！");
+            }
+
+            _iqcService.GetInspectBatchReport(parm);
+
+            return toResponse(StatusCodeType.Success, "拉力机检测报告生成成功！");
+
+            //byte[] fileContents = _iqcService.GetInspectReport(parm);
+
+            //return File(fileContents, "image/jpeg", "拉力机检测报告.jpg");
+        }
+
+        /// <summary>
         /// CPK数据报告
         /// </summary>
         /// <returns></returns>
@@ -98,6 +127,35 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             //// 3. 返回文件流
             //var fileName = $"零件清单_{DateTime.Now:yyyyMMdd}.jpg";
             //return File(fileContents, "image/jpeg", fileName);
+        }
+
+        /// <summary>
+        /// 批量CPK数据报告
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult CPKBatchReport([FromBody] CPKInputByCodeDto parm)
+        {
+            if (string.IsNullOrEmpty(parm.DOC_CODE))
+            {
+                return toResponse(StatusCodeType.Error, $"DOC_CODE不能为空！");
+            }
+            if (string.IsNullOrEmpty(parm.INSPECT_DEV))
+            {
+                return toResponse(StatusCodeType.Error, $"INSPECT_DEV不能为空！");
+            }
+            if (string.IsNullOrEmpty(parm.UserName))
+            {
+                return toResponse(StatusCodeType.Error, $"UserName不能为空！");
+            }
+
+            _iqcService.GetBatchCPKfile(parm);
+
+            return toResponse(StatusCodeType.Success, "拉力机检测报告生成成功！");
+
+            //byte[] fileContents = _iqcService.GetInspectReport(parm);
+
+            //return File(fileContents, "image/jpeg", "拉力机检测报告.jpg");
         }
 
         /// <summary>

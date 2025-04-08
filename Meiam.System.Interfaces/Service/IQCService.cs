@@ -47,7 +47,7 @@ namespace Meiam.System.Interfaces
         }
 
         #region GetInspectReport 
-        public byte[] GetInspectReport(InspectInputDto parm)
+        public void GetInspectReport(InspectInputDto parm)
         {
             string INSPECT_CODE;//检验单号
             string INSPECT_PUR; //检验来源
@@ -325,9 +325,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             //保存到SCANDOC
             SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID);
-
-            return fileContents;
         }
+
         private INSPECT_TENSILE_D GetDetailByInspect(DataRow item,string INSPECT_DEV1ID)
         {
             var newItem = new INSPECT_TENSILE_D();
@@ -491,8 +490,19 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         }
         #endregion
 
+        #region GetInspectBatchReport
+        public void GetInspectBatchReport(InspectInputByCodeDto parm){
+            var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEVID FROM INSPECT_DEV WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
+            foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
+            {
+                string INSPECT_DEV1ID = dataRow["INSPECT_DEVID"].ToString();
+                GetInspectReport(new InspectInputDto() { INSPECT_DEV1ID = INSPECT_DEV1ID, UserName = parm.UserName });
+            }
+        }
+        #endregion
+
         #region GetCPKfile
-        public byte[] GetCPKfile(string INSPECT_DEV2ID, string userName)
+        public void GetCPKfile(string INSPECT_DEV2ID, string userName)
         {
 
             string INSPECT_CODE;//检验单号
@@ -1070,8 +1080,6 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             //保存到SCANDOC
             SaveToCPKScanDoc("CPK报告", fileContents, filePath, INSPECT_CODE, INSPECT_DEV2ID);
-
-            return fileContents;
         }
 
         #region GET_INSPECT_RANK
@@ -1915,6 +1923,18 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             Db.Ado.ExecuteCommand(sql, parameters);
         }
 
+        #endregion
+
+        #region GetBatchCPKfile
+        public void GetBatchCPKfile(InspectInputByCodeDto parm)
+        {
+            var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEVID FROM INSPECT_DEV WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
+            foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
+            {
+                string INSPECT_DEV2ID = dataRow["INSPECT_DEVID"].ToString();
+                GetCPKfile(INSPECT_DEV2ID, parm.UserName);
+            }
+        }
         #endregion
 
         #region ReplaceFTIRPdf
