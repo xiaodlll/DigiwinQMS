@@ -65,6 +65,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.ReplaceFTIRPdf(Meiam.System.Model.Dto.FTIRInputDto)">
+            <summary>
+            FTIR报告PDF
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口

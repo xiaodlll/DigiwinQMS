@@ -105,7 +105,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult Test()
+        public IActionResult TestCPKExcel()
         {
             // 创建工作簿
             IWorkbook workbook = new XSSFWorkbook();
@@ -343,6 +343,18 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             // 3. 返回文件流
             var fileName = $"Excel报告.xlsx";
             return File(fileContents, "Excel/xlsx", fileName);
+        }
+
+        /// <summary>
+        /// FTIR报告PDF
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult ReplaceFTIRPdf([FromBody] FTIRInputDto parm)
+        {
+            _iqcService.ReplaceFTIRPdf(parm);
+
+            return toResponse(StatusCodeType.Success, "FTIR报告生成成功!");
         }
 
         string GetColumnName(int columnNumber)
