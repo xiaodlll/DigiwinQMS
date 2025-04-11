@@ -40,6 +40,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using HorizontalAlignment = NPOI.SS.UserModel.HorizontalAlignment;
 using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
+using Meiam.System.Interfaces.Extensions;
 
 namespace Meiam.System.Interfaces
 {
@@ -2180,6 +2181,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                         searchText = ExtractTextRightOfKeyword(allPdfText, "日期:");
                         replaceText = ConvertToCustomDateFormat(GenerateRandomWorkTime(DateTime.Parse(INSPECT_DATE)));
                         ReplacePdfText(searchText, replaceText, pdfDoc);
+                        
                         FileInfo filePDF = new FileInfo(outputFile);
                         if (!filePDF.Directory.Exists)
                         {
@@ -2187,6 +2189,18 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                         }
                         // 保存修改后的 PDF
                         pdfDoc.Save(outputFile);
+                        try
+                        {
+                            //去水印
+                            string outputFileRemoveWarter = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\temp{fileName}");
+                            ITextHelper.RemoveWatermark(outputFile, outputFileRemoveWarter);
+                            File.Copy(outputFileRemoveWarter, outputFile, true);
+                            File.Delete(outputFileRemoveWarter);
+                        }
+                        catch
+                        {
+                            //去水印失败，继续使用原文件
+                        }
                         //保存到SCANDOC
                         SavePDFToScanDoc("FTIR报告", outputFile, parm.INSPECTCODE, COLUM002ID, COLUMN001CODE);
                     }
