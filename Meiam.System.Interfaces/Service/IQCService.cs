@@ -38,6 +38,8 @@ using Aspose.Pdf.Text;
 using System.Globalization;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using HorizontalAlignment = NPOI.SS.UserModel.HorizontalAlignment;
+using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
 
 namespace Meiam.System.Interfaces
 {
@@ -1538,14 +1540,16 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             // 定义表头字体样式
             ICellStyle headerCellStyle = workbook.CreateCellStyle();
             IFont headerFont = workbook.CreateFont();
-            headerFont.FontHeightInPoints = 12;
-            headerFont.IsBold = true;
+            headerFont.FontName = "Verdana"; // 设置字体为 Verdana
+            headerFont.FontHeightInPoints = 8; // 设置字号为 8
+            headerFont.IsBold = true; // 设置加粗
             headerCellStyle.SetFont(headerFont);
+
             // 设置表头边框样式
-            headerCellStyle.BorderTop = BorderStyle.Thin;
-            headerCellStyle.BorderBottom = BorderStyle.Thin;
-            headerCellStyle.BorderLeft = BorderStyle.Thin;
-            headerCellStyle.BorderRight = BorderStyle.Thin;
+            //headerCellStyle.BorderTop = BorderStyle.Thin;
+            //headerCellStyle.BorderBottom = BorderStyle.Thin;
+            //headerCellStyle.BorderLeft = BorderStyle.Thin;
+            //headerCellStyle.BorderRight = BorderStyle.Thin;
             headerCellStyle.TopBorderColor = IndexedColors.Black.Index;
             headerCellStyle.BottomBorderColor = IndexedColors.Black.Index;
             headerCellStyle.LeftBorderColor = IndexedColors.Black.Index;
@@ -1553,6 +1557,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             // 定义普通单元格边框样式
             ICellStyle normalCellStyle = workbook.CreateCellStyle();
+            IFont normalFont = workbook.CreateFont();
             normalCellStyle.BorderTop = BorderStyle.Thin;
             normalCellStyle.BorderBottom = BorderStyle.Thin;
             normalCellStyle.BorderLeft = BorderStyle.Thin;
@@ -1561,33 +1566,82 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             normalCellStyle.BottomBorderColor = IndexedColors.Black.Index;
             normalCellStyle.LeftBorderColor = IndexedColors.Black.Index;
             normalCellStyle.RightBorderColor = IndexedColors.Black.Index;
+            normalFont.FontName = "Arial"; // 设置字体为 Arial
+            normalFont.FontHeightInPoints = 8; // 设置字号为 8
+            normalCellStyle.SetFont(normalFont); // 应用字体到普通单元格样式
+
+            // 定义加粗样式
+            ICellStyle boldCellStyle = workbook.CreateCellStyle();
+            boldCellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
+            IFont boldFont = workbook.CreateFont();
+            boldFont.FontName = "Arial"; // 字体与普通样式一致
+            boldFont.FontHeightInPoints = 8; // 字号与普通样式一致
+            boldFont.IsBold = true; // 设置加粗
+            boldCellStyle.SetFont(boldFont);
+
+            // 定义淡绿色背景样式 Dimension Description 行
+            ICellStyle lightGreenCellStyle = workbook.CreateCellStyle();
+            lightGreenCellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
+            lightGreenCellStyle.FillForegroundColor = IndexedColors.LightGreen.Index; // 设置背景色为淡绿色
+            lightGreenCellStyle.FillPattern = FillPattern.SolidForeground;
+            lightGreenCellStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            lightGreenCellStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
+
+            // 定义蓝色背景样式 Comments-Proposed Yield 行
+            ICellStyle skyBlueCellStyle = workbook.CreateCellStyle();
+            skyBlueCellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
+            skyBlueCellStyle.FillForegroundColor = IndexedColors.PaleBlue.Index;
+            skyBlueCellStyle.FillPattern = FillPattern.SolidForeground;
+            skyBlueCellStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            skyBlueCellStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
+
+            // 第14行蓝色字体+居中显示 Distribution Type 行
+            ICellStyle blueCenteredStyle = workbook.CreateCellStyle();
+            IFont verdanaFont = workbook.CreateFont();
+            verdanaFont.FontName = "Verdana"; // 设置字体为 Verdana
+            verdanaFont.FontHeightInPoints = 6; // 设置字号为 6
+            verdanaFont.Color = IndexedColors.Blue.Index; // 设置字体颜色为蓝色
+            blueCenteredStyle.SetFont(verdanaFont);
+            blueCenteredStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            blueCenteredStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
 
             // 定义数字格式单元格样式
             ICellStyle numberCellStyle = workbook.CreateCellStyle();
             IDataFormat dataFormat = workbook.CreateDataFormat();
+            numberCellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
             numberCellStyle.DataFormat = dataFormat.GetFormat("#,##0.0##"); // 例如 1,234.56
-            numberCellStyle.BorderTop = BorderStyle.Thin;
-            numberCellStyle.BorderBottom = BorderStyle.Thin;
-            numberCellStyle.BorderLeft = BorderStyle.Thin;
-            numberCellStyle.BorderRight = BorderStyle.Thin;
-            numberCellStyle.TopBorderColor = IndexedColors.Black.Index;
-            numberCellStyle.BottomBorderColor = IndexedColors.Black.Index;
-            numberCellStyle.LeftBorderColor = IndexedColors.Black.Index;
-            numberCellStyle.RightBorderColor = IndexedColors.Black.Index;
+            numberCellStyle.FillForegroundColor = IndexedColors.SeaGreen.Index; // 设置背景色为绿色
+            numberCellStyle.FillPattern = FillPattern.SolidForeground;
+            numberCellStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            numberCellStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
+            numberCellStyle.SetFont(normalFont); // 应用字体到普通单元格样式
 
             // 定义百分比格式单元格样式
             ICellStyle percentCellStyle = workbook.CreateCellStyle();
             IDataFormat dataFormat1 = workbook.CreateDataFormat();
+            percentCellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
             percentCellStyle.DataFormat = dataFormat1.GetFormat("0.0#%"); // 
-            percentCellStyle.BorderTop = BorderStyle.Thin;
-            percentCellStyle.BorderBottom = BorderStyle.Thin;
-            percentCellStyle.BorderLeft = BorderStyle.Thin;
-            percentCellStyle.BorderRight = BorderStyle.Thin;
-            percentCellStyle.TopBorderColor = IndexedColors.Black.Index;
-            percentCellStyle.BottomBorderColor = IndexedColors.Black.Index;
-            percentCellStyle.LeftBorderColor = IndexedColors.Black.Index;
-            percentCellStyle.RightBorderColor = IndexedColors.Black.Index;
+            percentCellStyle.FillForegroundColor = IndexedColors.SeaGreen.Index; // 设置背景色为绿色
+            percentCellStyle.FillPattern = FillPattern.SolidForeground;
+            percentCellStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            percentCellStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
+            percentCellStyle.SetFont(normalFont); // 应用字体到普通单元格样式
 
+            // 定义一个居中不加粗的样式 为30-62行 第0列
+            ICellStyle normal1CellStyle = workbook.CreateCellStyle();
+            normal1CellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
+            normal1CellStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            normal1CellStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
+            normal1CellStyle.SetFont(normalFont); // 应用字体到普通单元格样式
+
+            //以及20-23行，31行使用，无背景色
+            // 定义数字格式单元格样式
+            ICellStyle number1CellStyle = workbook.CreateCellStyle();
+            number1CellStyle.CloneStyleFrom(normalCellStyle); // 继承普通样式
+            number1CellStyle.DataFormat = dataFormat.GetFormat("#,##0.0##"); // 例如 1,234.56
+            number1CellStyle.Alignment = HorizontalAlignment.Center; // 水平居中
+            number1CellStyle.VerticalAlignment = VerticalAlignment.Center; // 垂
+            number1CellStyle.SetFont(normalFont); // 应用字体到普通单元格样式
 
             // 写入表头信息
             string[] headers = {
@@ -1600,12 +1654,14 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             int rowIndex = 0;
             IRow headerRow = sheet.CreateRow(rowIndex++);
+
             for (int i = 0; i < headers.Length; i++)
             {
                 ICell cell = headerRow.CreateCell(i);
                 cell.SetCellValue(headers[i]);
                 cell.CellStyle = headerCellStyle;
             }
+
             List<string> columnDistributions = new List<string>() { "Distribution Type" };
             for (int i = 0; i < columnCount; i++)
             {
@@ -1628,16 +1684,46 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             new string[] { "Proposed Yield" },
             columnDistributions.ToArray(),
         };
+
             for (int i = 0; i < staticData.Length; i++)
             {
                 IRow row = sheet.CreateRow(rowIndex++);
-                for (int j = 0; j < staticData[i].Length; j++)
+                for (int j = 0; j <= columnCount; j++)
                 {
                     ICell cell = row.CreateCell(j);
-                    if (staticData[i][j] != null)
+
+                    if (j < staticData[i].Length)
                     {
-                        cell.SetCellValue(staticData[i][j]);
-                        cell.CellStyle = normalCellStyle;
+                        if (staticData[i][j] != null)
+                        {
+                            cell.SetCellValue(staticData[i][j]);
+                            cell.CellStyle = normalCellStyle;
+                        }
+                    }
+   
+                    
+                    // 如果是第 0 列，应用加粗样式
+                    if (j == 0)
+                    {
+                        cell.CellStyle = boldCellStyle;
+                    }
+                    else
+                    {
+                        // 如果是 "Dimension" 部分，且不是第 0 列，设置淡绿色背景
+                        if (i == 3)
+                        {
+                            cell.CellStyle = lightGreenCellStyle;
+                        }
+                        //4-11行背景色
+                        else if (i > 3 && i <= 11)
+                        {
+                            cell.CellStyle = skyBlueCellStyle;
+                        }
+                        //12行背景色 Distribution Type 行
+                        else if (i == 12)
+                        {
+                            cell.CellStyle = blueCenteredStyle;
+                        }    
                     }
                 }
             }
@@ -1681,7 +1767,16 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 {
                     ICell cell = row.CreateCell(j);
                     cell.SetCellValue(dataTable1[i][j]);
-                    cell.CellStyle = normalCellStyle;
+                    // 如果是第 0 列，应用加粗样式
+                    if (j == 0)
+                    {
+                        cell.CellStyle = boldCellStyle;
+                    } 
+                    // 非第 0 列，设置淡绿色背景+居中
+                    else
+                    {
+                        cell.CellStyle = lightGreenCellStyle;
+                    }
                 }
             }
             List<string> columnUSLs = new List<string>() { "USL" };
@@ -1734,7 +1829,16 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 {
                     ICell cell = row.CreateCell(j);
                     cell.SetCellValue(formulasData[i][j]);
-                    cell.CellStyle = normalCellStyle;
+                    // 如果是第 0 列，应用加粗样式
+                    if (j == 0)
+                    {
+                        cell.CellStyle = boldCellStyle;
+                    }
+                    else
+                    {
+                        cell.CellStyle = normalCellStyle;
+                    }
+                        
                 }
             }
             // 假设的公式示例，你需要根据实际情况修改
@@ -1773,13 +1877,25 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 for (int j = 0; j < formulasData[i].Length; j++)
                 {
                     ICell cell = row.GetCell(j);
-                    if (i + 19 == 29)
+
+                    if (j > 0)
                     {
-                        cell.CellStyle = percentCellStyle;
-                    }
-                    else
-                    {
-                        cell.CellStyle = numberCellStyle;
+                        if (i + 19 == 29)
+                        {
+                            cell.CellStyle = percentCellStyle;
+                        }
+                        else if((i + 19)>= 20 && (i + 19) <= 23)
+                        {
+                            cell.CellStyle = number1CellStyle;
+                        }
+                        else if (i + 19 == 30)
+                        {
+                            cell.CellStyle = number1CellStyle;
+                        }
+                        else
+                        {
+                            cell.CellStyle = numberCellStyle;
+                        }
                     }
                 }
             }
@@ -1802,13 +1918,19 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                     cell.SetCellValue(textValue);
                     if(j == 0)
                     {
-                        cell.CellStyle = normalCellStyle;
+                        cell.CellStyle = normal1CellStyle;
                     }
                     else
                     {
                         cell.CellStyle = numberCellStyle;
                     }
                 }
+            }
+
+            // 写入表格内容后，设置列宽自适应 以13行的列数为准
+            for (int i = 0; i < sheet.GetRow(13).LastCellNum; i++)
+            {
+                sheet.AutoSizeColumn(i); // 自适应列宽
             }
 
             byte[] fileContents;
