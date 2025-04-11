@@ -326,7 +326,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\TENSILE\{ITEMID}\{fileName}");
 
             //保存到SCANDOC
-            SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID);
+            SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID, COLUM002ID, COLUM001ID);
         }
 
         private INSPECT_TENSILE_D GetDetailByInspect(DataRow item,string INSPECT_DEV1ID)
@@ -461,7 +461,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             }
             return result;
         }
-        private void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV1ID) {
+        private void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV1ID,string COLUM002ID, string COLUM001ID) {
             FileInfo file = new FileInfo(scandocName);
             if (!file.Directory.Exists) {
                 file.Directory.Create();
@@ -471,11 +471,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 File.WriteAllBytes(scandocName, fileContents);
             }
 
-            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE INSPECT_DEV1ID='{INSPECT_DEV1ID}'");
+            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
 
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID)";
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -484,7 +484,9 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
-                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID)
+                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID),
+                new SugarParameter("@COLUM002ID", COLUM002ID),
+                new SugarParameter("@COLUM001ID", COLUM001ID)
             };
 
             // 执行 SQL 命令
@@ -495,6 +497,10 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         #region GetInspectBatchReport
         public void GetInspectBatchReport(InspectInputByCodeDto parm){
             var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEV1ID FROM INSPECT_DEV1 WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
+            if (dtINSPECT_DEVID.Rows.Count == 0)
+            {
+                throw new Exception("没有找到任何记录.");
+            }
             foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
             {
                 string INSPECT_DEV1ID = dataRow["INSPECT_DEV1ID"].ToString();
@@ -1081,7 +1087,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\2D\{ITEMID}\{fileName}");
 
             //保存到SCANDOC
-            SaveToCPKScanDoc("CPK报告", fileContents, filePath, INSPECT_CODE, INSPECT_DEV2ID);
+            SaveToCPKScanDoc("CPK报告", fileContents, filePath, INSPECT_CODE, INSPECT_DEV2ID, COLUM002ID);
         }
 
         #region GET_INSPECT_RANK
@@ -2013,7 +2019,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         }
 
 
-        private void SaveToCPKScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV2ID)
+        private void SaveToCPKScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV2ID, string COLUM002ID)
         {
             FileInfo file = new FileInfo(scandocName);
             if (!file.Directory.Exists)
@@ -2025,11 +2031,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 File.WriteAllBytes(scandocName, fileContents);
             }
 
-            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE INSPECT_DEV2ID='{INSPECT_DEV2ID}'");
+            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE INSPECT_DEV2ID='{INSPECT_DEV2ID}' AND COLUM002ID='{COLUM002ID}'");
 
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV2ID)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV2ID)";
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV2ID,COLUM002ID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV2ID,@COLUM002ID)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -2038,7 +2044,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
-                new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID)
+                new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
+                new SugarParameter("@COLUM002ID", COLUM002ID)
             };
 
             // 执行 SQL 命令
@@ -2051,6 +2058,10 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         public void GetBatchCPKfile(CPKInputByCodeDto parm)
         {
             var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEV2ID FROM INSPECT_DEV2 WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
+            if (dtINSPECT_DEVID.Rows.Count == 0)
+            {
+                throw new Exception("没有找到任何记录.");
+            }
             foreach (DataRow dataRow in dtINSPECT_DEVID.Rows)
             {
                 string INSPECT_DEV2ID = dataRow["INSPECT_DEV2ID"].ToString();
@@ -2108,8 +2119,13 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
                 int inspect_Qyt = Db.Ado.GetInt(@$"GET_INPECT_CNT  '{COLUM002ID}','{LOT_QTY}'");
 
-                DataTable dt = Db.Ado.GetDataTable(@$"EXEC GET_INSPECT_LIST  '{COLUM002ID}','{parm.INSPECTCODE}','{parm.INSPECTTYPE}'");
+                Db.Ado.ExecuteCommand(@$"EXEC GET_INSPECT_RANK '{COLUM002ID}','{parm.INSPECTCODE}',{inspect_Qyt},'{parm.INSPECTTYPE}','{parm.UserName}'");
 
+                DataTable dt = Db.Ado.GetDataTable(@$"EXEC GET_INSPECT_LIST  '{COLUM002ID}','{parm.INSPECTCODE}','{parm.INSPECTTYPE}'");
+                if (dt.Rows.Count == 0)
+                {
+                    throw new Exception($"GET_INSPECT_LIST检验单{parm.INSPECTCODE}没有对应数据");
+                }
                 // 查找 "PCSCODE" 列的索引
                 int pcsCodeColumnIndex = -1;
                 foreach (DataColumn column in dt.Columns)
@@ -2132,32 +2148,43 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                     string ITEMID = drRank["ITEMID"].ToString();
                     string LOTID = drRank["LOTNO"].ToString();
                     // 从 "PCSCODE" 列的下一列开始遍历
-                    for (int colIndex = pcsCodeColumnIndex + 1; colIndex < dt.Columns.Count; colIndex++)
+                    for (int colIndex = pcsCodeColumnIndex + 2; colIndex < dt.Columns.Count; colIndex++)
                     {
                         string COLUMN001CODE = dt.Columns[colIndex].ColumnName;
-                        string RANKVALUE = drRank[dt.Columns[colIndex]].ToString();
+                        string RANKVALUE = drRank[dt.Columns[colIndex]].ToString(); 
+                        if (string.IsNullOrEmpty(COLUMN001CODE))
+                            continue;
+                        if (string.IsNullOrEmpty(RANKVALUE))
+                            continue;
                         //在存储FTIR报告路径下，按文件夹名称=物料名称（ITEMNAME）查询，随机从中取一份报告图表
                         string inputFile = GetRandomFTIRReport(ITEMNAME);
                         //返回文件流
-                        var fileName = $"{ITEMID}_{LOTID}{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMddHHmmss")}.pdf";
+                        var fileName = $"{ITEMID}_{LOTID}_{COLUMN001CODE}_{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMddHHmmss")}.pdf";
                         string outputFile = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\{fileName}");
 
                         Document pdfDoc = new Document(inputFile);
-                        string searchText = ExtractTextRightOfKeyword(pdfDoc, "质量检查结果:");
+                        string allPdfText = ExtractAllText(pdfDoc);
+
+                        string searchText = ExtractTextRightOfKeyword(allPdfText, "质量检查结果:");
                         string replaceText = ITEMNAME + "标准样";
                         ReplacePdfText(searchText, replaceText, pdfDoc);
 
-                        searchText = ExtractTextRightOfKeyword(pdfDoc, "相关:");
+                        searchText = ExtractTextRightOfKeyword(allPdfText, "相关:");
                         replaceText = RANKVALUE;
                         ReplacePdfText(searchText, replaceText, pdfDoc);
 
-                        searchText = ExtractTextRightOfKeyword(pdfDoc, "光谱 2 标题:");
+                        searchText = ExtractTextRightOfKeyword(allPdfText, "光谱 2 标题:");
                         replaceText = $"#JT+{parm.UserName}{ITEMNAME}&{LOTID}&{parm.UserName}&{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMdd")}&{LOTID}";
                         ReplacePdfText(searchText, replaceText, pdfDoc);
 
-                        searchText = ExtractTextRightOfKeyword(pdfDoc, "日期:");
+                        searchText = ExtractTextRightOfKeyword(allPdfText, "日期:");
                         replaceText = ConvertToCustomDateFormat(GenerateRandomWorkTime(DateTime.Parse(INSPECT_DATE)));
                         ReplacePdfText(searchText, replaceText, pdfDoc);
+                        FileInfo filePDF = new FileInfo(outputFile);
+                        if (!filePDF.Directory.Exists)
+                        {
+                            filePDF.Directory.Create();
+                        }
                         // 保存修改后的 PDF
                         pdfDoc.Save(outputFile);
                         //保存到SCANDOC
@@ -2196,35 +2223,41 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             return formattedDate;
         }
-        private string ExtractTextRightOfKeyword(Document pdfDoc, string keyword, double offset = 5)
+        private string ExtractAllText(Document pdfDoc)
         {
-            // 创建文本吸收器（定位关键字）
-            TextFragmentAbsorber absorber = new TextFragmentAbsorber(keyword);
-            absorber.TextSearchOptions = new TextSearchOptions(true);
-            pdfDoc.Pages.Accept(absorber);
+            // 创建一个文本吸收器（抓取所有文本）
+            TextAbsorber textAbsorber = new TextAbsorber();
 
-            var fragments = absorber.TextFragments;
-            if (fragments.Count == 0)
-                return $"未找到关键字：{keyword}";
+            // 让吸收器访问所有页面
+            pdfDoc.Pages.Accept(textAbsorber);
 
-            // 获取关键字位置
-            TextFragment keyFragment = fragments[1]; // 默认取第一个，多个可改
-            var rect = keyFragment.Position;
+            // 返回提取的文本
+            return textAbsorber.Text;
+        }
 
-            // 创建另一个吸收器，查找关键字右边的内容
-            TextFragmentAbsorber rightTextAbsorber = new TextFragmentAbsorber();
-            rightTextAbsorber.TextSearchOptions = new TextSearchOptions(true);
-            pdfDoc.Pages[keyFragment.Page.Number].Accept(rightTextAbsorber);
+        private string ExtractTextRightOfKeyword(string allText, string keyword)
+        {
+            if (string.IsNullOrEmpty(allText) || string.IsNullOrEmpty(keyword))
+                return "文本或关键字为空";
 
-            foreach (TextFragment tf in rightTextAbsorber.TextFragments)
+            // 按行拆分
+            var lines = allText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var line in lines)
             {
-                // 判断是否在关键字右边一定距离内（同一行）
-                if (tf.Position.YIndent == keyFragment.Position.YIndent && tf.Position.XIndent > keyFragment.Position.XIndent + offset)
+                int index = line.IndexOf(keyword);
+                if (index != -1)
                 {
-                    return tf.Text.Trim();
+                    // 提取该行中关键词右边的文本
+                    int startIndex = index + keyword.Length;
+                    if (startIndex >= line.Length)
+                        return "关键字后无内容";
+
+                    return line.Substring(startIndex).Trim();
                 }
             }
-            return "未找到关键字右边的文本";
+
+            return $"未找到关键字：{keyword}";
         }
 
         private void ReplacePdfText(string searchText, string replaceText, Document pdfDoc)
@@ -2277,7 +2310,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             return selectedPdf;
         }
-        private void SavePDFToScanDoc(string docType, string scandocName, string peopleId, string COLUMN002ID, string COLUMN001CODE)
+        private void SavePDFToScanDoc(string docType, string scandocName, string peopleId, string COLUM002ID, string COLUM001ID)
         {
             FileInfo file = new FileInfo(scandocName);
             if (!file.Directory.Exists)
@@ -2285,11 +2318,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 file.Directory.Create();
             }
 
-            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE PEOPLEID='{peopleId}' AND COLUMN002ID='{COLUMN002ID}' AND COLUMN001CODE='{COLUMN001CODE}'");
+            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE PEOPLEID='{peopleId}' AND COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
 
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,COLUMN002ID,COLUMN001CODE)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @COLUMN002ID, @COLUMN001CODE)";
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,COLUM002ID,COLUM001ID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @COLUM002ID, @COLUM001ID)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -2298,8 +2331,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
-                new SugarParameter("@COLUMN002ID",COLUMN002ID),
-                new SugarParameter("@COLUMN001CODE",COLUMN001CODE)
+                new SugarParameter("@COLUM002ID",COLUM002ID),
+                new SugarParameter("@COLUM001ID",COLUM001ID)
             };
 
             // 执行 SQL 命令
