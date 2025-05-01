@@ -100,7 +100,7 @@ namespace Meiam.System.Model {
         /// 空值 : 可根据实际情况设置
         /// 默认 : 
         /// </summary>
-        [Display(Name = "X-AXIS")]
+        [Display(Name = "X_AXIS")]
         public string X_AXIS { get; set; }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Meiam.System.Model {
         /// 空值 : 可根据实际情况设置
         /// 默认 : 
         /// </summary>
-        [Display(Name = "Y-AXIS")]
+        [Display(Name = "Y_AXIS")]
         public string Y_AXIS { get; set; }
 
         /// <summary>

@@ -268,6 +268,24 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 //将【INSPECT_TENSILE_D_R】中的平均值作为检验结果同步给QMS
                 Db.Ado.ExecuteCommand($"DELETE INSPECT_ZONE WHERE COLUM002ID='{COLUM002ID}' AND INSPECTCODE='{INSPECT_CODE}'");
 
+                var cOLUM001CODE = Db.Ado.GetString($"SELECT TOP 1 COLUM001CODE FROM COLUM001 WHERE COLUM001ID='{COLUM001ID}'");
+                //2. 获得@检验值
+                var avgValue = Db.Ado.GetString($"SELECT avg(AvgValue) FROM INSPECT_TENSILE_D_R WHERE  INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
+                sql = @$"INSERT INSPECT_ZONE (INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO,{cOLUM001CODE}) VALUES  (
+'{parm.UserName}'                        --传参@userName
+,CONVERT(varchar(20),GETDATE(),120)
+,newid()
+,'{INSPECT_PUR}'                      --@INSPECT_PUR
+,'{COLUM002ID}'                       --@COLUM002ID
+,'{ITEMID}'                           --@ITEMID
+,'{LOTID}'                            --@LOTID
+,'{INSPECT_CODE}'                     --@INSPECT_CODE 检验单号
+,'0'                                  --样本序号 (第1个SAMPLEID 给1，第2个给2,依次类推)
+,'0'                                 --固定给 0
+,'{avgValue}' )";
+                Db.Ado.ExecuteCommand(sql);
+                #region delete old
+                /*
                 var dtSAMPLEID = Db.Ado.GetDataTable(@$"SELECT SAMPLEID FROM INSPECT_TENSILE_D_R WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}' GROUP BY SAMPLEID");
                 int number = 1;
                 foreach (DataRow item in dtSAMPLEID.Rows)
@@ -307,7 +325,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 ,'0'                                 --固定给 0
 {AvgValues} )";
                     Db.Ado.ExecuteCommand(sql);
-                }
+                }*/
+                #endregion
 
                 // 提交事务
                 Db.Ado.CommitTran();
@@ -334,20 +353,10 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         {
             var newItem = new INSPECT_TENSILE_D();
             newItem.INSPECT_TENSILE_DID = Guid.NewGuid().ToString();
-            var mapping = new Dictionary<string, string>
-            {
-                { "X-AXIS", "X_AXIS" },
-                { "Y-AXIS", "Y_AXIS" }
-            };
             var properties = typeof(INSPECT_TENSILE_D).GetProperties();
             foreach (var prop in properties)
             {
                 string columnName = prop.Name; // 默认按类的属性名查找
-                if (mapping.ContainsValue(prop.Name)) // 如果属性名在映射字典的值中，获取对应的数据库列名
-                {
-                    columnName = mapping.FirstOrDefault(x => x.Value == prop.Name).Key;
-                }
-
                 // 赋值逻辑
                 if (item.Table.Columns.Contains(columnName) && item[columnName] != DBNull.Value)
                 {

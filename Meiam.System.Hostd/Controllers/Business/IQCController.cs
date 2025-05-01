@@ -60,8 +60,14 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                 return toResponse(StatusCodeType.Error, $"UserName不能为空！");
             }
 
-            _iqcService.GetInspectReport(parm);
-
+            try
+            {
+                _iqcService.GetInspectReport(parm);
+            }
+            catch (Exception ex)
+            {
+                return toResponse(StatusCodeType.Error, ex.ToString());
+            }
             return toResponse(StatusCodeType.Success, "拉力机检测报告生成成功！");
 
             //byte[] fileContents = _iqcService.GetInspectReport(parm);
@@ -115,8 +121,14 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             {
                 return toResponse(StatusCodeType.Error, $"UserName不能为空！");
             }
-
-            _iqcService.GetCPKfile(parm.INSPECT_DEV2ID, parm.UserName);
+            try
+            {
+                _iqcService.GetCPKfile(parm.INSPECT_DEV2ID, parm.UserName);
+            }
+            catch(Exception ex)
+            {
+                return toResponse(StatusCodeType.Error, ex.ToString());
+            }
             return toResponse(StatusCodeType.Success, "CPK数据报告生成成功！");
 
             //byte[] fileContents = _iqcService.getcpk(listToSave);
