@@ -41,6 +41,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using HorizontalAlignment = NPOI.SS.UserModel.HorizontalAlignment;
 using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
 using Meiam.System.Interfaces.Extensions;
+using System.Security.Policy;
 
 namespace Meiam.System.Interfaces
 {
@@ -2362,6 +2363,157 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             Db.Ado.ExecuteCommand(sql, parameters);
         }
 
+        #endregion
+
+        #region GetCOCfile
+        public void GetCOCfile(COCInputDto parm){
+            string COCID = parm.COCID;
+            string[] FIX_VALUE = parm.FIX_VALUE;
+            string ID = parm.ID;
+            //通过COCID获取模版
+            string fileName = Db.Ado.GetString($@"select FILENAME from COC where COCID='{COCID}'");
+            if (string.IsNullOrEmpty(fileName)) {
+                throw new Exception($"COCID[{parm.COCID}]在数据库中找不到模版文件!");
+            }
+            if (!File.Exists(fileName)) {
+                throw new Exception($"COCID[{parm.COCID}]在数据库中模版文件不存在!FILENAME:[{fileName}]");
+            }
+            DataSet ds = GetCOCDataSource(parm);
+
+            DataTable dtZONE = Db.Ado.GetDataTable($@"select * from COC_ZONE where COCID='{parm.COCID}' order by COC_ZONECODE");
+            string newFile = FillExcelFileContent(fileName, dtZONE, ds, parm);
+
+            //保存到SCANDOC
+            SaveCOCToScanDoc("COC报告", newFile, parm.ID, parm.COCID, parm.COCID, parm.COCID);
+        }
+
+        private string FillExcelFileContent(string fileName, DataTable dtZONE, DataSet ds, COCInputDto parm) {
+            var newFileName = $"{parm.COCID}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\COC\{parm.COCID}\{newFileName}");
+            File.Copy(fileName, filePath, true);
+            using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
+                //向Excel里面填充数据
+                foreach (DataRow dr in dtZONE.Rows) {
+                    DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{dr["COC_ZONEID"].ToString()}'");
+                    string SHEETNAME = dr["SHEETNAME"].ToString();
+                    foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                        string COLUM001ID = drZONE_D["drZONE_D"].ToString();
+                        string ANI = drZONE_D["ANI"].ToString();
+                        string COLUMN = drZONE_D["COLUMN"].ToString();
+                        string CELLS = drZONE_D["CELLS"].ToString();
+                        if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+
+                        }
+                        if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                            if (ANI == "ANI_001") {//样本合并值
+                                excelHelper.AddTextToCell(SHEETNAME, CELLS, "TestANI_001");
+                            }
+                            if (ANI == "ANI_002") {//附件合并值
+                                string[] attachs = new string[] { @"C:\Users\Administrator\Desktop\Temp\11.txt", @"C:\Users\Administrator\Desktop\Temp\12.txt" };
+                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                            }
+                        }
+                    }
+                }
+            }
+            return filePath;
+        }
+
+        public DataTable GetCOCVLOOK(string COC_VLOOKID) {
+            DataTable dtResult = new DataTable();
+            DataTable dtVLOOK = Db.Ado.GetDataTable($@"select * from COC_VLOOK where COC_VLOOKID='{COC_VLOOKID}'");
+            if (dtVLOOK.Rows.Count == 0) {
+                throw new Exception($"COC_VLOOKID[{COC_VLOOKID}]在数据库中找不到!");
+            }
+            DataRow drVLOOK = dtVLOOK.Rows[0];
+            string COULM002ID = drVLOOK["COULM002ID"].ToString();
+            string GOUPBY = drVLOOK["GOUPBY"].ToString();
+            string GROUPBYNAME = drVLOOK["GROUPBYNAME"].ToString();
+            string GROUPBYNAME_C = drVLOOK["GROUPBYNAME_C"].ToString();
+            string FIX_FILED = drVLOOK["FIX_FILED"].ToString();
+            //COC_VLOOK cOC_VLOOK = new COC_VLOOK();
+            //cOC_VLOOK.COC_VLOOKID = COC_VLOOKID;
+            //cOC_VLOOK.COULM002ID = COULM002ID;
+            //cOC_VLOOK.GOUPBY = GOUPBY;
+            //cOC_VLOOK.GROUPBYNAME = GROUPBYNAME;
+            //cOC_VLOOK.GROUPBYNAME_C = GROUPBYNAME_C;
+            //cOC_VLOOK.FIX_FILED = FIX_FILED;
+
+            DataTable dtCOULM002ID = Db.Ado.GetDataTable($@"select STRSQL,FIX_FILED from COULM002_COC where COULM002ID='{COULM002ID}'");
+            if (dtCOULM002ID.Rows.Count == 0) {
+                throw new Exception($"COULM002ID[{COULM002ID}]在数据库COULM002_COC中找不到!");
+            }
+            string STRSQL = dtCOULM002ID.Rows[0]["STRSQL"].ToString().Replace("@u","1");
+            string COULM002_FIX_FILED = dtCOULM002ID.Rows[0]["FIX_FILED"].ToString();
+            //加上where条件
+            if (FIX_FILED == "1") {
+                STRSQL += " AND "+ COULM002_FIX_FILED;
+            }
+            //执行sql获取原始数据源
+            DataTable dtCOULM002Source = Db.Ado.GetDataTable(STRSQL);
+
+            //按照GroupBy分组
+            switch (GOUPBY) {
+                case "GOUPBY_001"://分组合并
+                    break;
+                case "GOUPBY_002"://全部合并
+                    break;
+                case "GOUPBY_003"://行转列合并
+                    break;
+                default:
+                    break;
+            }
+            return dtResult;
+        }
+
+        private void SaveCOCToScanDoc(string docType, string scandocName, string peopleId, string INSPECT_DEV1ID, string COLUM002ID, string COLUM001ID) {
+            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
+
+            string sql = @"
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID)";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
+                new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
+                new SugarParameter("@DOCTYPE", docType),
+                new SugarParameter("@PEOPLEID", peopleId),
+                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID),
+                new SugarParameter("@COLUM002ID", COLUM002ID),
+                new SugarParameter("@COLUM001ID", COLUM001ID)
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        #endregion
+
+        #region GetCOCDataSource
+        public DataSet GetCOCDataSource(COCInputDto parm) {
+            DataSet ds = new DataSet();
+            DataTable dtVLOOKID = Db.Ado.GetDataTable($@"select distinct COC_VLOOKID from COC_ZONE where COCID='{parm.COCID}'");
+            if (dtVLOOKID.Rows.Count == 0) {
+                throw new Exception($"COCID[{parm.COCID}]在数据库中找不到COC_ZONE数据源!");
+            }
+            foreach (DataRow drVLOOKID in dtVLOOKID.Rows) {
+                string VLOOKID = drVLOOKID[0].ToString();
+                DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID);
+                dtCOCVLOOK.TableName = VLOOKID;
+                ds.Tables.Add(dtCOCVLOOK);
+            }
+
+            //测试Excel
+            string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
+            using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
+                excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
+                string[] attachs = new string[] { @"C:\Users\Administrator\Desktop\Temp\11.txt", @"C:\Users\Administrator\Desktop\Temp\12.txt" };
+                excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
+            }
+
+            return ds;
+        }
         #endregion
     }
 

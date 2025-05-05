@@ -83,6 +83,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.COCDataSource(Meiam.System.Model.Dto.COCInputDto)">
+            <summary>
+            COC数据报告数据源
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.COCReport(Meiam.System.Model.Dto.COCInputDto)">
+            <summary>
+            COC数据报告API2
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口

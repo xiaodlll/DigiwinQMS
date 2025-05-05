@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using SqlSugar;
 using System.Linq;
 using System;
+using System.Data;
 
 namespace Meiam.System.Interfaces
 {
@@ -24,6 +25,8 @@ namespace Meiam.System.Interfaces
         void GetBatchCPKfile(CPKInputByCodeDto parm);
 
         void ReplaceFTIRPdf(FTIRInputDto parm);
+        void GetCOCfile(COCInputDto parm);
+        DataSet GetCOCDataSource(COCInputDto parm);
         #endregion
     }
 }

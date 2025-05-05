@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aspose.PDF" Version="25.3.0" />
+    <PackageReference Include="EPPlus" Version="8.0.3" />
     <PackageReference Include="itext7" Version="9.1.0" />
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.1.0" />
     <PackageReference Include="NPOI" Version="2.7.2" />

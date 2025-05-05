@@ -9,6 +9,8 @@ using Meiam.System.Model;
 using Meiam.System.Model.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -442,5 +444,58 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
 
             return columnName;
         }
+
+
+        /// <summary>
+        /// COC数据报告数据源
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult COCDataSource([FromBody] COCInputDto parm) {
+
+            if (string.IsNullOrEmpty(parm.COCID)) {
+                return toResponse(StatusCodeType.Error, $"COCID不能为空！");
+            }
+            if (string.IsNullOrEmpty(parm.ID)) {
+                return toResponse(StatusCodeType.Error, $"ID不能为空！");
+            }
+            if (parm.FIX_VALUE == null || parm.FIX_VALUE.Length == 0) {
+                return toResponse(StatusCodeType.Error, $"FIX_VALUE不能为空！");
+            }
+            try {
+                var ds = _iqcService.GetCOCDataSource(parm);
+                string source = JsonConvert.SerializeObject(ds);
+                return toResponse(StatusCodeType.Success, source);
+            }
+            catch (Exception ex) {
+                return toResponse(StatusCodeType.Error, "COC数据获取失败:" + ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// COC数据报告API2
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult COCReport([FromBody] COCInputDto parm) {
+
+            if (string.IsNullOrEmpty(parm.COCID)) {
+                return toResponse(StatusCodeType.Error, $"COCID不能为空！");
+            }
+            if (string.IsNullOrEmpty(parm.ID)) {
+                return toResponse(StatusCodeType.Error, $"ID不能为空！");
+            }
+            if (parm.FIX_VALUE == null || parm.FIX_VALUE.Length == 0 ) {
+                return toResponse(StatusCodeType.Error, $"FIX_VALUE不能为空！");
+            }
+            try {
+                _iqcService.GetCOCfile(parm);
+            }
+            catch (Exception ex) {
+                return toResponse(StatusCodeType.Error, "COC数据报告生成失败:" + ex.ToString());
+            }
+            return toResponse(StatusCodeType.Success, "COC数据报告生成成功！");
+        }
+
     }
 }
