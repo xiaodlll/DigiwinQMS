@@ -1,5 +1,6 @@
 ﻿using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
+using OfficeOpenXml.Style;
 using System;
 using System.IO;
 using System.Linq;
@@ -29,9 +30,7 @@ public class ExcelHelper : IDisposable {
         var startRow = cell.Start.Row;
         var startCol = cell.Start.Column;
 
-        // 初始化尺寸参数
-        var totalHeight = 0.0;
-        var maxWidth = 0.0;
+        double startLeft = 5;
 
         // 设置基础样式
         cell.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Top;
@@ -39,47 +38,53 @@ public class ExcelHelper : IDisposable {
 
         foreach (var filePath in filePaths.Where(File.Exists)) {
             try {
-                var (embedObject, isImage) = CreateEmbedObject(worksheet, filePath);
+                var (embedObject, isImage, width) = CreateEmbedObject(worksheet, filePath, worksheet.Row(startRow).Height);
 
-                // 计算对象显示尺寸（保持比例）
-                var width = 30;
-                var height = 30;
-
-                // 调整对象尺寸以适应列宽
-                if (width > 200) {
-                    var ratio = 200 / width;
-                    width *= ratio;
-                    height *= ratio;
-                }
-
-                // 设置对象位置（垂直排列）
+                // 设置对象位置
                 embedObject.SetPosition(
                     startRow - 1,
-                    (int)(totalHeight * BaseRowHeight),
+                    5,
                     startCol - 1,
-                    0
+                    (int)(startLeft)
                 );
-
-                // 更新尺寸跟踪
-                totalHeight += height / BaseRowHeight;
-                maxWidth = Math.Max(maxWidth, width);
-
-                // 自动调整行高
-                worksheet.Row(startRow).Height =
-                    Math.Max(worksheet.Row(startRow).Height,
-                    (double)(totalHeight * BaseRowHeight));
+                startLeft += width + 5;
             }
             catch (Exception ex) {
                 AddErrorComment(cell, $"文件嵌入失败: {ex.Message}");
             }
         }
+    }
 
-        // 自动调整列宽
-        var newWidth = Math.Max(
-            worksheet.Column(startCol).Width,
-            (double)(maxWidth / 7.5)  // 转换为Excel列宽单位
-        );
-        worksheet.Column(startCol).Width = newWidth;
+    public void CopyRow(string sheetName, int[] sourceRow, int targetRow) {
+        // 获取指定工作表
+        var worksheet = GetOrCreateWorksheet(sheetName);
+        int cols = worksheet.Dimension.End.Column; // 获取总列数
+
+        // 将源行按升序排序以便正确处理行号偏移
+        var sortedSourceRows = sourceRow.OrderBy(r => r).ToArray();
+
+        int rowOffset = 0; // 跟踪因插入导致的行号偏移
+        int currentTargetRow = targetRow; // 当前插入的目标行
+
+        foreach (int originalRow in sortedSourceRows) {
+            // 计算调整后的源行号（考虑之前的插入操作）
+            int adjustedRow = originalRow + rowOffset;
+
+            // 在目标位置插入新行
+            worksheet.InsertRow(currentTargetRow, 1);
+
+            // 复制源行内容到目标行
+            var sourceRange = worksheet.Cells[adjustedRow, 1, adjustedRow, cols];
+            var targetRange = worksheet.Cells[currentTargetRow, 1];
+            sourceRange.Copy(targetRange);
+
+            // 如果插入位置在源行之前或同一行，则后续源行号需调整
+            if (currentTargetRow <= adjustedRow) {
+                rowOffset++;
+            }
+
+            currentTargetRow++; // 更新下一个目标行位置
+        }
     }
 
     public void Dispose() {
@@ -99,26 +104,43 @@ public class ExcelHelper : IDisposable {
             _excelPackage.Workbook.Worksheets.Add(sheetName);
     }
 
-    private (ExcelDrawing embedObject, bool isImage) CreateEmbedObject(
+    private (ExcelDrawing embedObject, bool isImage, int width) CreateEmbedObject(
         ExcelWorksheet worksheet,
-        string filePath) {
+        string filePath ,double targetRowHeight) {
         var extension = Path.GetExtension(filePath).ToLower();
         var imageTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp" };
-
+        int width = (int)(targetRowHeight);
         if (imageTypes.Contains(extension)) {
             var picture = worksheet.Drawings.AddPicture(
                 Guid.NewGuid().ToString(),
                 new FileInfo(filePath)
-            );
-            return (picture, true);
+            ); 
+            if (imageTypes.Contains(extension)) {
+                // 添加图片后立即缩放
+                width = ScaleImageToCell(picture, targetRowHeight);
+            }
+            return (picture, true, width);
         }
         else {
             var oleObject = worksheet.Drawings.AddOleObject(
                 Guid.NewGuid().ToString(),
                 new FileInfo(filePath)
             );
-            return (oleObject, false);
+            oleObject.SetSize(width, width);
+            return (oleObject, false, width);
         }
+    }
+    private int ScaleImageToCell(ExcelPicture picture, double cellHeightPoints) {
+        // 精确单位转换（点→像素）
+        double cellHeightPixels = (cellHeightPoints - 5) * 96 / 72; // 96 DPI标准
+
+        // 等比缩放计算
+        double scale = cellHeightPixels / picture.Image.Bounds.Height;
+        int newWidth = (int)(picture.Image.Bounds.Width * scale);
+
+        // 设置最终尺寸
+        picture.SetSize(newWidth, (int)cellHeightPixels);
+        return newWidth;
     }
 
     private void AddErrorComment(ExcelRange cell, string message) {

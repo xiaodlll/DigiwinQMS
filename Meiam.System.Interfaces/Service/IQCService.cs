@@ -2494,22 +2494,28 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         public DataSet GetCOCDataSource(COCInputDto parm) {
             DataSet ds = new DataSet();
             DataTable dtVLOOKID = Db.Ado.GetDataTable($@"select distinct COC_VLOOKID from COC_ZONE where COCID='{parm.COCID}'");
-            if (dtVLOOKID.Rows.Count == 0) {
-                throw new Exception($"COCID[{parm.COCID}]在数据库中找不到COC_ZONE数据源!");
-            }
-            foreach (DataRow drVLOOKID in dtVLOOKID.Rows) {
-                string VLOOKID = drVLOOKID[0].ToString();
-                DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID);
-                dtCOCVLOOK.TableName = VLOOKID;
-                ds.Tables.Add(dtCOCVLOOK);
-            }
+            //if (dtVLOOKID.Rows.Count == 0) {
+            //    throw new Exception($"COCID[{parm.COCID}]在数据库中找不到COC_ZONE数据源!");
+            //}
+            //foreach (DataRow drVLOOKID in dtVLOOKID.Rows) {
+            //    string VLOOKID = drVLOOKID[0].ToString();
+            //    DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID);
+            //    dtCOCVLOOK.TableName = VLOOKID;
+            //    ds.Tables.Add(dtCOCVLOOK);
+            //}
 
             //测试Excel
             string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
             using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
                 excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
-                string[] attachs = new string[] { @"C:\Users\Administrator\Desktop\Temp\11.txt", @"C:\Users\Administrator\Desktop\Temp\12.txt" };
+                string[] attachs = new string[] {
+                    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
+                    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
+                    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
+                    @"C:\Users\Administrator\Desktop\Temp\44.png",
+                    @"C:\Users\Administrator\Desktop\Temp\33.png"};
                 excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
+                excelHelper.CopyRow("Sheet8", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
             }
 
             return ds;
