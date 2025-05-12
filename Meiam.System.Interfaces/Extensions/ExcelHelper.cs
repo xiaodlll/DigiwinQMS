@@ -1,4 +1,5 @@
-﻿using OfficeOpenXml;
+﻿using NPOI.Util;
+using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
 using OfficeOpenXml.Style;
 using System;
@@ -55,7 +56,7 @@ public class ExcelHelper : IDisposable {
         }
     }
 
-    public void CopyRow(string sheetName, int[] sourceRow, int targetRow) {
+    public void CopyRows(string sheetName, int[] sourceRow, int targetRow) {
         // 获取指定工作表
         var worksheet = GetOrCreateWorksheet(sheetName);
         int cols = worksheet.Dimension.End.Column; // 获取总列数
@@ -85,6 +86,103 @@ public class ExcelHelper : IDisposable {
 
             currentTargetRow++; // 更新下一个目标行位置
         }
+    }
+
+    public void CopyCells(string sheetName, string cellAddress, string targetCells) {
+        // 获取指定工作表
+        var worksheet = GetOrCreateWorksheet(sheetName);
+
+        // 解析源单元格范围
+        var sourceRange = worksheet.Cells[cellAddress];
+        if (sourceRange == null) {
+            throw new ArgumentException($"源单元格地址 '{cellAddress}' 无效。");
+        }
+
+        // 解析目标单元格位置
+        var targetRange = worksheet.Cells[targetCells];
+        if (targetRange == null) {
+            throw new ArgumentException($"目标单元格地址 '{targetCells}' 无效。");
+        }
+
+        // 复制单元格内容、格式和公式
+        sourceRange.Copy(targetRange);
+
+        // 如果源范围和目标范围尺寸不同，调整目标区域大小以匹配源区域
+        if (sourceRange.Count() != targetRange.Count()) {
+            var sourceDimension = sourceRange.GetEnumerator().Current.Address;
+            var targetDimension = targetRange.GetEnumerator().Current.Address;
+
+            // 计算源区域的行列数
+            int sourceRows = GetExcelRows(sourceDimension);
+            int sourceCols = GetExcelColumns(sourceDimension);
+
+            // 扩展目标区域以匹配源区域大小
+            var expandedTargetRange = worksheet.Cells[
+                targetRange.Start.Row,
+                targetRange.Start.Column,
+                targetRange.Start.Row + sourceRows - 1,
+                targetRange.Start.Column + sourceCols - 1
+            ];
+
+            // 重新应用复制操作到扩展后的目标区域
+            sourceRange.Copy(expandedTargetRange);
+        }
+    }
+
+    public void CopySheet(string sourceExcelPath, string sourceSheetName, string targetSheetName) {
+        // 1. 验证源文件是否存在
+        if (!File.Exists(sourceExcelPath))
+            throw new FileNotFoundException("源 Excel 文件不存在", sourceExcelPath);
+
+        // 2. 加载源 Excel 文件和工作表
+        using (var sourcePackage = new ExcelPackage(new FileInfo(sourceExcelPath))) {
+            var sourceSheet = sourcePackage.Workbook.Worksheets[sourceSheetName];
+            if (sourceSheet == null)
+                throw new ArgumentException($"源工作表 '{sourceSheetName}' 不存在");
+
+            // 3. 确定目标工作表的原有位置（若存在）
+            var targetSheet = _excelPackage.Workbook.Worksheets[targetSheetName];
+            int originalPosition = targetSheet?.Index ?? _excelPackage.Workbook.Worksheets.Count;
+
+            // 4. 删除已存在的目标工作表（避免重名冲突）
+            if (targetSheet != null)
+                _excelPackage.Workbook.Worksheets.Delete(targetSheet);
+
+            // 5. 创建新的目标工作表（临时位置在末尾）
+            var newTargetSheet = _excelPackage.Workbook.Worksheets.Add(targetSheetName);
+
+            // 6. 复制源工作表的全部内容（含样式、公式等）
+            if (sourceSheet.Dimension != null)  // 源工作表非空时复制
+            {
+                var sourceRange = sourceSheet.Cells[sourceSheet.Dimension.Address];
+                var targetRange = newTargetSheet.Cells[sourceSheet.Dimension.Address];
+                sourceRange.Copy(targetRange);  // 关键：内置范围复制（保留所有样式）
+            }
+
+            // 7. 调整目标工作表到原有位置
+            if(originalPosition == 0) {
+                _excelPackage.Workbook.Worksheets.MoveToStart(targetSheetName);
+            }
+            else {
+                _excelPackage.Workbook.Worksheets.MoveBefore(targetSheetName, _excelPackage.Workbook.Worksheets[originalPosition].Name);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取Excel区域的行数
+    /// </summary>
+    private int GetExcelRows(string rangeAddress) {
+        var address = new ExcelAddress(rangeAddress);
+        return address.End.Row - address.Start.Row + 1;
+    }
+
+    /// <summary>
+    /// 获取Excel区域的列数
+    /// </summary>
+    private int GetExcelColumns(string rangeAddress) {
+        var address = new ExcelAddress(rangeAddress);
+        return address.End.Column - address.Start.Column + 1;
     }
 
     public void Dispose() {
