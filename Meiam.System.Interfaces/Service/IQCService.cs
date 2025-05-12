@@ -42,6 +42,7 @@ using HorizontalAlignment = NPOI.SS.UserModel.HorizontalAlignment;
 using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
 using Meiam.System.Interfaces.Extensions;
 using System.Security.Policy;
+using System.Text;
 
 namespace Meiam.System.Interfaces
 {
@@ -2379,38 +2380,178 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 throw new Exception($"COCID[{parm.COCID}]在数据库中模版文件不存在!FILENAME:[{fileName}]");
             }
             DataSet ds = GetCOCDataSource(parm);
+            Dictionary<string,DataTable> dicDataSource = new Dictionary<string,DataTable>();
+            foreach (DataTable dt in ds.Tables) {
+                if (!dicDataSource.ContainsKey(dt.TableName)) {
+                    dicDataSource.Add(dt.TableName, dt);
+                }
+            }
 
-            DataTable dtZONE = Db.Ado.GetDataTable($@"select * from COC_ZONE where COCID='{parm.COCID}' order by COC_ZONECODE");
-            string newFile = FillExcelFileContent(fileName, dtZONE, ds, parm);
+            DataTable dtZoneIDs = Db.Ado.GetDataTable($@"SELECT COC_ZONE.COC_ZONEID, CELLS
+FROM COC_ZONE_D
+LEFT JOIN COC_ZONE ON COC_ZONE.COC_ZONEID=COC_ZONE_D.COC_ZONEID
+where COC_ZONE.COCID='{parm.COCID}' 
+ORDER BY 
+  -- 提取字母部分（兼容A/AA格式）
+  LEFT(CELLS, PATINDEX('%[0-9]%', CELLS) - 1), 
+  -- 提取数字部分
+  CAST(SUBSTRING(CELLS, PATINDEX('%[0-9]%', CELLS), LEN(CELLS)) AS INT)");
+
+            List<string> listZoneIDs = new List<string>();
+            foreach (DataRow row in dtZoneIDs.AsEnumerable().Reverse()) {
+                string zoneID = row["COC_ZONEID"]?.ToString();
+                if (!string.IsNullOrEmpty(zoneID))
+                {
+                    // 当且仅当未添加过时插入列表
+                    if (!listZoneIDs.Contains(zoneID)) {
+                        listZoneIDs.Add(zoneID);
+                    }
+                }
+            }
+
+            string newFile = FillExcelFileContent(fileName, listZoneIDs, dicDataSource, parm);
 
             //保存到SCANDOC
             SaveCOCToScanDoc("COC报告", newFile, parm.ID, parm.COCID, parm.COCID, parm.COCID);
         }
 
-        private string FillExcelFileContent(string fileName, DataTable dtZONE, DataSet ds, COCInputDto parm) {
+        private string FillExcelFileContent(string fileName, List<string> listZoneIDs, Dictionary<string, DataTable> dicDataSource, COCInputDto parm) {
             var newFileName = $"{parm.COCID}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
             string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\COC\{parm.COCID}\{newFileName}");
             File.Copy(fileName, filePath, true);
             using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
                 //向Excel里面填充数据
-                foreach (DataRow dr in dtZONE.Rows) {
-                    DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{dr["COC_ZONEID"].ToString()}'");
-                    string SHEETNAME = dr["SHEETNAME"].ToString();
-                    foreach (DataRow drZONE_D in dtZONE_D.Rows) {
-                        string COLUM001ID = drZONE_D["drZONE_D"].ToString();
-                        string ANI = drZONE_D["ANI"].ToString();
-                        string COLUMN = drZONE_D["COLUMN"].ToString();
-                        string CELLS = drZONE_D["CELLS"].ToString();
-                        if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-
-                        }
-                        if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
-                            if (ANI == "ANI_001") {//样本合并值
-                                excelHelper.AddTextToCell(SHEETNAME, CELLS, "TestANI_001");
+                foreach (string zoneID in listZoneIDs) {
+                    DataTable dtZONE = Db.Ado.GetDataTable($@"select * from COC_ZONE where COC_ZONEID='{zoneID}'");
+                    string SHEETNAME = dtZONE.Rows[0]["SHEETNAME"].ToString();
+                    string ZONE_TYPE = dtZONE.Rows[0]["ZONE_TYPE"].ToString();
+                    string VLOOK = dtZONE.Rows[0]["VLOOK"].ToString();
+                    string COC_VLOOKID = dtZONE.Rows[0]["COC_VLOOKID"].ToString();
+                    string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString(); 
+                    DataTable dtSource = dicDataSource[COC_VLOOKID];
+                    DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{zoneID}'
+ORDER BY 
+  -- 提取字母部分（兼容A/AA格式）
+  LEFT(CELLS, PATINDEX('%[0-9]%', CELLS) - 1), 
+  -- 提取数字部分
+  CAST(SUBSTRING(CELLS, PATINDEX('%[0-9]%', CELLS), LEN(CELLS)) AS INT)");
+                    if (ZONE_TYPE == "ZONE_TYPE_001") {//通用区域
+                        if (dtSource.Rows.Count > 0) {
+                            DataRow drData = dtSource.Rows[0];
+                            //直接给单元格赋值
+                            foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                                string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
+                                string ANI = drZONE_D["ANI"].ToString();
+                                string COLUMN = drZONE_D["COLUMN"].ToString();
+                                string CELLS = drZONE_D["CELLS"].ToString();
+                                if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                    string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                    if (dtZONE_D.Columns.Contains(byName)) {
+                                        string textValue = drData[byName].ToString();
+                                        excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                                    if (ANI == "ANI_001") {//样本合并值
+                                        string byName = "样本合并值";
+                                        if (dtZONE_D.Columns.Contains(byName)) {
+                                            string textValue = drData[byName].ToString();
+                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                        }
+                                    }
+                                    if (ANI == "ANI_002") {//附件合并值
+                                        string byName = "附件合并值";
+                                        if (dtZONE_D.Columns.Contains(byName)) {
+                                            string textValue = drData[byName].ToString();
+                                            string[] attachs = textValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries);
+                                            excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                        }
+                                    }
+                                }
                             }
-                            if (ANI == "ANI_002") {//附件合并值
-                                string[] attachs = new string[] { @"C:\Users\Administrator\Desktop\Temp\11.txt", @"C:\Users\Administrator\Desktop\Temp\12.txt" };
-                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                        }
+                    }
+                    else if (ZONE_TYPE == "ZONE_TYPE_001") {//循环区域
+                        if (VLOOK == "VLOOK_001") {//向下循环
+                            //按照数据区域复制行
+                            int[] copyRows = GetCopyRowsByCellsZone(CELLS_ZONE);
+                            for (int i = 0; i < dtSource.Rows.Count - 1; i++) {//排除自身，只需要复制N-1份
+                                excelHelper.CopyRows(SHEETNAME, copyRows, copyRows[copyRows.Length - 1]);
+                            }
+
+                            for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
+                                DataRow drData = dtSource.Rows[i];
+                                //直接给单元格赋值
+                                foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                                    string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
+                                    string ANI = drZONE_D["ANI"].ToString();
+                                    string COLUMN = drZONE_D["COLUMN"].ToString();
+                                    string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
+
+                                    if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        if (dtZONE_D.Columns.Contains(byName)) {
+                                            string textValue = drData[byName].ToString();
+                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                        }
+                                    }
+                                    if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                                        if (ANI == "ANI_001") {//样本合并值
+                                            string byName = "样本合并值";
+                                            if (dtZONE_D.Columns.Contains(byName)) {
+                                                string textValue = drData[byName].ToString();
+                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                            }
+                                        }
+                                        if (ANI == "ANI_002") {//附件合并值
+                                            string byName = "附件合并值";
+                                            if (dtZONE_D.Columns.Contains(byName)) {
+                                                string textValue = drData[byName].ToString();
+                                                string[] attachs = textValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (VLOOK == "VLOOK_002") {//向右循环
+                            int[] copyColumns = GetCopyColumnsByCellsZone(CELLS_ZONE);
+                            //按照数据区域复制行
+                            for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
+                                DataRow drData = dtSource.Rows[i];
+                                //直接给单元格赋值
+                                foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                                    string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
+                                    string ANI = drZONE_D["ANI"].ToString();
+                                    string COLUMN = drZONE_D["COLUMN"].ToString();
+                                    string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
+
+                                    if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        if (dtZONE_D.Columns.Contains(byName)) {
+                                            string textValue = drData[byName].ToString();
+                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                        }
+                                    }
+                                    if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                                        if (ANI == "ANI_001") {//样本合并值
+                                            string byName = "样本合并值";
+                                            if (dtZONE_D.Columns.Contains(byName)) {
+                                                string textValue = drData[byName].ToString();
+                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                            }
+                                        }
+                                        if (ANI == "ANI_002") {//附件合并值
+                                            string byName = "附件合并值";
+                                            if (dtZONE_D.Columns.Contains(byName)) {
+                                                string textValue = drData[byName].ToString();
+                                                string[] attachs = textValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -2419,8 +2560,190 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             return filePath;
         }
 
+        #region 单元格循环辅助方法
+        private string GetAddColumnsValue(string cellAddress, int i) {
+            // 参数校验
+            if (string.IsNullOrWhiteSpace(cellAddress))
+                throw new ArgumentNullException(nameof(cellAddress), "单元格地址不能为空");
+            if (i < 0)
+                throw new ArgumentOutOfRangeException(nameof(i), "列偏移量不能为负数");
+
+            // 正则解析单元格地址（格式：列字母+行号，如 A1、BC23）
+            var match = Regex.Match(cellAddress.Trim().ToUpper(), @"^([A-Z]+)(\d+)$");
+            if (!match.Success)
+                throw new ArgumentException($"无效的单元格格式: {cellAddress}");
+
+            // 提取列字母和行号
+            string columnLetters = match.Groups[1].Value;  // 列字母（如 "A"、"BC"）
+            int rowNumber = int.Parse(match.Groups[2].Value);  // 行号（如 1、23）
+
+            // 列字母转数值（如 "A"→1，"BC"→55）
+            int columnNumber = ColumnLettersToNumber(columnLetters);
+
+            // 计算新列数值（向右移动 i 列）
+            int newColumnNumber = columnNumber + i;
+            if (newColumnNumber < 1)  // 理论上 i≥0 时不会触发，但防御性检查
+                throw new InvalidOperationException($"列号溢出: {columnNumber} + {i} = {newColumnNumber}");
+
+            // 新列数值转字母（如 55→"BC"）
+            string newColumnLetters = NumberToColumnLetters(newColumnNumber);
+
+            // 组合新单元格地址（列字母+行号）
+            return $"{newColumnLetters}{rowNumber}";
+        }
+
+        // 辅助方法：数值转列字母（如 55→"BC"）
+        private string NumberToColumnLetters(int number) {
+            if (number < 1)
+                throw new ArgumentOutOfRangeException(nameof(number), "列数值必须≥1");
+
+            var letters = new StringBuilder();
+            while (number > 0) {
+                number--;  // 调整为0基索引（处理26进制无0的问题）
+                letters.Insert(0, (char)('A' + number % 26));
+                number = number / 26;
+            }
+            return letters.ToString();
+        }
+
+        private int[] GetCopyColumnsByCellsZone(string CELLS_ZONE) {
+            // 参数校验
+            if (string.IsNullOrWhiteSpace(CELLS_ZONE))
+                throw new ArgumentNullException(nameof(CELLS_ZONE), "CELLS_ZONE 不能为空");
+
+            // 分割起始和结束单元格
+            string[] cells = CELLS_ZONE.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+            if (cells.Length != 2)
+                throw new ArgumentException("CELLS_ZONE 格式无效，示例格式：B8:O8");
+
+            // 提取列号
+            int startCol = ParseColumnNumber(cells[0]);
+            int endCol = ParseColumnNumber(cells[1]);
+
+            // 生成列号数组
+            return GenerateColumnArray(startCol, endCol);
+        }
+
+        /// <summary>
+        /// 从单元格地址解析列号（如 B8 -> 2）
+        /// </summary>
+        private int ParseColumnNumber(string cellAddress) {
+            // 使用正则匹配字母部分
+            var match = Regex.Match(cellAddress.Trim().ToUpper(), @"^([A-Z]+)\d+$");
+            if (!match.Success)
+                throw new ArgumentException($"无效的单元格地址格式: {cellAddress}");
+
+            // 转换字母为列号
+            string columnLetters = match.Groups[1].Value;
+            return ColumnLettersToNumber(columnLetters);
+        }
+
+        /// <summary>
+        /// 将Excel列字母转换为数字（如 A->1, B->2, AA->27）
+        /// </summary>
+        private int ColumnLettersToNumber(string columnLetters) {
+            int columnNumber = 0;
+            foreach (char c in columnLetters) {
+                columnNumber = columnNumber * 26 + (c - 'A' + 1);
+                if (columnNumber > 16384) // Excel最大列限制(XFD=16384)
+                    throw new ArgumentException($"超出Excel最大列限制: {columnLetters}");
+            }
+            return columnNumber;
+        }
+
+        /// <summary>
+        /// 生成连续列号数组
+        /// </summary>
+        private int[] GenerateColumnArray(int startCol, int endCol) {
+            // 校验列号顺序
+            if (startCol > endCol)
+                throw new ArgumentException($"起始列号({startCol}) 不能大于结束列号({endCol})");
+
+            // 生成数组
+            List<int> columns = new List<int>();
+            for (int col = startCol; col <= endCol; col++) {
+                columns.Add(col);
+            }
+            return columns.ToArray();
+        }
+
+        private string GetAddRowsValue(string CELLS, int i) {
+            // 参数校验
+            if (string.IsNullOrWhiteSpace(CELLS))
+                throw new ArgumentNullException(nameof(CELLS), "CELLS 不能为空");
+            if (i < 0)
+                throw new ArgumentOutOfRangeException(nameof(i), "行偏移量不能为负数");
+
+            // 正则解析单元格地址
+            var match = Regex.Match(CELLS.Trim().ToUpper(), @"^([A-Z]+)(\d+)$");
+            if (!match.Success)
+                throw new ArgumentException($"无效的单元格格式: {CELLS}");
+
+            // 提取列字母和行号
+            string column = match.Groups[1].Value;
+            int originalRow = int.Parse(match.Groups[2].Value);
+
+            // 计算新行号（Excel行号从1开始）
+            int newRow = originalRow + i;
+            if (newRow < 1)
+                throw new InvalidOperationException($"行号溢出: {originalRow} + {i} = {newRow}");
+
+            return $"{column}{newRow}";
+        }
+
+        private int[] GetCopyRowsByCellsZone(string CELLS_ZONE) {
+            // 参数校验
+            if (string.IsNullOrWhiteSpace(CELLS_ZONE))
+                throw new ArgumentNullException(nameof(CELLS_ZONE), "CELLS_ZONE 不能为空");
+
+            // 分割起始和结束单元格
+            string[] cells = CELLS_ZONE.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+            if (cells.Length != 2)
+                throw new ArgumentException("CELLS_ZONE 格式无效，示例格式：B8:O8");
+
+            // 提取行号
+            int startRow = ParseRowNumber(cells[0]);
+            int endRow = ParseRowNumber(cells[1]);
+
+            // 生成行号数组
+            return GenerateRowArray(startRow, endRow);
+        }
+
+        /// <summary>
+        /// 从单元格地址解析行号（如 B8 -> 8）
+        /// </summary>
+        private int ParseRowNumber(string cellAddress) {
+            // 使用正则匹配字母+数字结构
+            var match = Regex.Match(cellAddress.Trim().ToUpper(), @"^[A-Z]+(\d+)$");
+            if (!match.Success)
+                throw new ArgumentException($"无效的单元格地址格式: {cellAddress}");
+
+            // 转换行号为整数
+            if (!int.TryParse(match.Groups[1].Value, out int row) || row < 1)
+                throw new ArgumentException($"无效的行号: {cellAddress}");
+
+            return row;
+        }
+
+        /// <summary>
+        /// 生成连续行号数组
+        /// </summary>
+        private int[] GenerateRowArray(int startRow, int endRow) {
+            // 校验行号顺序
+            if (startRow > endRow)
+                throw new ArgumentException($"起始行号({startRow}) 不能大于结束行号({endRow})");
+
+            // 生成数组
+            List<int> rows = new List<int>();
+            for (int row = startRow; row <= endRow; row++) {
+                rows.Add(row);
+            }
+            return rows.ToArray();
+        }
+        #endregion
+
         public DataTable GetCOCVLOOK(string COC_VLOOKID) {
-            DataTable dtResult = new DataTable();
+            DataTable dtResult = new DataTable(COC_VLOOKID);
             DataTable dtVLOOK = Db.Ado.GetDataTable($@"select * from COC_VLOOK where COC_VLOOKID='{COC_VLOOKID}'");
             if (dtVLOOK.Rows.Count == 0) {
                 throw new Exception($"COC_VLOOKID[{COC_VLOOKID}]在数据库中找不到!");
@@ -2461,6 +2784,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 case "GOUPBY_003"://行转列合并
                     break;
                 default:
+                    //不分组直接使用
                     break;
             }
             return dtResult;
@@ -2508,14 +2832,16 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
             using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
                 excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
-                string[] attachs = new string[] {
-                    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
-                    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
-                    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
-                    @"C:\Users\Administrator\Desktop\Temp\44.png",
-                    @"C:\Users\Administrator\Desktop\Temp\33.png"};
-                excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
-                excelHelper.CopyRow("Sheet8", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
+                //string[] attachs = new string[] {
+                //    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
+                //    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
+                //    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
+                //    @"C:\Users\Administrator\Desktop\Temp\44.png",
+                //    @"C:\Users\Administrator\Desktop\Temp\33.png"};
+                //excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
+                //excelHelper.CopyRows("Sheet8", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
+                //excelHelper.CopyCells("Sheet1","E8:G9", "H8:J9");
+                excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
             }
 
             return ds;
