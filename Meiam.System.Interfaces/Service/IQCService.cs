@@ -2743,7 +2743,7 @@ ORDER BY
         #endregion
 
         public DataTable GetCOCVLOOK(string COC_VLOOKID) {
-            DataTable dtResult = new DataTable(COC_VLOOKID);
+            DataTable dtResult = new DataTable();
             DataTable dtVLOOK = Db.Ado.GetDataTable($@"select * from COC_VLOOK where COC_VLOOKID='{COC_VLOOKID}'");
             if (dtVLOOK.Rows.Count == 0) {
                 throw new Exception($"COC_VLOOKID[{COC_VLOOKID}]在数据库中找不到!");
@@ -2754,13 +2754,6 @@ ORDER BY
             string GROUPBYNAME = drVLOOK["GROUPBYNAME"].ToString();
             string GROUPBYNAME_C = drVLOOK["GROUPBYNAME_C"].ToString();
             string FIX_FILED = drVLOOK["FIX_FILED"].ToString();
-            //COC_VLOOK cOC_VLOOK = new COC_VLOOK();
-            //cOC_VLOOK.COC_VLOOKID = COC_VLOOKID;
-            //cOC_VLOOK.COULM002ID = COULM002ID;
-            //cOC_VLOOK.GOUPBY = GOUPBY;
-            //cOC_VLOOK.GROUPBYNAME = GROUPBYNAME;
-            //cOC_VLOOK.GROUPBYNAME_C = GROUPBYNAME_C;
-            //cOC_VLOOK.FIX_FILED = FIX_FILED;
 
             DataTable dtCOULM002ID = Db.Ado.GetDataTable($@"select STRSQL,FIX_FILED from COULM002_COC where COULM002ID='{COULM002ID}'");
             if (dtCOULM002ID.Rows.Count == 0) {
@@ -2780,6 +2773,8 @@ ORDER BY
                 case "GOUPBY_001"://分组合并
                     break;
                 case "GOUPBY_002"://全部合并
+                    //排除REPORT_URL和A1,A2...A32 组成新的table
+                    dtResult = MergeDataTable002(dtCOULM002Source);
                     break;
                 case "GOUPBY_003"://行转列合并
                     break;
@@ -2787,7 +2782,65 @@ ORDER BY
                     //不分组直接使用
                     break;
             }
+            dtResult.TableName = COC_VLOOKID;
             return dtResult;
+        }
+
+        public DataTable MergeDataTable002(DataTable sourceTable) {
+            // 1. 初始化结果表结构
+            DataTable resultTable = new DataTable();
+
+            // 定义A1-A32的列名列表（用于精准筛选）
+            var aColumnNames = Enumerable.Range(1, 32).Select(i => $"A{i}").ToList();
+
+            // 基础列：除REPORT_URL和A1-A32外的所有列
+            var baseColumns = sourceTable.Columns.Cast<DataColumn>()
+                .Where(c => c.ColumnName != "REPORT_URL" && !aColumnNames.Contains(c.ColumnName))
+                .ToList();
+
+            // 添加基础列到结果表
+            foreach (var col in baseColumns) {
+                resultTable.Columns.Add(col.ColumnName, col.DataType);
+            }
+
+            // 添加合并列
+            resultTable.Columns.Add("附件合并值", typeof(string));
+            resultTable.Columns.Add("样本合并值", typeof(string));
+
+            if (sourceTable.Rows.Count == 0) return resultTable;
+
+            // 2. 填充基础列（取第一行的基础列数据）
+            DataRow firstRow = sourceTable.Rows[0];
+            DataRow newRow = resultTable.NewRow();
+            foreach (var col in baseColumns) {
+                newRow[col.ColumnName] = firstRow[col.ColumnName];
+            }
+
+            // 3. 处理附件合并值（所有行的REPORT_URL非空值用；连接）
+            var reportUrls = sourceTable.AsEnumerable()
+                .Select(r => r["REPORT_URL"]?.ToString().Trim())
+                .Where(url => !string.IsNullOrEmpty(url));
+            newRow["附件合并值"] = string.Join(";", reportUrls);
+
+            // 4. 处理样本合并值（核心逻辑：先行内合并A1-A32，再合并所有行）
+            List<string> rowMergedValues = new List<string>();
+            foreach (DataRow row in sourceTable.Rows) {
+                // 行内合并A1-A32：按顺序收集非空值，用；连接
+                List<string> currentRowAValues = new List<string>();
+                foreach (var aCol in aColumnNames) {
+                    if (sourceTable.Columns.Contains(aCol)) {
+                        string value = row[aCol]?.ToString().Trim();
+                        if (!string.IsNullOrEmpty(value)) {
+                            currentRowAValues.Add(value);
+                        }
+                    }
+                }
+                rowMergedValues.Add(string.Join(";", currentRowAValues));
+            }
+            newRow["样本合并值"] = string.Join(";", rowMergedValues);
+
+            resultTable.Rows.Add(newRow);
+            return resultTable;
         }
 
         private void SaveCOCToScanDoc(string docType, string scandocName, string peopleId, string INSPECT_DEV1ID, string COLUM002ID, string COLUM001ID) {
