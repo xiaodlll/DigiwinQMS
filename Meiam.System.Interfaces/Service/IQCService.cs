@@ -2373,11 +2373,13 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             string ID = parm.ID;
             //通过COCID获取模版
             string fileName = Db.Ado.GetString($@"select FILENAME from COC where COCID='{COCID}'");
+            string cocName = Db.Ado.GetString($@"select COCNAME from COC where COCID='{COCID}'");
             if (string.IsNullOrEmpty(fileName)) {
                 throw new Exception($"COCID[{parm.COCID}]在数据库中找不到模版文件!");
             }
-            if (!File.Exists(fileName)) {
-                throw new Exception($"COCID[{parm.COCID}]在数据库中模版文件不存在!FILENAME:[{fileName}]");
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"OQCTEMPLATE\{fileName}");
+            if (!File.Exists(filePath)) {
+                throw new Exception($"COCID[{parm.COCID}]在数据库中模版文件不存在!FILENAME:[{filePath}]");
             }
             DataSet ds = GetCOCDataSource(parm);
             Dictionary<string,DataTable> dicDataSource = new Dictionary<string,DataTable>();
@@ -2409,16 +2411,20 @@ ORDER BY
                 }
             }
 
-            string newFile = FillExcelFileContent(fileName, listZoneIDs, dicDataSource, parm);
+            string newFile = FillExcelFileContent(filePath, cocName, listZoneIDs, dicDataSource, parm);
 
             //保存到SCANDOC
             SaveCOCToScanDoc("COC报告", newFile, parm.ID, parm.COCID, parm.COCID, parm.COCID);
         }
 
-        private string FillExcelFileContent(string fileName, List<string> listZoneIDs, Dictionary<string, DataTable> dicDataSource, COCInputDto parm) {
-            var newFileName = $"{parm.COCID}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+        private string FillExcelFileContent(string tempFilePath, string tempFileName, List<string> listZoneIDs, Dictionary<string, DataTable> dicDataSource, COCInputDto parm) {
+            var newFileName = $"{tempFileName}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
             string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\COC\{parm.COCID}\{newFileName}");
-            File.Copy(fileName, filePath, true);
+            FileInfo fi = new FileInfo(filePath);
+            if (!fi.Directory.Exists) {
+                fi.Directory.Create();
+            }
+            File.Copy(tempFilePath, filePath, true);
             using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
                 //向Excel里面填充数据
                 foreach (string zoneID in listZoneIDs) {
@@ -2471,7 +2477,7 @@ ORDER BY
                             }
                         }
                     }
-                    else if (ZONE_TYPE == "ZONE_TYPE_001") {//循环区域
+                    else if (ZONE_TYPE == "ZONE_TYPE_002") {//循环区域
                         if (VLOOK == "VLOOK_001") {//向下循环
                             //按照数据区域复制行
                             int[] copyRows = GetCopyRowsByCellsZone(CELLS_ZONE);
@@ -2485,7 +2491,7 @@ ORDER BY
                                 foreach (DataRow drZONE_D in dtZONE_D.Rows) {
                                     string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
                                     string ANI = drZONE_D["ANI"].ToString();
-                                    string COLUMN = drZONE_D["COLUMN"].ToString();
+                                    //string COLUMN = drZONE_D["COLUMN"].ToString();
                                     string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
 
                                     if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
@@ -2524,7 +2530,7 @@ ORDER BY
                                 foreach (DataRow drZONE_D in dtZONE_D.Rows) {
                                     string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
                                     string ANI = drZONE_D["ANI"].ToString();
-                                    string COLUMN = drZONE_D["COLUMN"].ToString();
+                                    //string COLUMN = drZONE_D["COLUMN"].ToString();
                                     string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
 
                                     if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
@@ -2742,31 +2748,45 @@ ORDER BY
         }
         #endregion
 
-        public DataTable GetCOCVLOOK(string COC_VLOOKID) {
+        public DataTable GetCOCVLOOK(string COC_VLOOKID, string[] filterValues) {
             DataTable dtResult = new DataTable();
             DataTable dtVLOOK = Db.Ado.GetDataTable($@"select * from COC_VLOOK where COC_VLOOKID='{COC_VLOOKID}'");
             if (dtVLOOK.Rows.Count == 0) {
                 throw new Exception($"COC_VLOOKID[{COC_VLOOKID}]在数据库中找不到!");
             }
             DataRow drVLOOK = dtVLOOK.Rows[0];
-            string COULM002ID = drVLOOK["COULM002ID"].ToString();
+            string COLUM002ID = drVLOOK["COLUM002ID"].ToString();
             string GOUPBY = drVLOOK["GOUPBY"].ToString();
             string GROUPBYNAME = drVLOOK["GROUPBYNAME"].ToString();
             string GROUPBYNAME_C = drVLOOK["GROUPBYNAME_C"].ToString();
             string FIX_FILED = drVLOOK["FIX_FILED"].ToString();
 
-            DataTable dtCOULM002ID = Db.Ado.GetDataTable($@"select STRSQL,FIX_FILED from COULM002_COC where COULM002ID='{COULM002ID}'");
-            if (dtCOULM002ID.Rows.Count == 0) {
-                throw new Exception($"COULM002ID[{COULM002ID}]在数据库COULM002_COC中找不到!");
+            DataTable dtCOLUM002ID = Db.Ado.GetDataTable($@"select STRSQL,FIX_FILED from COLUM002_COC where COLUM002ID='{COLUM002ID}'");
+            if (dtCOLUM002ID.Rows.Count == 0) {
+                throw new Exception($"COLUM002ID[{COLUM002ID}]在数据库COLUM002_COC中找不到!");
             }
-            string STRSQL = dtCOULM002ID.Rows[0]["STRSQL"].ToString().Replace("@u","1");
-            string COULM002_FIX_FILED = dtCOULM002ID.Rows[0]["FIX_FILED"].ToString();
+            string STRSQL = dtCOLUM002ID.Rows[0]["STRSQL"].ToString().Replace("@u","1");
+            string COULM002_FIX_FILED = dtCOLUM002ID.Rows[0]["FIX_FILED"].ToString();
             //加上where条件
             if (FIX_FILED == "1") {
-                STRSQL += " AND "+ COULM002_FIX_FILED;
+                STRSQL += " AND " + COULM002_FIX_FILED + " IN (" + GetSqlInString(filterValues) + ")";
             }
+            //加上本身条件
+            DataTable dtWhere = Db.Ado.GetDataTable($@"select COLUM001ID,WHEREVALUE from COC_VLOOK_W where COC_VLOOKID = '{COC_VLOOKID}'");
+            foreach (DataRow drWhere in dtWhere.Rows) {
+                string COLUM001ID = drWhere["COLUM001ID"].ToString();
+                string whereField = Db.Ado.GetString($@"select WHEREFILED,BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                string whereValue = drWhere["WHEREVALUE"].ToString();
+                if (whereValue.Contains(",") || whereValue.Contains("，")) {
+                    STRSQL += " AND " + whereField + " IN (" + GetSqlInString(whereValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries)) + ")";
+                }
+                else {
+                    STRSQL += " AND " + whereField + $" = '{whereValue}'";
+                }
+            }
+
             //执行sql获取原始数据源
-            DataTable dtCOULM002Source = Db.Ado.GetDataTable(STRSQL);
+            DataTable dtCOLUM002Source = Db.Ado.GetDataTable(STRSQL);
 
             //按照GroupBy分组
             switch (GOUPBY) {
@@ -2774,19 +2794,34 @@ ORDER BY
                     break;
                 case "GOUPBY_002"://全部合并
                     //排除REPORT_URL和A1,A2...A32 组成新的table
-                    dtResult = MergeDataTable002(dtCOULM002Source);
+                    dtResult = MergeDataTable002(dtCOLUM002Source);
                     break;
                 case "GOUPBY_003"://行转列合并
                     break;
                 default:
                     //不分组直接使用
+                    dtResult = MergeDataTableDefault(dtCOLUM002Source); 
                     break;
             }
             dtResult.TableName = COC_VLOOKID;
             return dtResult;
         }
 
-        public DataTable MergeDataTable002(DataTable sourceTable) {
+        private string GetSqlInString(string[] filterValues) {
+            if (filterValues == null || filterValues.Length == 0) {
+                return "''"; // 空值处理，避免SQL语法错误
+            }
+
+            // 转义单引号并包裹每个值
+            var escapedValues = filterValues
+                .Select(value => value.Replace("'", "''"))
+                .Select(value => $"'{value}'");
+
+            // 连接所有值并返回
+            return string.Join(", ", escapedValues);
+        }
+
+        private DataTable MergeDataTable002(DataTable sourceTable) {
             // 1. 初始化结果表结构
             DataTable resultTable = new DataTable();
 
@@ -2843,6 +2878,54 @@ ORDER BY
             return resultTable;
         }
 
+        private DataTable MergeDataTableDefault(DataTable sourceTable) {
+            // 1. 初始化结果表结构
+            DataTable resultTable = sourceTable.Clone();
+            resultTable.Columns.Add("附件合并值", typeof(string));
+            resultTable.Columns.Add("样本合并值", typeof(string));
+
+            if (sourceTable.Rows.Count == 0) return resultTable;
+
+            // 定义A1-A32的列名列表
+            var aColumnNames = Enumerable.Range(1, 32).Select(i => $"A{i}").ToList();
+
+            // 检查REPORT_URL列是否存在
+            bool hasReportUrlColumn = sourceTable.Columns.Contains("REPORT_URL");
+
+            // 2. 处理每一行数据
+            foreach (DataRow sourceRow in sourceTable.Rows) {
+                DataRow newRow = resultTable.NewRow();
+
+                // 复制原行数据到新行
+                foreach (DataColumn col in sourceTable.Columns) {
+                    newRow[col.ColumnName] = sourceRow[col.ColumnName];
+                }
+
+                // 3. 处理附件合并值（兼容REPORT_URL列不存在的情况）
+                string reportUrl = hasReportUrlColumn
+                    ? sourceRow["REPORT_URL"]?.ToString().Trim()
+                    : string.Empty;
+
+                newRow["附件合并值"] = !string.IsNullOrEmpty(reportUrl) ? reportUrl : string.Empty;
+
+                // 4. 处理样本合并值
+                List<string> currentRowAValues = new List<string>();
+                foreach (var aCol in aColumnNames) {
+                    if (sourceTable.Columns.Contains(aCol)) {
+                        string value = sourceRow[aCol]?.ToString().Trim();
+                        if (!string.IsNullOrEmpty(value)) {
+                            currentRowAValues.Add(value);
+                        }
+                    }
+                }
+                newRow["样本合并值"] = string.Join(";", currentRowAValues);
+
+                resultTable.Rows.Add(newRow);
+            }
+
+            return resultTable;
+        }
+
         private void SaveCOCToScanDoc(string docType, string scandocName, string peopleId, string INSPECT_DEV1ID, string COLUM002ID, string COLUM001ID) {
             Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
 
@@ -2871,31 +2954,37 @@ ORDER BY
         public DataSet GetCOCDataSource(COCInputDto parm) {
             DataSet ds = new DataSet();
             DataTable dtVLOOKID = Db.Ado.GetDataTable($@"select distinct COC_VLOOKID from COC_ZONE where COCID='{parm.COCID}'");
-            //if (dtVLOOKID.Rows.Count == 0) {
-            //    throw new Exception($"COCID[{parm.COCID}]在数据库中找不到COC_ZONE数据源!");
-            //}
-            //foreach (DataRow drVLOOKID in dtVLOOKID.Rows) {
-            //    string VLOOKID = drVLOOKID[0].ToString();
-            //    DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID);
-            //    dtCOCVLOOK.TableName = VLOOKID;
-            //    ds.Tables.Add(dtCOCVLOOK);
-            //}
-
-            //测试Excel
-            string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
-            using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
-                excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
-                //string[] attachs = new string[] {
-                //    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
-                //    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
-                //    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
-                //    @"C:\Users\Administrator\Desktop\Temp\44.png",
-                //    @"C:\Users\Administrator\Desktop\Temp\33.png"};
-                //excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
-                //excelHelper.CopyRows("Sheet8", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
-                //excelHelper.CopyCells("Sheet1","E8:G9", "H8:J9");
-                excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
+            if (dtVLOOKID.Rows.Count == 0) {
+                throw new Exception($"COCID[{parm.COCID}]在数据库中找不到COC_ZONE数据源!");
             }
+            foreach (DataRow drVLOOKID in dtVLOOKID.Rows) {
+                string VLOOKID = drVLOOKID[0].ToString();
+                try {
+                    DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID, parm.FIX_VALUE);
+                    dtCOCVLOOK.TableName = VLOOKID;
+                    ds.Tables.Add(dtCOCVLOOK);
+                }
+                catch (Exception ex) {
+                    string name = Db.Ado.GetString($@"select TOP 1 COC_VLOOKNAME from COC_VLOOK WHERE COC_VLOOKID='{VLOOKID}'");
+                    throw new Exception($"数据源[{name}]获取异常:{ex.ToString()}");
+                }
+            }
+
+            ////测试Excel
+            //string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
+            //using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
+            //    excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
+            //    //string[] attachs = new string[] {
+            //    //    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
+            //    //    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
+            //    //    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
+            //    //    @"C:\Users\Administrator\Desktop\Temp\44.png",
+            //    //    @"C:\Users\Administrator\Desktop\Temp\33.png"};
+            //    //excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
+            //    //excelHelper.CopyRows("Sheet8", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
+            //    //excelHelper.CopyCells("Sheet1","E8:G9", "H8:J9");
+            //    excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
+            //}
 
             return ds;
         }
