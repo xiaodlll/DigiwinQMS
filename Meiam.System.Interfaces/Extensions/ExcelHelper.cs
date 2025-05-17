@@ -1,4 +1,7 @@
-﻿using NPOI.Util;
+﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
+using Meiam.System.Common;
+using NPOI.HPSF;
+using NPOI.Util;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
 using OfficeOpenXml.Style;
@@ -22,10 +25,36 @@ public class ExcelHelper : IDisposable {
 
     public void AddTextToCell(string sheetName, string cellAddress, string text) {
         var worksheet = GetOrCreateWorksheet(sheetName);
-        worksheet.Cells[cellAddress].Value = text;
+        var cell = worksheet.Cells[cellAddress];
+
+        // 检查单元格是否已有数字格式
+        if (IsNumericFormat(cell.Style.Numberformat.Format)) {
+            // 尝试将文本转换为数字
+            if (double.TryParse(text, out double numberValue)) {
+                cell.Value = numberValue; // 设置为数字类型
+                return;
+            }
+        }
+
+        // 默认作为文本处理
+        cell.Value = text;
+    }
+
+    private bool IsNumericFormat(string format) {
+        // 判断是否为数字格式（简化版）
+        if (string.IsNullOrEmpty(format)) return false;
+        return format.Contains("0") || format.Contains("#") || format.Contains("?");
     }
 
     public void AddAttachsToCell(string sheetName, string cellAddress, string[] filePaths) {
+        // 定义完整路径数组并初始化
+        string[] fullFilePaths = new string[filePaths.Length];
+
+        // 填充完整路径
+        for (int i = 0; i < filePaths.Length; i++) {
+            fullFilePaths[i] = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], filePaths[i].TrimStart('\\'));
+        }
+
         var worksheet = GetOrCreateWorksheet(sheetName);
         var cell = worksheet.Cells[cellAddress];
         var startRow = cell.Start.Row;
@@ -37,7 +66,7 @@ public class ExcelHelper : IDisposable {
         cell.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Top;
         worksheet.Row(startRow).CustomHeight = true;
 
-        foreach (var filePath in filePaths.Where(File.Exists)) {
+        foreach (var filePath in fullFilePaths.Where(File.Exists)) {
             try {
                 var (embedObject, isImage, width) = CreateEmbedObject(worksheet, filePath, worksheet.Row(startRow).Height);
 
@@ -54,6 +83,12 @@ public class ExcelHelper : IDisposable {
                 AddErrorComment(cell, $"文件嵌入失败: {ex.Message}");
             }
         }
+    }
+    public void InsertRows(string sheetName, int rowCount, int targetRow) {
+        // 获取指定工作表
+        var worksheet = GetOrCreateWorksheet(sheetName);
+        // 在目标位置插入新行
+        worksheet.InsertRow(targetRow, rowCount);
     }
 
     public void CopyRows(string sheetName, int[] sourceRow, int targetRow) {

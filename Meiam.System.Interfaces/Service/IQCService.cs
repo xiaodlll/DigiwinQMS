@@ -2433,133 +2433,172 @@ ORDER BY
                     string ZONE_TYPE = dtZONE.Rows[0]["ZONE_TYPE"].ToString();
                     string VLOOK = dtZONE.Rows[0]["VLOOK"].ToString();
                     string COC_VLOOKID = dtZONE.Rows[0]["COC_VLOOKID"].ToString();
-                    string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString(); 
-                    DataTable dtSource = dicDataSource[COC_VLOOKID];
-                    DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{zoneID}'
+                    string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString();
+                    try {
+                        DataTable dtSource = dicDataSource[COC_VLOOKID];
+                        DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{zoneID}'
 ORDER BY 
   -- 提取字母部分（兼容A/AA格式）
   LEFT(CELLS, PATINDEX('%[0-9]%', CELLS) - 1), 
   -- 提取数字部分
   CAST(SUBSTRING(CELLS, PATINDEX('%[0-9]%', CELLS), LEN(CELLS)) AS INT)");
-                    if (ZONE_TYPE == "ZONE_TYPE_001") {//通用区域
-                        if (dtSource.Rows.Count > 0) {
-                            DataRow drData = dtSource.Rows[0];
-                            //直接给单元格赋值
-                            foreach (DataRow drZONE_D in dtZONE_D.Rows) {
-                                string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
-                                string ANI = drZONE_D["ANI"].ToString();
-                                string COLUMN = drZONE_D["COLUMN"].ToString();
-                                string CELLS = drZONE_D["CELLS"].ToString();
-                                if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-                                    string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                    if (dtZONE_D.Columns.Contains(byName)) {
-                                        string textValue = drData[byName].ToString();
-                                        excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                    }
-                                }
-                                if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
-                                    if (ANI == "ANI_001") {//样本合并值
-                                        string byName = "样本合并值";
-                                        if (dtZONE_D.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
-                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                        if (ZONE_TYPE == "ZONE_TYPE_001") {//通用区域
+                            if (dtSource.Rows.Count > 0) {
+                                DataRow drData = dtSource.Rows[0];
+                                //直接给单元格赋值
+                                foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                                    string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
+                                    string ANI = drZONE_D["ANI"].ToString();
+                                    //string COLUMN = drZONE_D["COLUMN"].ToString();
+                                    string CELLS = drZONE_D["CELLS"].ToString();
+                                    try {
+                                        if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                            string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            if (dtSource.Columns.Contains(byName)) {
+                                                string textValue = drData[byName].ToString();
+                                                if (byName == "REPORT_URL") {
+                                                    string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                    excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                }
+                                                else {
+                                                    excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                                }
+                                            }
+                                        }
+                                        if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                                            if (ANI == "ANI_001") {//样本合并值
+                                                string byName = "样本合并值";
+                                                if (dtSource.Columns.Contains(byName)) {
+                                                    string textValue = drData[byName].ToString();
+                                                    excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                                }
+                                            }
+                                            if (ANI == "ANI_002") {//附件合并值
+                                                string byName = "附件合并值";
+                                                if (dtSource.Columns.Contains(byName)) {
+                                                    string textValue = drData[byName].ToString();
+                                                    string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                    excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                }
+                                            }
                                         }
                                     }
-                                    if (ANI == "ANI_002") {//附件合并值
-                                        string byName = "附件合并值";
-                                        if (dtZONE_D.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
-                                            string[] attachs = textValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries);
-                                            excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                    catch (Exception ex) {
+                                        throw new Exception($"单元格{CELLS}填值异常:" + ex.ToString());
+                                    }
+                                }
+                            }
+                        }
+                        else if (ZONE_TYPE == "ZONE_TYPE_002") {//循环区域
+                            if (VLOOK == "VLOOK_001") {//向下循环
+                                                       //按照数据区域复制行
+                                int[] copyRows = GetCopyRowsByCellsZone(CELLS_ZONE);
+                                for (int i = 0; i < dtSource.Rows.Count - 1; i++) {//排除自身，只需要复制N-1份
+                                    try {
+                                        excelHelper.CopyRows(SHEETNAME, copyRows, copyRows[copyRows.Length - 1] + 1);
+                                    }
+                                    catch {//有合并行，改为插入行
+                                        excelHelper.InsertRows(SHEETNAME, copyRows.Length, copyRows[copyRows.Length - 1] + 1);
+                                    }
+                                }
+
+                                for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
+                                    DataRow drData = dtSource.Rows[i];
+                                    //直接给单元格赋值
+                                    foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                                        string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
+                                        string ANI = drZONE_D["ANI"].ToString();
+                                        string ISSQ = drZONE_D["ISSQ"].ToString();
+                                        //string COLUMN = drZONE_D["COLUMN"].ToString();
+                                        string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
+                                        try {
+                                            if(ISSQ == "1") {
+                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, (i+1).ToString());
+                                            }
+                                            else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                                string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                                if (dtSource.Columns.Contains(byName)) {
+                                                    string textValue = drData[byName].ToString();
+                                                    if (byName == "REPORT_URL") {
+                                                        string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                        excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                    }
+                                                    else {
+                                                        excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                                    }
+                                                }
+                                            }
+                                            else if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                                                if (ANI == "ANI_001") {//样本合并值
+                                                    string byName = "样本合并值";
+                                                    if (dtSource.Columns.Contains(byName)) {
+                                                        string textValue = drData[byName].ToString();
+                                                        excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                                    }
+                                                }
+                                                if (ANI == "ANI_002") {//附件合并值
+                                                    string byName = "附件合并值";
+                                                    if (dtSource.Columns.Contains(byName)) {
+                                                        string textValue = drData[byName].ToString();
+                                                        string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                        excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        catch (Exception ex) {
+                                            throw new Exception($"单元格{CELLS}填值异常:" + ex.ToString());
+                                        }
+                                    }
+                                }
+                            }
+                            else if (VLOOK == "VLOOK_002") {//向右循环
+                                int[] copyColumns = GetCopyColumnsByCellsZone(CELLS_ZONE);
+                                //按照数据区域复制行
+                                for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
+                                    DataRow drData = dtSource.Rows[i];
+                                    //直接给单元格赋值
+                                    foreach (DataRow drZONE_D in dtZONE_D.Rows) {
+                                        string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
+                                        string ANI = drZONE_D["ANI"].ToString();
+                                        //string COLUMN = drZONE_D["COLUMN"].ToString();
+                                        string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
+                                        try {
+                                            if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                                string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                                if (dtSource.Columns.Contains(byName)) {
+                                                    string textValue = drData[byName].ToString();
+                                                    excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                                }
+                                            }
+                                            if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
+                                                if (ANI == "ANI_001") {//样本合并值
+                                                    string byName = "样本合并值";
+                                                    if (dtSource.Columns.Contains(byName)) {
+                                                        string textValue = drData[byName].ToString();
+                                                        excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                                    }
+                                                }
+                                                if (ANI == "ANI_002") {//附件合并值
+                                                    string byName = "附件合并值";
+                                                    if (dtSource.Columns.Contains(byName)) {
+                                                        string textValue = drData[byName].ToString();
+                                                        string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                        excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        catch (Exception ex) {
+                                            throw new Exception($"单元格{CELLS}填值异常:" + ex.ToString());
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (ZONE_TYPE == "ZONE_TYPE_002") {//循环区域
-                        if (VLOOK == "VLOOK_001") {//向下循环
-                            //按照数据区域复制行
-                            int[] copyRows = GetCopyRowsByCellsZone(CELLS_ZONE);
-                            for (int i = 0; i < dtSource.Rows.Count - 1; i++) {//排除自身，只需要复制N-1份
-                                excelHelper.CopyRows(SHEETNAME, copyRows, copyRows[copyRows.Length - 1]);
-                            }
-
-                            for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
-                                DataRow drData = dtSource.Rows[i];
-                                //直接给单元格赋值
-                                foreach (DataRow drZONE_D in dtZONE_D.Rows) {
-                                    string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
-                                    string ANI = drZONE_D["ANI"].ToString();
-                                    //string COLUMN = drZONE_D["COLUMN"].ToString();
-                                    string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
-
-                                    if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                        if (dtZONE_D.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
-                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                        }
-                                    }
-                                    if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
-                                        if (ANI == "ANI_001") {//样本合并值
-                                            string byName = "样本合并值";
-                                            if (dtZONE_D.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
-                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                            }
-                                        }
-                                        if (ANI == "ANI_002") {//附件合并值
-                                            string byName = "附件合并值";
-                                            if (dtZONE_D.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
-                                                string[] attachs = textValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (VLOOK == "VLOOK_002") {//向右循环
-                            int[] copyColumns = GetCopyColumnsByCellsZone(CELLS_ZONE);
-                            //按照数据区域复制行
-                            for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
-                                DataRow drData = dtSource.Rows[i];
-                                //直接给单元格赋值
-                                foreach (DataRow drZONE_D in dtZONE_D.Rows) {
-                                    string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
-                                    string ANI = drZONE_D["ANI"].ToString();
-                                    //string COLUMN = drZONE_D["COLUMN"].ToString();
-                                    string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
-
-                                    if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                        if (dtZONE_D.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
-                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                        }
-                                    }
-                                    if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
-                                        if (ANI == "ANI_001") {//样本合并值
-                                            string byName = "样本合并值";
-                                            if (dtZONE_D.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
-                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                            }
-                                        }
-                                        if (ANI == "ANI_002") {//附件合并值
-                                            string byName = "附件合并值";
-                                            if (dtZONE_D.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
-                                                string[] attachs = textValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    catch (Exception ex) {
+                        throw new Exception($"区域{SHEETNAME}:" + ex.Message);
                     }
                 }
             }
