@@ -2484,7 +2484,7 @@ ORDER BY
                                         }
                                     }
                                     catch (Exception ex) {
-                                        throw new Exception($"单元格{CELLS}填值异常:" + ex.ToString());
+                                        throw new Exception($"单元格[{CELLS}]填值异常:" + ex.ToString());
                                     }
                                 }
                             }
@@ -2547,7 +2547,7 @@ ORDER BY
                                             }
                                         }
                                         catch (Exception ex) {
-                                            throw new Exception($"单元格{CELLS}填值异常:" + ex.ToString());
+                                            throw new Exception($"单元格[{CELLS}]填值异常:" + ex.ToString());
                                         }
                                     }
                                 }
@@ -2590,7 +2590,7 @@ ORDER BY
                                             }
                                         }
                                         catch (Exception ex) {
-                                            throw new Exception($"单元格{CELLS}填值异常:" + ex.ToString());
+                                            throw new Exception($"单元格[{CELLS}]填值异常:" + ex.ToString());
                                         }
                                     }
                                 }
@@ -2598,7 +2598,7 @@ ORDER BY
                         }
                     }
                     catch (Exception ex) {
-                        throw new Exception($"区域{SHEETNAME}:" + ex.Message);
+                        throw new Exception($"区域[{SHEETNAME}]:" + ex.Message);
                     }
                 }
             }
@@ -3012,17 +3012,19 @@ ORDER BY
             ////测试Excel
             //string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
             //using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
-            //    excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
-            //    //string[] attachs = new string[] {
-            //    //    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
-            //    //    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
-            //    //    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
-            //    //    @"C:\Users\Administrator\Desktop\Temp\44.png",
-            //    //    @"C:\Users\Administrator\Desktop\Temp\33.png"};
-            //    //excelHelper.AddAttachsToCell("Sheet4", "G2", attachs);
+            //    //excelHelper.AddTextToCell("Sheet4", "F2", "TestANI_001");
+            //    string[] attachs = new string[] {
+            //        @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
+            //        @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
+            //        @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
+            //        @"C:\Users\Administrator\Desktop\Temp\44.png",
+            //        @"C:\Users\Administrator\Downloads\26eae128-f295-4f60-abca-fcf8cd389215.jpg",
+            //        @"C:\Users\Administrator\Desktop\Temp\44.png",
+            //        @"C:\Users\Administrator\Downloads\26eae128-f295-4f60-abca-fcf8cd389215.jpg"};
+            //    excelHelper.AddAttachsToCell("Sheet4", "L57", attachs);
             //    //excelHelper.CopyRows("Sheet8", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
             //    //excelHelper.CopyCells("Sheet1","E8:G9", "H8:J9");
-            //    excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
+            //    //excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
             //}
 
             return ds;
