@@ -6,6 +6,7 @@ using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
 using OfficeOpenXml.Style;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -26,6 +27,49 @@ public class ExcelHelper : IDisposable {
     public void AddTextToCell(string sheetName, string cellAddress, string text) {
         var worksheet = GetOrCreateWorksheet(sheetName);
         var cell = worksheet.Cells[cellAddress];
+
+        // 定义 Unicode 上标字符映射表
+        var superscriptMap = new Dictionary<char, string> {
+        {'0', "⁰"}, {'1', "¹"}, {'2', "²"}, {'3', "³"}, {'4', "⁴"},
+        {'5', "⁵"}, {'6', "⁶"}, {'7', "⁷"}, {'8', "⁸"}, {'9', "⁹"},
+        {'+', "⁺"}, {'-', "⁻"}, {'=', "⁼"}, {'(', "⁽"}, {')', "⁾"}
+    };
+
+        // 处理 HTML 格式的数字的几次方，例如 5<sup>3</sup>
+        int supStart = text.IndexOf("<sup>");
+        while (supStart > 0) // 循环处理所有 <sup> 标签
+        {
+            // 查找前面的数字部分
+            int numStart = supStart - 1;
+            while (numStart >= 0 && char.IsDigit(text[numStart])) {
+                numStart--;
+            }
+            numStart++; // 调整到数字开始位置
+
+            int supEnd = text.IndexOf("</sup>", supStart);
+            if (supEnd > supStart) {
+                string baseNumber = text.Substring(numStart, supStart - numStart);
+                string exponent = text.Substring(supStart + 5, supEnd - supStart - 5);
+
+                // 转换指数为 Unicode 上标（不使用 LINQ）
+                string superscript = "";
+                foreach (char c in exponent) {
+                    if (superscriptMap.ContainsKey(c)) {
+                        superscript += superscriptMap[c];
+                    }
+                    else {
+                        superscript += c;
+                    }
+                }
+
+                // 替换 HTML 标签为 Unicode 上标
+                text = text.Substring(0, numStart) + baseNumber + superscript +
+                      (supEnd + 6 < text.Length ? text.Substring(supEnd + 6) : "");
+            }
+
+            // 继续查找下一个 <sup> 标签
+            supStart = text.IndexOf("<sup>");
+        }
 
         // 检查单元格是否已有数字格式
         if (IsNumericFormat(cell.Style.Numberformat.Format)) {
@@ -173,35 +217,31 @@ public class ExcelHelper : IDisposable {
         worksheet.InsertRow(targetRow, rowCount);
     }
 
-    public void CopyRows(string sheetName, int[] sourceRow, int targetRow) {
-        // 获取指定工作表
+    public void CopyRows(string sheetName, int[] sourceRows, int targetRow) {
         var worksheet = GetOrCreateWorksheet(sheetName);
-        int cols = worksheet.Dimension.End.Column; // 获取总列数
 
-        // 将源行按升序排序以便正确处理行号偏移
-        var sortedSourceRows = sourceRow.OrderBy(r => r).ToArray();
+        // 对源行进行降序排序，避免插入操作影响后续源行索引
+        var sortedSourceRows = sourceRows.OrderByDescending(r => r).ToList();
 
-        int rowOffset = 0; // 跟踪因插入导致的行号偏移
-        int currentTargetRow = targetRow; // 当前插入的目标行
+        // 计算源行总高度（行数）
+        int totalRowsToCopy = sortedSourceRows.Distinct().Count();
 
-        foreach (int originalRow in sortedSourceRows) {
-            // 计算调整后的源行号（考虑之前的插入操作）
-            int adjustedRow = originalRow + rowOffset;
+        // 插入足够的空行
+        worksheet.InsertRow(targetRow, totalRowsToCopy);
 
-            // 在目标位置插入新行
-            worksheet.InsertRow(currentTargetRow, 1);
+        // 复制整个源区域到目标位置
+        var sourceAddress = $"{sortedSourceRows.Min()}:{sortedSourceRows.Max()}";
+        var targetAddress = $"{targetRow}:{targetRow + totalRowsToCopy - 1}";
+        // 复制单元格内容和格式
+        worksheet.Cells[sourceAddress].Copy(worksheet.Cells[targetAddress]);
 
-            // 复制源行内容到目标行
-            var sourceRange = worksheet.Cells[adjustedRow, 1, adjustedRow, cols];
-            var targetRange = worksheet.Cells[currentTargetRow, 1];
-            sourceRange.Copy(targetRange);
+        // 单独复制行高（解决行高问题的关键）
+        for (int i = 0; i < sortedSourceRows.Count; i++) {
+            int sourceRowIndex = sortedSourceRows[i];
+            int targetRowIndex = targetRow + i;
 
-            // 如果插入位置在源行之前或同一行，则后续源行号需调整
-            if (currentTargetRow <= adjustedRow) {
-                rowOffset++;
-            }
-
-            currentTargetRow++; // 更新下一个目标行位置
+            // 复制行高
+            worksheet.Row(targetRowIndex).Height = worksheet.Row(sourceRowIndex).Height;
         }
     }
 
