@@ -3067,16 +3067,16 @@ ORDER BY
             //string filePath = @"C:\Users\Administrator\Desktop\Temp\test.xlsx";
             //using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
             //    //excelHelper.AddTextToCell("Sheet4", "F2", "5<sup>3</sup>");
-            //    //string[] attachs = new string[] {
-            //    //    @"C:\Users\Administrator\Desktop\Temp\1.xlsx",
-            //    //    @"C:\Users\Administrator\Desktop\Temp\2.docx" ,
-            //    //    @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
-            //    //    @"C:\Users\Administrator\Desktop\Temp\44.png",
-            //    //    @"C:\Users\Administrator\Downloads\26eae128-f295-4f60-abca-fcf8cd389215.jpg",
-            //    //    @"C:\Users\Administrator\Desktop\Temp\44.png",
-            //    //    @"C:\Users\Administrator\Downloads\26eae128-f295-4f60-abca-fcf8cd389215.jpg"};
-            //    //excelHelper.AddAttachsToCell("Sheet4", "F6", attachs);
-            //    excelHelper.CopyRows("Sheet4", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
+            //    string[] attachs = new string[] {
+            //        //@"C:\Users\Administrator\Desktop\Temp\1.xlsx",
+            //        //@"C:\Users\Administrator\Desktop\Temp\2.docx" ,
+            //        @"C:\Users\Administrator\Desktop\Temp\3.pdf" ,
+            //        //@"C:\Users\Administrator\Desktop\Temp\44.png",
+            //        //@"C:\Users\Administrator\Downloads\26eae128-f295-4f60-abca-fcf8cd389215.jpg",
+            //        //@"C:\Users\Administrator\Desktop\Temp\44.png",
+            //        @"C:\Users\Administrator\Downloads\26eae128-f295-4f60-abca-fcf8cd389215.jpg"};
+            //    excelHelper.AddAttachsToCell("Sheet4", "F6", attachs);
+            //    //excelHelper.CopyRows("Sheet4", new int[] { 42, 43, 44, 45, 46, 47 }, 48);
             //    //excelHelper.CopyCells("Sheet1","E8:G9", "H8:J9");
             //    //excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
             //}

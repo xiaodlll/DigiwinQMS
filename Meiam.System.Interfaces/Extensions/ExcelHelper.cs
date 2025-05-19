@@ -363,20 +363,36 @@ public class ExcelHelper : IDisposable {
         ExcelWorksheet worksheet,
         string filePath ,double targetRowHeight) {
         var extension = Path.GetExtension(filePath).ToLower();
-        var imageTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp" };
+        var imageTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf" };
         int width = (int)(targetRowHeight);
         if (imageTypes.Contains(extension)) {
-            byte[] imageBytes = File.ReadAllBytes(filePath);
-            using (var stream = new MemoryStream(imageBytes)) {
-                var picture = worksheet.Drawings.AddPicture(
-                  Guid.NewGuid().ToString(),
-                  stream
-                );
-                if (imageTypes.Contains(extension)) {
-                    // 添加图片后立即缩放
-                    width = ScaleImageToCell(picture, targetRowHeight);
+            //pdf
+            if (extension.Contains(".pdf")) {
+                using (var stream = FileToImageHelper.ConvertFirstPageToImageStream(filePath)) {
+                    var picture = worksheet.Drawings.AddPicture(
+                      Guid.NewGuid().ToString(),
+                      stream
+                    );
+                    if (imageTypes.Contains(extension)) {
+                        // 添加图片后立即缩放
+                        width = ScaleImageToCell(picture, targetRowHeight);
+                    }
+                    return (picture, true, width);
                 }
-                return (picture, true, width);
+            }
+            else {
+                byte[] imageBytes = File.ReadAllBytes(filePath);
+                using (var stream = new MemoryStream(imageBytes)) {
+                    var picture = worksheet.Drawings.AddPicture(
+                      Guid.NewGuid().ToString(),
+                      stream
+                    );
+                    if (imageTypes.Contains(extension)) {
+                        // 添加图片后立即缩放
+                        width = ScaleImageToCell(picture, targetRowHeight);
+                    }
+                    return (picture, true, width);
+                }
             }
         }
         else {
