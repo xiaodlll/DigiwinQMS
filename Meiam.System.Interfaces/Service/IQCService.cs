@@ -2884,12 +2884,14 @@ ORDER BY
             //按照GroupBy分组
             switch (GOUPBY) {
                 case "GOUPBY_001"://分组合并
+                    dtResult = MergeDataTable001(dtCOLUM002Source, GROUPBYNAME);
                     break;
                 case "GOUPBY_002"://全部合并
                     //排除REPORT_URL和A1,A2...A32 组成新的table
                     dtResult = MergeDataTable002(dtCOLUM002Source);
                     break;
                 case "GOUPBY_003"://行转列合并
+                    dtResult = MergeDataTable003(dtCOLUM002Source, GROUPBYNAME, GROUPBYNAME_C);
                     break;
                 default:
                     //不分组直接使用
@@ -2914,6 +2916,7 @@ ORDER BY
             return string.Join(", ", escapedValues);
         }
 
+        //全部合并
         private DataTable MergeDataTable002(DataTable sourceTable) {
             // 1. 初始化结果表结构
             DataTable resultTable = new DataTable();
@@ -2968,6 +2971,143 @@ ORDER BY
             newRow["样本合并值"] = string.Join(";", rowMergedValues);
 
             resultTable.Rows.Add(newRow);
+            return resultTable;
+        }
+
+        //分组合并
+        private DataTable MergeDataTable001(DataTable dtCOLUM002Source, string gROUPBYNAME) {
+            // 检查输入参数
+            if (dtCOLUM002Source == null || dtCOLUM002Source.Rows.Count == 0)
+                return new DataTable();
+
+            // 分割分组列名
+            string[] groupByColumns = gROUPBYNAME.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            // 验证分组列是否存在
+            foreach (string colName in groupByColumns) {
+                if (!dtCOLUM002Source.Columns.Contains(colName)) {
+                    throw new ArgumentException($"分组列 '{colName}' 不存在于数据源中。");
+                }
+            }
+
+            // 创建结果表结构
+            DataTable resultTable = dtCOLUM002Source.Clone();
+
+            // 使用LINQ进行分组处理
+            var groupedRows = dtCOLUM002Source.AsEnumerable()
+                .GroupBy(row => new {
+                    Key = groupByColumns.Select(col => row[col]).ToArray()
+                });
+
+            // 处理每个分组
+            foreach (var group in groupedRows) {
+                DataRow newRow = resultTable.NewRow();
+
+                // 1. 设置分组列的值（取第一行）
+                foreach (string colName in groupByColumns) {
+                    newRow[colName] = group.First()[colName];
+                }
+
+                // 2. 处理其他列
+                foreach (DataColumn column in dtCOLUM002Source.Columns) {
+                    if (groupByColumns.Contains(column.ColumnName))
+                        continue; // 跳过分组列
+
+                    if (column.ColumnName == "Report_Url" || column.ColumnName.Contains("合并值")) {
+                        // 合并值列：使用;连接所有值
+                        var nonNullValues = group.Select(row => row[column.ColumnName])
+                                                 .Where(val => val != DBNull.Value)
+                                                 .Select(val => val.ToString());
+
+                        newRow[column.ColumnName] = string.Join(";", nonNullValues);
+                    }
+                    else {
+                        // 其他列：取第一行的值
+                        newRow[column.ColumnName] = group.First()[column.ColumnName];
+                    }
+                }
+
+                resultTable.Rows.Add(newRow);
+            }
+
+            return resultTable;
+        }
+
+        //行转列合并
+        private DataTable MergeDataTable003(DataTable dtCOLUM002Source, string gROUPBYNAME, string gROUPBYNAME_C) {
+            // 检查输入参数
+            if (dtCOLUM002Source == null || dtCOLUM002Source.Rows.Count == 0)
+                return new DataTable();
+
+            // 分割分组列名
+            string[] groupByColumns = gROUPBYNAME.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            // 验证分组列和行转列字段是否存在
+            foreach (string colName in groupByColumns) {
+                if (!dtCOLUM002Source.Columns.Contains(colName)) {
+                    throw new ArgumentException($"分组列 '{colName}' 不存在于数据源中。");
+                }
+            }
+
+            if (!dtCOLUM002Source.Columns.Contains(gROUPBYNAME_C)) {
+                throw new ArgumentException($"行转列字段 '{gROUPBYNAME_C}' 不存在于数据源中。");
+            }
+
+            // 创建结果表结构
+            DataTable resultTable = new DataTable();
+
+            // 添加分组列
+            foreach (string colName in groupByColumns) {
+                resultTable.Columns.Add(colName, dtCOLUM002Source.Columns[colName].DataType);
+            }
+
+            // 收集所有可能的行转列值，用于创建动态列
+            var pivotValues = dtCOLUM002Source.AsEnumerable()
+                .Select(row => row[gROUPBYNAME_C].ToString())
+                .Distinct()
+                .ToList();
+
+            // 为每个行转列值创建附件合并值和样本合并值列
+            foreach (string pivotValue in pivotValues) {
+                resultTable.Columns.Add($"{pivotValue}_附件合并值", typeof(string));
+                resultTable.Columns.Add($"{pivotValue}_样本合并值", typeof(string));
+            }
+
+            // 使用LINQ进行分组处理
+            var groupedRows = dtCOLUM002Source.AsEnumerable()
+                .GroupBy(row => new {
+                    Key = groupByColumns.Select(col => row[col]).ToArray()
+                });
+
+            // 处理每个分组
+            foreach (var group in groupedRows) {
+                DataRow newRow = resultTable.NewRow();
+
+                // 设置分组列的值
+                for (int i = 0; i < groupByColumns.Length; i++) {
+                    newRow[groupByColumns[i]] = group.Key.Key[i];
+                }
+
+                // 处理行转列数据
+                foreach (var row in group) {
+                    string pivotValue = row[gROUPBYNAME_C].ToString();
+
+                    // 设置附件合并值
+                    string attachmentColumn = $"{pivotValue}_附件合并值";
+                    if (resultTable.Columns.Contains(attachmentColumn)) {
+                        newRow[attachmentColumn] = row["附件合并值"];
+                    }
+
+                    // 设置样本合并值
+                    string sampleColumn = $"{pivotValue}_样本合并值";
+                    if (resultTable.Columns.Contains(sampleColumn)) {
+                        newRow[sampleColumn] = row["样本合并值"];
+                    }
+                }
+
+                resultTable.Rows.Add(newRow);
+            }
+
             return resultTable;
         }
 
@@ -3052,6 +3192,12 @@ ORDER BY
             }
             foreach (DataRow drVLOOKID in dtVLOOKID.Rows) {
                 string VLOOKID = drVLOOKID[0].ToString();
+                string COC_VLOOKCODE = Db.Ado.GetString($@"select TOP 1 COC_VLOOKCODE from COC_VLOOK WHERE COC_VLOOKID='{VLOOKID}'");
+                if (!string.IsNullOrEmpty(parm.VLOOKCODE)) {
+                    if(parm.VLOOKCODE != COC_VLOOKCODE) {
+                        continue;
+                    }
+                }
                 try {
                     DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID, parm.FIX_VALUE);
                     dtCOCVLOOK.TableName = VLOOKID;

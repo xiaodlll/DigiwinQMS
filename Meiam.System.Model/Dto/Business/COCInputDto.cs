@@ -19,6 +19,14 @@ namespace Meiam.System.Model.Dto {
         public string COCID { get; set; }
 
         /// <summary>
+        /// 描述 : VLOOKCODE 
+        /// 空值 : False
+        /// 默认 : 
+        /// </summary>
+        [Display(Name = "VLOOKCODE")]
+        public string VLOOKCODE { get; set; }
+
+        /// <summary>
         /// 描述 : FIX_VALUE 
         /// 空值 : False
         /// 默认 : 
@@ -34,4 +42,5 @@ namespace Meiam.System.Model.Dto {
         [Display(Name = "ID")]
         public string ID { get; set; }
     }
+
 }
