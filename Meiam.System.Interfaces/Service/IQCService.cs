@@ -416,7 +416,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             Position = AxisPosition.Bottom,
             Title = "变形(mm)",
             Minimum = 0,
-            Maximum = xMax
+            Maximum = xMax,
+                MajorGridlineStyle = OxyPlot.LineStyle.Solid,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                MajorGridlineColor = OxyColors.LightGray,
+                MinorGridlineColor = OxyColors.LightGray
             });
 
             // 创建一个线性坐标轴作为 Y 轴
@@ -424,7 +428,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 Position = AxisPosition.Left,
                 Title = "力(gt)",
                 Minimum = 0,
-                Maximum = yMax
+                Maximum = yMax,
+                MajorGridlineStyle = OxyPlot.LineStyle.Solid,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                MajorGridlineColor = OxyColors.LightGray,
+                MinorGridlineColor = OxyColors.LightGray
             });
 
             int i = 1;
