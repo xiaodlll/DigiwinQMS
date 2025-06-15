@@ -2870,8 +2870,8 @@ ORDER BY
                 string COLUM001ID = drWhere["COLUM001ID"].ToString();
                 string whereField = Db.Ado.GetString($@"select WHEREFILED,BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                 string whereValue = drWhere["WHEREVALUE"].ToString();
-                if (whereValue.Contains(",") || whereValue.Contains("，")) {
-                    STRSQL += " AND " + whereField + " IN (" + GetSqlInString(whereValue.Split(new string[] { ",", "，" }, StringSplitOptions.RemoveEmptyEntries)) + ")";
+                if (whereValue.Contains(";") || whereValue.Contains("；")) {
+                    STRSQL += " AND " + whereField + " IN (" + GetSqlInString(whereValue.Split(new string[] { ";", "；" }, StringSplitOptions.RemoveEmptyEntries)) + ")";
                 }
                 else {
                     STRSQL += " AND " + whereField + $" = '{whereValue}'";
