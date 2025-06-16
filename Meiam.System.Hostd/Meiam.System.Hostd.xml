@@ -95,6 +95,21 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="T:Meiam.System.Hostd.Controllers.Bisuness.MSController">
+            <summary>
+            MS
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Bisuness.MSController._logger">
+            <summary>
+            日志管理接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Bisuness.MSController._msService">
+            <summary>
+            项目Bom接口
+            </summary>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口

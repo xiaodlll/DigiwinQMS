@@ -8,6 +8,7 @@
 using Meiam.System.Model;
 using System.Threading.Tasks;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace Meiam.System.Interfaces
 {
@@ -18,106 +19,116 @@ namespace Meiam.System.Interfaces
         {
         }
 
-        #region ERP收料通知单
-        [HttpPost("lotNotice")]
-        public void PostLotNotice(LotNoticeRequest request)
+        private readonly ILogger<MSService> _logger;
+
+        public MSService(IUnitOfWork unitOfWork, ILogger<MSService> logger) : base(unitOfWork)
         {
+            _logger = logger;
+        }
+
+        #region ERP收料通知单
+        public async Task<ApiResponse> ProcessLotNoticeAsync(LotNoticeRequest request)
+        {
+            _logger.LogInformation("开始处理收料通知单，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
             try
             {
-                // 验证请求模型数据
-                if (!ModelState.IsValid)
+                // 验证数据
+                if (request.LOT_QTY <= 0)
                 {
-                    var errorMessages = string.Join("; ", ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage));
-
-                    //TODO: logger
-
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        message = $"收料通知单接收失败，原因：{errorMessages}"
-                    });
+                    _logger.LogWarning("到货数量无效: {LotQty}", request.LOT_QTY);
+                    throw new ArgumentException("到货数量必须大于0");
                 }
 
-                // TODO: 实际业务逻辑处理
+                // 生成检验单号
+                var inspectionId = GenerateInspectionId();
+                _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
+
+                // 模拟保存到数据库
+                _logger.LogDebug("正在保存收料通知单到数据库...");
+                // TODO:await SaveToDatabase(request, inspectionId);
 
 
-                //TODO: logger
+                await Task.Delay(100); // 模拟异步操作
 
+                _logger.LogInformation("收料通知单处理成功，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
 
-                return Ok(new ApiResponse
+                return new ApiResponse
                 {
                     Success = true,
-                    message = "收料通知单接收成功"
-                });
+                    Message = "收料通知单接收成功",
+                    // 可以返回生成的检验单号
+                    Data = new { InspectionId = inspectionId }
+                };
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                //TODO: logger
+                _logger.LogError(ex, "处理收料通知单失败，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
 
-                return StatusCode(500, new ApiResponse
+                return new ApiResponse
                 {
                     Success = false,
-                    message = $"收料通知单接收失败，原因：系统内部错误 - {ex.Message}"
-                });
+                    Message = $"收料通知单接收失败，原因：{ex.Message}"
+                };
             }
+        }
+
+        private string GenerateInspectionId()
+        {
+            return $"IQC-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
         }
         #endregion
 
         #region 首检单据 
-        [HttpPost("workorderSync")]
-        public async Task<IActionResult> WorkOrderSync(WorkOrderSyncRequest request)
+        public async Task<ApiResponse> ProcessWorkOrderAsync(WorkOrderSyncRequest request)
         {
+            _logger.LogInformation("开始同步工单首检数据，工单号: {MOID}", request.MOID);
+
             try
             {
-                // 验证模型
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
-                        .ToList();
+                // 1. 验证数据
+                ValidateRequest(request);
 
-                    //TODO: logger
+                // 2. 业务处理（示例）
+                _logger.LogDebug("正在处理首检单据...");
+                await ProcessFirstArticleInspection(request);
 
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        Message = $"MES 工单数据同步失败：{string.Join("; ", errors)}"
-                    });
-                }
+                _logger.LogInformation("工单首检数据同步成功，工单号: {MOID}", request.MOID);
 
-                // TODO: 处理工单同步逻辑
-                var result = false;
-
-                if (!result.Success)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        Message = $"MES 工单数据同步失败：{result.Message}"
-                    });
-                }
-
-                //TODO: logger
-
-                return Ok(new ApiResponse
+                return new ApiResponse
                 {
                     Success = true,
-                    Message = "MES 工单数据同步成功"
-                });
+                    Message = "MES 工单数据同步成功",
+                    Data = new { InspectionType = "FAI" }
+                };
             }
             catch (Exception ex)
             {
-                //TODO: logger
-
-                return StatusCode(500, new ApiResponse
+                _logger.LogError(ex, "工单首检数据同步失败，工单号: {MOID}", request.MOID);
+                return new ApiResponse
                 {
                     Success = false,
-                    Message = $"MES 工单数据同步失败，原因：系统内部错误 - {ex.Message}"
-                });
+                    Message = $"MES 工单数据同步失败：{ex.Message}"
+                };
             }
+        }
+
+        private void ValidateRequest(WorkOrderSyncRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.MOID))
+                throw new ArgumentException("缺少工单号");
+
+            if (!DateTime.TryParse(request.CREATEDATE, out _))
+                throw new ArgumentException("无效的日期格式");
+        }
+
+        private async Task ProcessFirstArticleInspection(WorkOrderSyncRequest request)
+        {
+            // 实际业务逻辑：
+            // 1. 检查工单是否存在
+            // 2. 创建首检记录
+            // 3. 触发相关流程
+
+            await Task.Delay(100); // 模拟异步操作
         }
         #endregion
 

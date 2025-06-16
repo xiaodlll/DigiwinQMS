@@ -18,5 +18,18 @@ namespace Meiam.System.Interfaces
 {
     public interface IMSService : IBaseService<INSPECT_TENSILE_D>
     {
+        /// <summary>
+        /// ERP收料通知单
+        /// </summary>
+        /// <param name="request">收料通知单请求数据</param>
+        /// <returns>处理结果</returns>
+        Task<ApiResponse> ProcessLotNoticeAsync(LotNoticeRequest request);
+
+        /// <summary>
+        /// 首检单据
+        /// </summary>
+        /// <param name="request">首检单据请求数据</param>
+        /// <returns>处理结果</returns>
+        Task<ApiResponse> ProcessWorkOrderAsync(WorkOrderSyncRequest request);
     }
 }

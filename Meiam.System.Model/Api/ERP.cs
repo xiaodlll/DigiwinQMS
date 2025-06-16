@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 /// <summary>
 /// Summary description for Class1
@@ -70,8 +71,12 @@ namespace Meiam.System.Model
     {
         public bool Success { get; set; }
         public string Message { get; set; }
+        public object Data { get; set; }
     }
 
+    /// <summary>
+    /// 首检单据
+    /// </summary>
     public class WorkOrderSyncRequest
     {
         [Required(ErrorMessage = "工单号（MOID）是必填字段")]
@@ -94,6 +99,8 @@ namespace Meiam.System.Model
             ErrorMessage = "建单时间的格式必须是YYYY-MM-DD HH:MM:SS")]
         public string CREATEDATE { get; set; }
     }
+
+
 
     public class LotCheckResultRequest
     {
