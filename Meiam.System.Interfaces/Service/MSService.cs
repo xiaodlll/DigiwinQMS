@@ -6,6 +6,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 using Meiam.System.Model;
+using System.Threading.Tasks;
+using System;
 
 namespace Meiam.System.Interfaces
 {
@@ -15,5 +17,120 @@ namespace Meiam.System.Interfaces
         public MSService(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
         }
+
+        #region ERP收料通知单
+        [HttpPost("lotNotice")]
+        public void PostLotNotice(LotNoticeRequest request)
+        {
+            try
+            {
+                // 验证请求模型数据
+                if (!ModelState.IsValid)
+                {
+                    var errorMessages = string.Join("; ", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+
+                    //TODO: logger
+
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        message = $"收料通知单接收失败，原因：{errorMessages}"
+                    });
+                }
+
+                // TODO: 实际业务逻辑处理
+
+
+                //TODO: logger
+
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    message = "收料通知单接收成功"
+                });
+            }
+            catch (System.Exception ex)
+            {
+                //TODO: logger
+
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    message = $"收料通知单接收失败，原因：系统内部错误 - {ex.Message}"
+                });
+            }
+        }
+        #endregion
+
+        #region 首检单据 
+        [HttpPost("workorderSync")]
+        public async Task<IActionResult> WorkOrderSync(WorkOrderSyncRequest request)
+        {
+            try
+            {
+                // 验证模型
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+
+                    //TODO: logger
+
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"MES 工单数据同步失败：{string.Join("; ", errors)}"
+                    });
+                }
+
+                // TODO: 处理工单同步逻辑
+                var result = false;
+
+                if (!result.Success)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"MES 工单数据同步失败：{result.Message}"
+                    });
+                }
+
+                //TODO: logger
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "MES 工单数据同步成功"
+                });
+            }
+            catch (Exception ex)
+            {
+                //TODO: logger
+
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"MES 工单数据同步失败，原因：系统内部错误 - {ex.Message}"
+                });
+            }
+        }
+        #endregion
+
+        #region 产品检验结果 
+
+        #endregion
+
+        #region ERP物料数据同步 
+
+        #endregion
+
+        #region ERP客户同步 
+
+        #endregion
     }
 }
