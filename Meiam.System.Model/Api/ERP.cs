@@ -100,10 +100,47 @@ namespace Meiam.System.Model
         public string CREATEDATE { get; set; }
     }
 
+    /// <summary>
+    /// 收料检验结果回传ERP
+    /// </summary>
+    public class LotNoticeResultRequest
+    {
+        [Required(ErrorMessage = "内码（ID）是必填字段")]
+        public string ID { get; set; }
+
+        [Required(ErrorMessage = "内码ID（EntryID）是必填字段")]
+        public string EntryID { get; set; }
+
+        [Required(ErrorMessage = "组织内码ID（OrgID）是必填字段")]
+        public string OrgID { get; set; }
+
+        [Required(ErrorMessage = "检验结果（Result）是必填字段")]
+        public string Result { get; set; }
+
+    }
+
+    /// <summary>
+    /// 工单首检检验结果回传MES
+    /// </summary>
+    public class WorkOrderResultRequest
+    {
+        [Required(ErrorMessage = "工单单号（BillNo）是必填字段")]
+        public string BillNo { get; set; }
+
+        [Required(ErrorMessage = "内码ID（MESFirstInspectID）是必填字段")]
+        public string MESFirstInspectID { get; set; }
 
     /// <summary>
     /// 产品检验结果(入库检)
     /// </summary>
+        [Required(ErrorMessage = "组织内码ID（OrgID）是必填字段")]
+        public string OrgID { get; set; }
+
+        [Required(ErrorMessage = "检验结果（Result）是必填字段")]
+        public string Result { get; set; }
+
+    }
+
     public class LotCheckResultRequest
     {
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
@@ -117,7 +154,13 @@ namespace Meiam.System.Model
         public string ORGID { get; set; }
     }
 
-    public class CheckResultResponse: ApiResponse
+    public class ErpApiResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class CheckResultResponse
     {
         public string Result { get; set; } // 合格、不合格、未检验
     }

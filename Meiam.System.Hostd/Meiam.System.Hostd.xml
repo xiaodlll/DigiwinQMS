@@ -110,6 +110,34 @@
             项目Bom接口
             </summary>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostLotNotice(Meiam.System.Model.LotNoticeRequest)">
+            <summary>
+            ERP收料通知单
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostWorkOrderSync(Meiam.System.Model.WorkOrderSyncRequest)">
+            <summary>
+            首检单据
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostLotNoticeSync(Meiam.System.Model.LotNoticeResultRequest)">
+            <summary>
+            收料检验结果回传ERP
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostWorkOrderResultSync(Meiam.System.Model.WorkOrderResultRequest)">
+            <summary>
+            工单首检检验结果回传MES
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostLotCheckResult(Meiam.System.Model.LotCheckResultRequest)">
             <summary>
             产品检验结果(入库检)

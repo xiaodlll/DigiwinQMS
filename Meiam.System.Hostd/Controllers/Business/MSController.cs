@@ -6,12 +6,14 @@ using Meiam.System.Extensions;
 using Meiam.System.Extensions.Dto;
 using Meiam.System.Hostd.Extensions;
 using Meiam.System.Interfaces;
+using Meiam.System.Interfaces.Extensions;
 using Meiam.System.Model;
 using Meiam.System.Model.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using NPOI.HPSF;
 using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -28,7 +30,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
     /// <summary>
     /// MS
     /// </summary>
-    [Route("api/[controller]/[action]")]
+    [Route("api/erp")]
     [ApiController]
     public class MSController : BaseController
     {
@@ -51,6 +53,11 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
 
         #region ERP收料通知单
+        /// <summary>
+        /// ERP收料通知单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("lotNotice")]
         public async Task<IActionResult> PostLotNotice([FromBody] LotNoticeRequest request)
         {
@@ -82,6 +89,11 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         #endregion
 
         #region 首检单据
+        /// <summary>
+        /// 首检单据
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("workorderSync")]
         public async Task<IActionResult> PostWorkOrderSync([FromBody] WorkOrderSyncRequest request)
         {
@@ -102,6 +114,115 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             return result.Success ? Ok(result) : BadRequest(result);
         }
         #endregion
+
+        #region 收料检验结果回传ERP
+        /// <summary>
+        /// 收料检验结果回传ERP
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost("UpdateReceiveInspectResult")]
+        public async Task<IActionResult> PostLotNoticeSync([FromBody] LotNoticeResultRequest request)
+        {
+            string erpApiUrl =  AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateFirstInspectResult";
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "参数验证失败",
+                    Data = ModelState
+                });
+            }
+
+            try
+            {
+                string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
+
+                var result = JsonConvert.DeserializeObject<ApiResponse>(postResult);
+
+                if (result?.Success == true)
+                {
+                    return Ok(result);
+                }
+                else
+                {
+                    return BadRequest(result ?? new ApiResponse
+                    {
+                        Success = false,
+                        Message = "更新检验结果失败，返回内容无法解析"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "调用 ERP 接口异常");
+
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"系统异常：{ex.Message}"
+                });
+            }
+        }
+        #endregion
+
+        #region 工单首检检验结果回传MES
+        /// <summary>
+        /// 工单首检检验结果回传MES
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost("UpdateFirstInspectResult")]
+        public async Task<IActionResult> PostWorkOrderResultSync([FromBody] WorkOrderResultRequest request)
+        {
+            string erpApiUrl = AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateFirstInspectResult";
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "参数验证失败",
+                    Data = ModelState
+                });
+            }
+
+            try
+            {
+                string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
+
+                var result = JsonConvert.DeserializeObject<ApiResponse>(postResult);
+
+                if (result?.Success == true)
+                {
+                    return Ok(result);
+                }
+                else
+                {
+                    return BadRequest(result ?? new ApiResponse
+                    {
+                        Success = false,
+                        Message = "更新检验结果失败，返回内容无法解析"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "调用 ERP 接口异常");
+
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"系统异常：{ex.Message}"
+                });
+            }
+        }
+        #endregion
+
 
 
         #region 产品检验结果(入库检)
