@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using Autofac.Core;
+using Mapster;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using Meiam.System.Common;
 using Meiam.System.Extensions;
@@ -98,6 +99,33 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             }
 
             var result = await _msService.ProcessWorkOrderAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        #endregion
+
+
+        #region 产品检验结果(入库检)
+        /// <summary>
+        /// 产品检验结果(入库检)
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("lotCheckResult")]
+        public async Task<IActionResult> PostLotCheckResult([FromBody] LotCheckResultRequest request)
+        {
+            _logger.LogInformation("收到检验结果查询请求，料号: {ITEMID}", request?.ITEMID);
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("参数验证失败: {@Errors}", ModelState);
+                return BadRequest(new CheckResultResponse
+                {
+                    Success = false,
+                    Message = "参数格式错误",
+                    Result = "未检验"
+                });
+            }
+
+            var result = await _msService.ProcessLotCheckResult(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
         #endregion

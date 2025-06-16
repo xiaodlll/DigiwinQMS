@@ -101,7 +101,9 @@ namespace Meiam.System.Model
     }
 
 
-
+    /// <summary>
+    /// 产品检验结果(入库检)
+    /// </summary>
     public class LotCheckResultRequest
     {
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
@@ -115,10 +117,8 @@ namespace Meiam.System.Model
         public string ORGID { get; set; }
     }
 
-    public class CheckResultResponse
+    public class CheckResultResponse: ApiResponse
     {
-        public bool Success { get; set; }
         public string Result { get; set; } // 合格、不合格、未检验
-        public string Message { get; set; }
     }
 }

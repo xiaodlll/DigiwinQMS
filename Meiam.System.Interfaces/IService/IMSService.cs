@@ -31,5 +31,12 @@ namespace Meiam.System.Interfaces
         /// <param name="request">首检单据请求数据</param>
         /// <returns>处理结果</returns>
         Task<ApiResponse> ProcessWorkOrderAsync(WorkOrderSyncRequest request);
+
+        /// <summary>
+        /// 产品检验结果(入库检)
+        /// </summary>
+        /// <param name="request">产品检验结果(入库检)请求数据</param>
+        /// <returns>处理结果</returns>
+        Task<CheckResultResponse> ProcessLotCheckResult(LotCheckResultRequest request);
     }
 }

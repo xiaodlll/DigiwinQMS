@@ -9,6 +9,7 @@ using Meiam.System.Model;
 using System.Threading.Tasks;
 using System;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Meiam.System.Interfaces
 {
@@ -132,8 +133,66 @@ namespace Meiam.System.Interfaces
         }
         #endregion
 
-        #region 产品检验结果 
+        #region 产品检验结果(入库检) 
+        public async Task<CheckResultResponse> ProcessLotCheckResult(LotCheckResultRequest request)
+        {
+            _logger.LogInformation("开始查询检验结果，料号: {ITEMID}", request.ITEMID);
 
+            try
+            {
+                // 1. 参数验证
+                ValidateRequest(request);
+
+                // 2. 查询数据库
+                var result = await QueryLotCheckResult(request);
+
+                _logger.LogDebug("检验结果查询成功，状态: {Result}", result);
+
+                return new CheckResultResponse
+                {
+                    Success = true,
+                    Message = "调用成功",
+                    Result = MapStateToResult(result)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "检验结果查询失败");
+                return new CheckResultResponse
+                {
+                    Success = false,
+                    Message = $"API调用失败：{ex.Message}",
+                    Result = "未检验"
+                };
+            }
+        }
+
+        private void ValidateRequest(LotCheckResultRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.ITEMID))
+                throw new ArgumentException("缺少料号");
+        }
+
+        private async Task<string> QueryLotCheckResult(LotCheckResultRequest request)
+        {
+            var sql = @"";
+            return await Db.Ado.GetStringAsync(sql, new
+            {
+                request.ITEMID,
+                request.CHECKDATE,
+                request.ORGID
+            });
+        }
+
+        private string MapStateToResult(string state)
+        {
+            return state switch
+            {
+                "PSTATE_003" => "合格",
+                "PSTATE_004" => "不合格",
+                _ => "未检验"
+            };
+        }
         #endregion
 
         #region ERP物料数据同步 
