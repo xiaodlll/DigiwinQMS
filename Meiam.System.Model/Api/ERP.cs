@@ -160,7 +160,7 @@ namespace Meiam.System.Model
         public string Message { get; set; }
     }
 
-    public class CheckResultResponse
+    public class CheckResultResponse : ApiResponse
     {
         public string Result { get; set; } // 合格、不合格、未检验
     }
