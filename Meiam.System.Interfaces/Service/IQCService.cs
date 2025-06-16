@@ -5,44 +5,30 @@
 //     author MEIAM
 // </auto-generated>
 //------------------------------------------------------------------------------
-using Meiam.System.Model;
-using Meiam.System.Model.Dto;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using SqlSugar;
-using System.Linq;
-using System;
-using System.IO;
-using OxyPlot.Axes;
-using OxyPlot.Series;
-using OxyPlot;
-using OxyPlot.Core.Drawing;
-using OxyPlot.Legends;
-using Microsoft.Data.SqlClient;
-using System.Data;
-using Microsoft.Extensions.Options;
-using DotNetCore.CAP;
-using Mapster.Utils;
-using Newtonsoft.Json.Linq;
-using System.Text.RegularExpressions;
-using SqlSugar.Extensions;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Reflection.Emit;
-using Meiam.System.Common;
-using Microsoft.AspNetCore.Mvc;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
-using NPOI.SS.Formula.Functions;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
+using Meiam.System.Common;
+using Meiam.System.Interfaces.Extensions;
+using Meiam.System.Model;
+using Meiam.System.Model.Dto;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Core.Drawing;
+using OxyPlot.Legends;
+using OxyPlot.Series;
+using SqlSugar;
+using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using HorizontalAlignment = NPOI.SS.UserModel.HorizontalAlignment;
 using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
-using Meiam.System.Interfaces.Extensions;
-using System.Security.Policy;
-using System.Text;
 
 namespace Meiam.System.Interfaces
 {
@@ -416,7 +402,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             Position = AxisPosition.Bottom,
             Title = "变形(mm)",
             Minimum = 0,
-            Maximum = xMax
+            Maximum = xMax,
+                MajorGridlineStyle = OxyPlot.LineStyle.Solid,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                MajorGridlineColor = OxyColors.LightGray,
+                MinorGridlineColor = OxyColors.LightGray
             });
 
             // 创建一个线性坐标轴作为 Y 轴
@@ -424,7 +414,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 Position = AxisPosition.Left,
                 Title = "力(gt)",
                 Minimum = 0,
-                Maximum = yMax
+                Maximum = yMax,
+                MajorGridlineStyle = OxyPlot.LineStyle.Solid,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                MajorGridlineColor = OxyColors.LightGray,
+                MinorGridlineColor = OxyColors.LightGray
             });
 
             int i = 1;
