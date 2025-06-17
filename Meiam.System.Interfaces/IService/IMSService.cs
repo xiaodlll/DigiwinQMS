@@ -38,5 +38,19 @@ namespace Meiam.System.Interfaces
         /// <param name="request">产品检验结果(入库检)请求数据</param>
         /// <returns>处理结果</returns>
         Task<CheckResultResponse> ProcessLotCheckResult(LotCheckResultRequest request);
+
+        /// <summary>
+        /// ERP物料数据同步
+        /// </summary>
+        /// <param name="materials">ERP物料数据同步请求数据</param>
+        /// <returns>处理结果</returns>
+        Task<MaterialSyncResponse> ProcessMaterialSyncBatch(List<MaterialSyncItem> materials);
+
+        /// <summary>
+        /// ERP客户同步
+        /// </summary>
+        /// <param name="materials">ERP客户同步请求数据</param>
+        /// <returns>处理结果</returns>
+        Task<CustomerSyncResponse> ProcessCustomersSynBatch(List<CustomerSyncItem> customers);
     }
 }

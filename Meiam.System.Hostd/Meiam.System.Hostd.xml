@@ -144,6 +144,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostMaterialSyncBatch(System.Collections.Generic.List{Meiam.System.Model.MaterialSyncItem})">
+            <summary>
+            ERP物料数据同步
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostCustomerSyncBatch(System.Collections.Generic.List{Meiam.System.Model.CustomerSyncItem})">
+            <summary>
+            ERP客户同步
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口

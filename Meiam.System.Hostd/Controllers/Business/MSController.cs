@@ -223,8 +223,6 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         }
         #endregion
 
-
-
         #region 产品检验结果(入库检)
         /// <summary>
         /// 产品检验结果(入库检)
@@ -248,6 +246,60 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
             var result = await _msService.ProcessLotCheckResult(request);
             return result.Success ? Ok(result) : BadRequest(result);
+        }
+        #endregion
+
+        #region ERP物料数据同步
+        /// <summary>
+        /// ERP物料数据同步
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("materialSyncBatch")]
+        public async Task<IActionResult> PostMaterialSyncBatch([FromBody] List<MaterialSyncItem> materials)
+        {
+            if (materials == null || materials.Count == 0)
+            {
+                _logger.LogWarning("接收到空物料列表");
+                return BadRequest(new MaterialSyncResponse
+                {
+                    Success = false,
+                    Message = "物料列表不能为空"
+                });
+            }
+
+            var response = await _msService.ProcessMaterialSyncBatch(materials);
+
+            return response.Success ?
+                Ok(response) :
+                BadRequest(response);
+        }
+        #endregion
+
+        #region ERP客户同步
+        /// <summary>
+        /// ERP客户同步
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("customerSyncBatch")]
+        public async Task<IActionResult> PostCustomerSyncBatch([FromBody] List<CustomerSyncItem> customers)
+        {
+            _logger.LogInformation("收到客户同步请求，数量: {Count}", customers?.Count);
+
+            if (customers == null || customers.Count == 0)
+            {
+                _logger.LogWarning("无效的请求数据");
+                return BadRequest(new CustomerSyncResponse
+                {
+                    Success = false,
+                    Message = "请求数据不能为空"
+                });
+            }
+
+            var response = await _msService.ProcessCustomersSynBatch(customers);
+
+            return response.Success ?
+                Ok(response) :
+                BadRequest(response);
         }
         #endregion
     }

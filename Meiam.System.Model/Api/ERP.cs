@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 /// <summary>
@@ -130,9 +131,6 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "内码ID（MESFirstInspectID）是必填字段")]
         public string MESFirstInspectID { get; set; }
 
-    /// <summary>
-    /// 产品检验结果(入库检)
-    /// </summary>
         [Required(ErrorMessage = "组织内码ID（OrgID）是必填字段")]
         public string OrgID { get; set; }
 
@@ -141,6 +139,15 @@ namespace Meiam.System.Model
 
     }
 
+    public class ErpApiResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// 产品检验结果(入库检)
+    /// </summary>
     public class LotCheckResultRequest
     {
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
@@ -154,14 +161,63 @@ namespace Meiam.System.Model
         public string ORGID { get; set; }
     }
 
-    public class ErpApiResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; }
-    }
-
     public class CheckResultResponse : ApiResponse
     {
         public string Result { get; set; } // 合格、不合格、未检验
+    }
+
+    /// <summary>
+    /// ERP物料数据同步
+    /// </summary>
+    public class MaterialSyncItem
+    {
+        [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
+        public string ITEMID { get; set; }
+
+        [Required(ErrorMessage = "品名（ITEMNAME）是必填字段")]
+        public string ITEMNAME { get; set; }
+
+        [Required(ErrorMessage = "组织内码ID（ORGID）是必填字段")]
+        public string ORGID { get; set; }
+    }
+
+    public class MaterialSyncResponse : ApiResponse
+    {
+        public int TotalCount { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailedCount { get; set; }
+        public List<MaterialSyncDetail> Details { get; set; } = new();
+    }
+
+    public class MaterialSyncDetail
+    {
+        public string ITEMID { get; set; }
+        public string Error { get; set; }
+    }
+
+    /// <summary>
+    /// ERP客户同步
+    /// </summary>
+    public class CustomerSyncItem
+    {
+        public string CUSTOMCODE { get; set; }
+
+        public string CUSTOMNAME { get; set; }
+
+        public string ORGID { get; set; }
+    }
+
+    public class CustomerSyncResponse : ApiResponse
+    {
+        public int TotalCount { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailedCount { get; set; }
+        public List<CustomerSyncDetail> Details { get; set; } = new();
+    }
+
+    public class CustomerSyncDetail
+    {
+        public string CUSTOMCODE { get; set; }
+        public string Error { get; set; }
     }
 }

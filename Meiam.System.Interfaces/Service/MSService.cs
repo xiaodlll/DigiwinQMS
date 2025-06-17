@@ -10,6 +10,10 @@ using System.Threading.Tasks;
 using System;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using Microsoft.Data.SqlClient;
+using System.Data.Common;
+using Microsoft.Extensions.Configuration;
 
 namespace Meiam.System.Interfaces
 {
@@ -21,10 +25,13 @@ namespace Meiam.System.Interfaces
         }
 
         private readonly ILogger<MSService> _logger;
+        private readonly string _connectionString;
 
-        public MSService(IUnitOfWork unitOfWork, ILogger<MSService> logger) : base(unitOfWork)
+        public MSService(IUnitOfWork unitOfWork, ILogger<MSService> logger, IConfiguration config) : base(unitOfWork)
         {
             _logger = logger;
+            _connectionString = config.GetConnectionString("ConnectionString");
+
         }
 
         #region ERP收料通知单
@@ -44,9 +51,9 @@ namespace Meiam.System.Interfaces
                 var inspectionId = GenerateInspectionId();
                 _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
 
-                // 模拟保存到数据库
+                // 保存到数据库
                 _logger.LogDebug("正在保存收料通知单到数据库...");
-                // TODO:await SaveToDatabase(request, inspectionId);
+                await SaveToDatabase(request, inspectionId);
 
 
                 await Task.Delay(100); // 模拟异步操作
@@ -77,6 +84,71 @@ namespace Meiam.System.Interfaces
         {
             return $"IQC-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
         }
+
+        public async Task SaveToDatabase(LotNoticeRequest request, string inspectionId)
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+            using var transaction = await connection.BeginTransactionAsync();
+
+            try
+            {
+                // 保存数据
+                //await SaveMainInspection(connection, transaction, request, inspectionId);
+                
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        //private async Task SaveMainInspection(SqlConnection conn, DbTransaction trans,
+        //    LotNoticeRequest request, string inspectionId)
+        //{
+        //    const string sql = @"
+        //        INSERT INTO INSPECT_IQC (
+        //            TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
+        //            INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
+        //            LOT_QTY, ITEMID, LOTNO, 
+        //            APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
+        //            PRO_DATE, LENGTH, WIDTH,
+        //            INUM, ENTRYID, ORGID,
+        //            KEEID
+        //        ) VALUES (
+        //            @TenId, @InspectIqcId, @InspectIqcCreateUser, 
+        //            getdate(), @ItemName, @ErpArrivedId,
+        //            @LotQty, @ItemId, @LotNo, 
+        //            @ApplyDate, @ItemSpecification, @QuaDate,
+        //            @ProDate, @Length, @Width,
+        //            @Inum, @EntryId, @OrgId,
+        //            @KeeId
+        //        )";
+            
+        //    await conn.ExecuteAsync(sql, new
+        //    {
+        //        TenId = "001",
+        //        InspectIqcId = inspectionId,
+        //        InspectIqcCreateUser = "system",
+        //        ItemName = request.ITEMNAME,
+        //        ErpArrivedId = request.ERP_ARRIVEDID,
+        //        LotQty = request.LOT_QTY,
+        //        ItemId = request.ITEMID,
+        //        LotNo = request.LOTNO,
+        //        ApplyDate = request.APPLY_DATE,
+        //        ItemSpecification = request.MODEL_SPEC,
+        //        QuaDate = request.QUA_DATE,
+        //        ProDate = request.PRO_DATE,
+        //        Length = request.LENGTH,
+        //        Width = request.WIDTH,
+        //        Inum = request.INUM,
+        //        EntryId = request.ENTRYID,
+        //        OrgId = request.ORGID,
+        //        KeeId = request.ID,
+        //    }, transaction: trans);
+        //}
         #endregion
 
         #region 首检单据 
@@ -124,10 +196,7 @@ namespace Meiam.System.Interfaces
 
         private async Task ProcessFirstArticleInspection(WorkOrderSyncRequest request)
         {
-            // 实际业务逻辑：
-            // 1. 检查工单是否存在
-            // 2. 创建首检记录
-            // 3. 触发相关流程
+            // TODO
 
             await Task.Delay(100); // 模拟异步操作
         }
@@ -196,11 +265,203 @@ namespace Meiam.System.Interfaces
         #endregion
 
         #region ERP物料数据同步 
+        public async Task<MaterialSyncResponse> ProcessMaterialSyncBatch(List<MaterialSyncItem> materials)
+        {
+            _logger.LogInformation("开始同步物料数据，共 {Count} 条", materials.Count);
+
+            var response = await BatchSyncMaterialsAsync(materials);
+
+            if (response.FailedCount > 0)
+            {
+                _logger.LogWarning("物料同步完成，失败 {FailedCount} 条", response.FailedCount);
+            }
+            else
+            {
+                _logger.LogInformation("物料同步全部成功");
+            }
+
+            return response;
+        }
+
+        public async Task<MaterialSyncResponse> BatchSyncMaterialsAsync(List<MaterialSyncItem> materials)
+        {
+            var response = new MaterialSyncResponse
+            {
+                TotalCount = materials.Count
+            };
+
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+            using var transaction = await connection.BeginTransactionAsync();
+
+            try
+            {
+                foreach (var item in materials)
+                {
+                    try
+                    {
+                        // 同步到ITEM表
+                        //await SyncItemTable(connection,transaction,item);
+
+                        response.SuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        response.Details.Add(new MaterialSyncDetail
+                        {
+                            ITEMID = item.ITEMID,
+                            Error = ex.Message
+                        });
+                        response.FailedCount++;
+                    }
+                }
+
+                if (response.FailedCount == 0)
+                {
+                    await transaction.CommitAsync();
+                    response.Success = true;
+                    response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                }
+                else
+                {
+                    await transaction.RollbackAsync();
+                    response.Success = false;
+                    response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            return response;
+        }
+
+        //private async Task SyncItemTable(SqlConnection conn, DbTransaction trans, MaterialSyncItem item)
+        //{
+        //const string sql = @"
+        //        MERGE INTO ITEM AS target
+        //        USING (SELECT @ItemId AS ITEMID, @ItemCode AS ITEMCODE, @ItemName AS ITEMNAME) AS source
+        //        ON (target.ITEMID = source.ITEMID)
+        //        WHEN MATCHED THEN
+        //            UPDATE SET 
+        //                ITEMCODE = source.ITEMCODE,
+        //                ITEMNAME = source.ITEMNAME,
+        //                ORGID = CASE 
+        //                          WHEN target.ORGID IS NULL THEN '001'
+        //                          ELSE target.ORGID + ',' + RIGHT('00' + CAST(
+        //                               (SELECT COUNT(*) FROM STRING_SPLIT(target.ORGID, ',')) + 1 AS VARCHAR(3)), 3)
+        //                        END
+        //        WHEN NOT MATCHED THEN
+        //            INSERT (ITEMID, ITEMCODE, ORGID, ITEMNAME)
+        //            VALUES (source.ITEMID, source.ITEMCODE, '001', source.ITEMNAME);";
+
+        //    await conn.ExecuteAsync(sql, new
+        //    {
+        //        ItemId = item.ITEMID,
+        //        ItemCode = item.ITEMID,
+        //        ItemName = item.ITEMNAME
+        //    }, transaction: trans);
+        //}
 
         #endregion
 
         #region ERP客户同步 
+        public async Task<CustomerSyncResponse> ProcessCustomersSynBatch(List<CustomerSyncItem> customers)
+        {
+            _logger.LogInformation("开始同步客户数据，数量: {Count}", customers?.Count);
 
+            if (customers == null || customers.Count == 0)
+            {
+                _logger.LogWarning("接收到空客户列表");
+                return new CustomerSyncResponse
+                {
+                    Success = false,
+                    Message = "客户列表不能为空",
+                    TotalCount = 0
+                };
+            }
+
+            var response = await BatchSyncCustomersAsync(customers);
+
+            if (response.FailedCount > 0)
+            {
+                _logger.LogWarning("客户同步完成，失败 {FailedCount} 条", response.FailedCount);
+            }
+            else
+            {
+                _logger.LogInformation("客户同步全部成功");
+            }
+
+            return response;
+        }
+
+        public async Task<CustomerSyncResponse> BatchSyncCustomersAsync(List<CustomerSyncItem> customers)
+        {
+            var response = new CustomerSyncResponse { TotalCount = customers.Count };
+
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+            using var transaction = await connection.BeginTransactionAsync();
+
+            try
+            {
+                foreach (var customer in customers)
+                {
+                    try
+                    {
+                        // 同步表
+                        //await SyncCustomerTable(connection, transaction, customer);
+
+                        response.SuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        response.Details.Add(new CustomerSyncDetail
+                        {
+                            CUSTOMCODE = customer.CUSTOMCODE,
+                            Error = ex.Message
+                        });
+                        response.FailedCount++;
+                    }
+                }
+
+                response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                response.Success = response.FailedCount == 0;
+
+                if (response.Success)
+                    await transaction.CommitAsync();
+                else
+                    await transaction.RollbackAsync();
+
+                return response;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        //private async Task SyncCustomerTable(SqlConnection conn, DbTransaction trans, CustomerSyncItem customer)
+        //{
+        //    const string sql = @"
+        //        MERGE INTO CUSTOM AS target
+        //        USING (SELECT @CustomCode AS CUSTOMCODE, @CustomName AS CUSTOMNAME) AS source
+        //        ON target.CUSTOMCODE = source.CUSTOMCODE
+        //        WHEN MATCHED THEN
+        //            UPDATE SET CUSTOMNAME = source.CUSTOMNAME, CUSTOMID = source.CUSTOMCODE
+        //        WHEN NOT MATCHED THEN
+        //            INSERT (CUSTOMID, CUSTOMCODE, CUSTOMNAME)
+        //            VALUES (source.CUSTOMCODE, source.CUSTOMCODE, source.CUSTOMNAME);";
+
+        //    await conn.ExecuteAsync(sql, new
+        //    {
+        //        CustomCode = customer.CUSTOMCODE,
+        //        CustomName = customer.CUSTOMNAME
+        //    }, transaction: trans);
+        //}
         #endregion
     }
 }
