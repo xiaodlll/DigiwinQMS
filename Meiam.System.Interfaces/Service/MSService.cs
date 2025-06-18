@@ -14,6 +14,11 @@ using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using System.Data.Common;
 using Microsoft.Extensions.Configuration;
+using DocumentFormat.OpenXml.Office2013.Word;
+using Meiam.System.Common;
+using SqlSugar;
+using System.Data;
+using System.Linq;
 
 namespace Meiam.System.Interfaces
 {
@@ -27,11 +32,9 @@ namespace Meiam.System.Interfaces
         private readonly ILogger<MSService> _logger;
         private readonly string _connectionString;
 
-        public MSService(IUnitOfWork unitOfWork, ILogger<MSService> logger, IConfiguration config) : base(unitOfWork)
+        public MSService(IUnitOfWork unitOfWork, ILogger<MSService> logger) : base(unitOfWork)
         {
             _logger = logger;
-            _connectionString = config.GetConnectionString("ConnectionString");
-
         }
 
         #region ERP收料通知单
@@ -53,10 +56,9 @@ namespace Meiam.System.Interfaces
 
                 // 保存到数据库
                 _logger.LogDebug("正在保存收料通知单到数据库...");
-                await SaveToDatabase(request, inspectionId);
+                SaveToDatabase(request, inspectionId);
 
-
-                await Task.Delay(100); // 模拟异步操作
+                await Task.Delay(10); // 模拟异步操作
 
                 _logger.LogInformation("收料通知单处理成功，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
 
@@ -82,73 +84,94 @@ namespace Meiam.System.Interfaces
 
         private string GenerateInspectionId()
         {
-            return $"IQC-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
+            string INSPECT_CODE = "";//检验单号
+
+            const string sql = @"
+                DECLARE @INSPECT_CODE  	  NVARCHAR(200) 
+
+                --获得IQC检验单号
+                SELECT TOP 1 @INSPECT_CODE=CAST(CAST(dbo.getNumericValue(INSPECT_IQCCODE) AS DECIMAL)+1 AS CHAR)  FROM  INSPECT_IQC
+                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_IQCCODE,'IQC_',''),'') like REPLACE(CONVERT(VARCHAR(7),GETDATE(),120),'-','')+'%' 
+                ORDER BY INSPECT_IQCCODE DESC
+
+                IF(ISNULL(@INSPECT_CODE,'')='')
+                   SET @INSPECT_CODE ='IQC_'+REPLACE(CONVERT(VARCHAR(7),GETDATE(),120),'-','')+'0001'
+                ELSE 
+                   SET @INSPECT_CODE ='IQC_'+@INSPECT_CODE
+
+                SELECT @INSPECT_CODE AS INSPECT_CODE
+                ";
+
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql);
+            if (dataTable.Rows.Count > 0)
+            {
+                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
+            }
+            return INSPECT_CODE;
         }
 
-        public async Task SaveToDatabase(LotNoticeRequest request, string inspectionId)
+        public void SaveToDatabase(LotNoticeRequest request, string inspectionId)
         {
-            await using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = await connection.BeginTransactionAsync();
-
             try
             {
                 // 保存数据
-                //await SaveMainInspection(connection, transaction, request, inspectionId);
-                
-                await transaction.CommitAsync();
+                SaveMainInspection(request, inspectionId);
             }
             catch
             {
-                await transaction.RollbackAsync();
                 throw;
             }
         }
 
-        //private async Task SaveMainInspection(SqlConnection conn, DbTransaction trans,
-        //    LotNoticeRequest request, string inspectionId)
-        //{
-        //    const string sql = @"
-        //        INSERT INTO INSPECT_IQC (
-        //            TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
-        //            INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
-        //            LOT_QTY, ITEMID, LOTNO, 
-        //            APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
-        //            PRO_DATE, LENGTH, WIDTH,
-        //            INUM, ENTRYID, ORGID,
-        //            KEEID
-        //        ) VALUES (
-        //            @TenId, @InspectIqcId, @InspectIqcCreateUser, 
-        //            getdate(), @ItemName, @ErpArrivedId,
-        //            @LotQty, @ItemId, @LotNo, 
-        //            @ApplyDate, @ItemSpecification, @QuaDate,
-        //            @ProDate, @Length, @Width,
-        //            @Inum, @EntryId, @OrgId,
-        //            @KeeId
-        //        )";
-            
-        //    await conn.ExecuteAsync(sql, new
-        //    {
-        //        TenId = "001",
-        //        InspectIqcId = inspectionId,
-        //        InspectIqcCreateUser = "system",
-        //        ItemName = request.ITEMNAME,
-        //        ErpArrivedId = request.ERP_ARRIVEDID,
-        //        LotQty = request.LOT_QTY,
-        //        ItemId = request.ITEMID,
-        //        LotNo = request.LOTNO,
-        //        ApplyDate = request.APPLY_DATE,
-        //        ItemSpecification = request.MODEL_SPEC,
-        //        QuaDate = request.QUA_DATE,
-        //        ProDate = request.PRO_DATE,
-        //        Length = request.LENGTH,
-        //        Width = request.WIDTH,
-        //        Inum = request.INUM,
-        //        EntryId = request.ENTRYID,
-        //        OrgId = request.ORGID,
-        //        KeeId = request.ID,
-        //    }, transaction: trans);
-        //}
+        private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
+        {
+            const string sql = @"
+                INSERT INTO INSPECT_IQC (
+                    TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
+                    INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
+                    LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
+                    APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
+                    PRO_DATE, LENGTH, WIDTH,
+                    INUM, ENTRYID, ORGID,
+                    KEEID
+                ) VALUES (
+                    @TenId, @InspectIqcId, @InspectIqcCreateUser, 
+                    getdate(), @ItemName, @ErpArrivedId,
+                    @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
+                    @ApplyDate, @ItemSpecification, @QuaDate,
+                    @ProDate, @Length, @Width,
+                    @Inum, @EntryId, @OrgId,
+                    @KeeId
+                )";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@TenId", "001"),
+                new SugarParameter("@InspectIqcId", inspectionId),
+                new SugarParameter("@InspectIqcCreateUser", "system"),
+                new SugarParameter("@ItemName", request.ITEMNAME),
+                new SugarParameter("@ErpArrivedId", request.ERP_ARRIVEDID),
+                new SugarParameter("@LotQty", request.LOT_QTY),
+                new SugarParameter("@InspectIqcCode", inspectionId),
+                new SugarParameter("@ItemId", request.ITEMID),
+                new SugarParameter("@LotNo", request.LOTNO),
+                new SugarParameter("@ApplyDate", request.APPLY_DATE),
+                new SugarParameter("@ItemSpecification", request.MODEL_SPEC),
+                new SugarParameter("@QuaDate", request.QUA_DATE),
+                new SugarParameter("@ProDate", request.PRO_DATE),
+                new SugarParameter("@Length", request.LENGTH),
+                new SugarParameter("@Width", request.WIDTH),
+                new SugarParameter("@Inum", request.INUM),
+                new SugarParameter("@EntryId", request.ENTRYID),
+                new SugarParameter("@OrgId", request.ORGID),
+                new SugarParameter("@KeeId", request.ID)
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
         #endregion
 
         #region 首检单据 
@@ -158,20 +181,24 @@ namespace Meiam.System.Interfaces
 
             try
             {
-                // 1. 验证数据
+                // 验证数据
                 ValidateRequest(request);
 
-                // 2. 业务处理（示例）
-                _logger.LogDebug("正在处理首检单据...");
-                await ProcessFirstArticleInspection(request);
+                // 生成FPI检验单号
+                var inspectionFpiId = GenerateInspectionFpiId();
+                _logger.LogInformation("生成检验单号: {InspectionFpiId}", inspectionFpiId);
 
+                // 业务处理
+                _logger.LogDebug("正在处理首检单据...");
+                ProcessFirstArticleInspection(request, inspectionFpiId);
+
+                await Task.Delay(10);
                 _logger.LogInformation("工单首检数据同步成功，工单号: {MOID}", request.MOID);
 
                 return new ApiResponse
                 {
                     Success = true,
                     Message = "MES 工单数据同步成功",
-                    Data = new { InspectionType = "FAI" }
                 };
             }
             catch (Exception ex)
@@ -194,11 +221,78 @@ namespace Meiam.System.Interfaces
                 throw new ArgumentException("无效的日期格式");
         }
 
-        private async Task ProcessFirstArticleInspection(WorkOrderSyncRequest request)
+        private string GenerateInspectionFpiId()
         {
-            // TODO
+            string INSPECT_CODE = "";//检验单号
 
-            await Task.Delay(100); // 模拟异步操作
+            const string sql = @"
+                DECLARE @INSPECT_CODE  	  NVARCHAR(200) 
+
+                --获得FPI检验单号
+                SELECT TOP 1 @INSPECT_CODE=CAST(CAST(dbo.getNumericValue(INSPECT_FPICODE) AS DECIMAL)+1 AS CHAR)  FROM  INSPECT_FPI
+                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_FPICODE,'FPI_',''),'') like REPLACE(CONVERT(VARCHAR(7),GETDATE(),120),'-','')+'%' 
+                ORDER BY INSPECT_FPICODE DESC
+
+                IF(ISNULL(@INSPECT_CODE,'')='')
+                   SET @INSPECT_CODE ='FPI_'+REPLACE(CONVERT(VARCHAR(7),GETDATE(),120),'-','')+'0001'
+                ELSE 
+                   SET @INSPECT_CODE ='FPI_'+@INSPECT_CODE
+
+                SELECT @INSPECT_CODE AS INSPECT_CODE
+                ";
+
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql);
+            if (dataTable.Rows.Count > 0)
+            {
+                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
+            }
+            return INSPECT_CODE;
+        }
+
+        public void ProcessFirstArticleInspection(WorkOrderSyncRequest request, string inspectionFpiId)
+        {
+            try
+            {
+                // 保存数据
+                SaveMainInspectionFpi(request, inspectionFpiId);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private void SaveMainInspectionFpi(WorkOrderSyncRequest request, string inspectionFpiId)
+        {
+            const string sql = @"
+                INSERT INTO INSPECT_FPI (
+                    TENID, INSPECT_FPIID, INSPECT_FPICREATEUSER, 
+                    INSPECT_FPICREATEDATE, MODI, INSPECT_FPICODE, 
+                    ITEMNAME, ITEMID, MESFIRSTINSPECTID, ORGID
+                ) VALUES (
+                    @TenId, @InspectFpiId, @InspectFpiCreateUser, 
+                    @InspectFpiCreateDate, @Modi, @InspectFpiCode,
+                    @ItemName, @ItemId, @MesFirstInspectId, @OrgId
+                )";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@TenId", "001"),
+                new SugarParameter("@InspectFpiId", inspectionFpiId),
+                new SugarParameter("@InspectFpiCreateUser", "system"),
+                new SugarParameter("@InspectFpiCreateDate", request.CREATEDATE),
+                new SugarParameter("@Modi", request.MOID),
+                new SugarParameter("@InspectFpiCode", inspectionFpiId),
+                new SugarParameter("@ItemName", request.ITEMNAME),
+                new SugarParameter("@ItemId", request.ITEMID),
+                new SugarParameter("@MesFirstInspectId", request.ID),
+                new SugarParameter("@OrgId", request.ORGID)
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
         }
         #endregion
 
@@ -213,8 +307,9 @@ namespace Meiam.System.Interfaces
                 ValidateRequest(request);
 
                 // 2. 查询数据库
-                var result = await QueryLotCheckResult(request);
+                var result = QueryLotCheckResult(request);
 
+                await Task.Delay(10);
                 _logger.LogDebug("检验结果查询成功，状态: {Result}", result);
 
                 return new CheckResultResponse
@@ -231,7 +326,6 @@ namespace Meiam.System.Interfaces
                 {
                     Success = false,
                     Message = $"API调用失败：{ex.Message}",
-                    Result = "未检验"
                 };
             }
         }
@@ -242,23 +336,35 @@ namespace Meiam.System.Interfaces
                 throw new ArgumentException("缺少料号");
         }
 
-        private async Task<string> QueryLotCheckResult(LotCheckResultRequest request)
+        private string QueryLotCheckResult(LotCheckResultRequest request)
         {
-            var sql = @"";
-            return await Db.Ado.GetStringAsync(sql, new
+            var sql = @"SELECT OQC_STATE
+                FROM INSPECT_SI
+                WHERE ITEMID = @ItemId
+                  AND CONVERT(varchar(10), INSPECT_SINAME, 120) = @CheckDate
+                  AND ORGID = @OrgId";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
             {
-                request.ITEMID,
-                request.CHECKDATE,
-                request.ORGID
-            });
+                new SugarParameter("@ItemId", request.ITEMID),
+                new SugarParameter("@CheckDate", request.CHECKDATE),
+                new SugarParameter("@OrgId", request.ORGID)
+            };
+
+            // 执行 SQL 命令
+            var state = Db.Ado.GetString(sql, parameters);
+            return state;
         }
 
         private string MapStateToResult(string state)
         {
             return state switch
             {
-                "PSTATE_003" => "合格",
-                "PSTATE_004" => "不合格",
+                "PSTATE_005" => "合格",
+                "PSTATE_006" => "合格",
+                "PSTATE_008" => "合格",
+                "PSTATE_007" => "不合格",
                 _ => "未检验"
             };
         }
@@ -290,18 +396,20 @@ namespace Meiam.System.Interfaces
                 TotalCount = materials.Count
             };
 
-            await using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = await connection.BeginTransactionAsync();
-
             try
             {
                 foreach (var item in materials)
                 {
                     try
                     {
-                        // 同步到ITEM表
-                        //await SyncItemTable(connection,transaction,item);
+                        // 1. 获取现有ORG列表
+                        var existingOrgs = GetExistingOrgs(item.ITEMID);
+
+                        // 2. 合并新旧ORGID（自动去重）
+                        item.ORGID = MergeOrgIds(existingOrgs, item.ORGID);
+
+                        // 3. 同步数据
+                        SyncItemTable(item);
 
                         response.SuccessCount++;
                     }
@@ -318,52 +426,86 @@ namespace Meiam.System.Interfaces
 
                 if (response.FailedCount == 0)
                 {
-                    await transaction.CommitAsync();
+                    await Db.Ado.CommitTranAsync();
                     response.Success = true;
                     response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
                 }
                 else
                 {
-                    await transaction.RollbackAsync();
+                    await Db.Ado.RollbackTranAsync();
                     response.Success = false;
                     response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
                 }
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await Db.Ado.RollbackTranAsync();
                 throw;
             }
 
             return response;
         }
 
-        //private async Task SyncItemTable(SqlConnection conn, DbTransaction trans, MaterialSyncItem item)
-        //{
-        //const string sql = @"
-        //        MERGE INTO ITEM AS target
-        //        USING (SELECT @ItemId AS ITEMID, @ItemCode AS ITEMCODE, @ItemName AS ITEMNAME) AS source
-        //        ON (target.ITEMID = source.ITEMID)
-        //        WHEN MATCHED THEN
-        //            UPDATE SET 
-        //                ITEMCODE = source.ITEMCODE,
-        //                ITEMNAME = source.ITEMNAME,
-        //                ORGID = CASE 
-        //                          WHEN target.ORGID IS NULL THEN '001'
-        //                          ELSE target.ORGID + ',' + RIGHT('00' + CAST(
-        //                               (SELECT COUNT(*) FROM STRING_SPLIT(target.ORGID, ',')) + 1 AS VARCHAR(3)), 3)
-        //                        END
-        //        WHEN NOT MATCHED THEN
-        //            INSERT (ITEMID, ITEMCODE, ORGID, ITEMNAME)
-        //            VALUES (source.ITEMID, source.ITEMCODE, '001', source.ITEMNAME);";
+        private string GetExistingOrgs(string itemId)
+        {
+            string sql = @"
+            SELECT ORGID
+            FROM ITEM 
+            WHERE ITEMID = @ItemId";
 
-        //    await conn.ExecuteAsync(sql, new
-        //    {
-        //        ItemId = item.ITEMID,
-        //        ItemCode = item.ITEMID,
-        //        ItemName = item.ITEMNAME
-        //    }, transaction: trans);
-        //}
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@ItemId", itemId)
+            };
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            if (dataTable.Rows.Count > 0)
+            {
+                return string.Join(";", dataTable.AsEnumerable()
+                          .Select(row => row["ORGID"].ToString())); ;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private string MergeOrgIds(string existingOrgs, string newOrgs)
+        {
+            var orgSet = new HashSet<string>(
+                (existingOrgs ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries));
+
+            foreach (var org in (newOrgs ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                orgSet.Add(org.Trim());
+            }
+
+            return string.Join(";", orgSet.OrderBy(x => x));
+        }
+
+        private void SyncItemTable(MaterialSyncItem item)
+        {
+            string sql = @"
+                    MERGE INTO ITEM AS target
+                    USING (SELECT @ItemId AS ITEMID, @ItemName AS ITEMNAME, @ORGID AS ORGID) AS source
+                    ON target.ITEMID = source.ITEMID
+                    WHEN MATCHED THEN
+                        UPDATE SET ITEMNAME = source.ITEMNAME,
+                                   ORGID=source.ORGID
+                    WHEN NOT MATCHED THEN
+                        INSERT (ITEMID, ITEMCODE, ITEMNAME, ORGID)
+                        VALUES (source.ITEMID, source.ITEMID, source.ITEMNAME, source.ORGID);";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@ItemId", item.ITEMID),
+                new SugarParameter("@ItemName", item.ITEMNAME),
+                new SugarParameter("@ORGID", item.ORGID)
+            };
+
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
 
         #endregion
 
@@ -401,16 +543,21 @@ namespace Meiam.System.Interfaces
         {
             var response = new CustomerSyncResponse { TotalCount = customers.Count };
 
-            await using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = await connection.BeginTransactionAsync();
-
             try
             {
                 foreach (var customer in customers)
                 {
                     try
                     {
+                        // 1. 获取现有ORG列表
+                        var existingOrgsInCustomer = GetExistingOrgsInCustom(customer.CUSTOMCODE);
+
+                        // 2. 合并新旧ORGID（自动去重）
+                        customer.ORGID = MergeOrgIdsInCustom(existingOrgsInCustomer, customer.ORGID);
+
+                        // 3. 同步数据
+                        SyncCustomerTable(customer);
+
                         // 同步表
                         //await SyncCustomerTable(connection, transaction, customer);
 
@@ -431,37 +578,79 @@ namespace Meiam.System.Interfaces
                 response.Success = response.FailedCount == 0;
 
                 if (response.Success)
-                    await transaction.CommitAsync();
+                    await Db.Ado.CommitTranAsync();
                 else
-                    await transaction.RollbackAsync();
+                    await Db.Ado.RollbackTranAsync();
 
                 return response;
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await Db.Ado.RollbackTranAsync();
                 throw;
             }
         }
 
-        //private async Task SyncCustomerTable(SqlConnection conn, DbTransaction trans, CustomerSyncItem customer)
-        //{
-        //    const string sql = @"
-        //        MERGE INTO CUSTOM AS target
-        //        USING (SELECT @CustomCode AS CUSTOMCODE, @CustomName AS CUSTOMNAME) AS source
-        //        ON target.CUSTOMCODE = source.CUSTOMCODE
-        //        WHEN MATCHED THEN
-        //            UPDATE SET CUSTOMNAME = source.CUSTOMNAME, CUSTOMID = source.CUSTOMCODE
-        //        WHEN NOT MATCHED THEN
-        //            INSERT (CUSTOMID, CUSTOMCODE, CUSTOMNAME)
-        //            VALUES (source.CUSTOMCODE, source.CUSTOMCODE, source.CUSTOMNAME);";
+        private string GetExistingOrgsInCustom(string customCode)
+        {
+            string sql = @"
+                SELECT ORGID
+                FROM CUSTOM 
+                WHERE CUSTOMID = @CustomId";
 
-        //    await conn.ExecuteAsync(sql, new
-        //    {
-        //        CustomCode = customer.CUSTOMCODE,
-        //        CustomName = customer.CUSTOMNAME
-        //    }, transaction: trans);
-        //}
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@CustomId", customCode)
+            };
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            if (dataTable.Rows.Count > 0)
+            {
+                return string.Join(";", dataTable.AsEnumerable()
+                          .Select(row => row["ORGID"].ToString())); ;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private string MergeOrgIdsInCustom(string existingOrgsInCustomer, string newOrgs)
+        {
+            var orgSet = new HashSet<string>(
+                (existingOrgsInCustomer ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries));
+
+            foreach (var org in (newOrgs ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                orgSet.Add(org.Trim());
+            }
+
+            return string.Join(";", orgSet.OrderBy(x => x));
+        }
+
+        private void SyncCustomerTable(CustomerSyncItem item)
+        {
+            string sql = @"
+                MERGE INTO CUSTOM AS target
+                USING (SELECT @CustomId AS CUSTOMID, @CustomName AS CUSTOMNAME, @ORGID AS ORGID) AS source
+                ON target.CUSTOMID = source.CUSTOMID
+                WHEN MATCHED THEN
+                    UPDATE SET CUSTOMNAME = source.CUSTOMNAME,
+                                ORGID=source.ORGID
+                WHEN NOT MATCHED THEN
+                    INSERT (CUSTOMID, CUSTOMCODE, CUSTOMNAME, ORGID)
+                    VALUES (source.CUSTOMID, source.CUSTOMID, source.CUSTOMNAME, source.ORGID);";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@CustomId", item.CUSTOMCODE),
+                new SugarParameter("@CustomName", item.CUSTOMNAME),
+                new SugarParameter("@ORGID", item.ORGID)
+            };
+
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
         #endregion
     }
 }

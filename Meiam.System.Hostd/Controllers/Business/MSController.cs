@@ -69,8 +69,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                 return BadRequest(new ApiResponse
                 {
                     Success = false,
-                    Message = "请求参数验证失败",
-                    Data = ModelState
+                    Message = $"请求参数验证失败，原因：{ModelState}"
                 });
             }
 
@@ -102,16 +101,25 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
                 return BadRequest(new ApiResponse
                 {
                     Success = false,
-                    Message = "参数验证失败",
-                    Data = ModelState
+                    Message = $"参数验证失败，原因：{ModelState}"
                 });
             }
 
             var result = await _msService.ProcessWorkOrderAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
+
+            if (result.Success)
+            {
+                _logger.LogInformation("工单同步请求处理成功，工单号: {MOID}", request.MOID);
+                return Ok(result);
+            }
+
+            _logger.LogError("工单同步请求处理失败，工单号: {MOID}, 原因: {Message}",
+                request.MOID, result.Message);
+            return BadRequest(result);
         }
         #endregion
 
@@ -239,13 +247,21 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                 return BadRequest(new CheckResultResponse
                 {
                     Success = false,
-                    Message = "参数格式错误",
-                    Result = "未检验"
+                    Message = $"参数验证失败，原因：{ModelState}"
                 });
             }
 
             var result = await _msService.ProcessLotCheckResult(request);
-            return result.Success ? Ok(result) : BadRequest(result);
+
+            if (result.Success)
+            {
+                _logger.LogInformation("检验结果查询请求处理成功，料号: {ITEMID}", request.ITEMID);
+                return Ok(result);
+            }
+
+            _logger.LogError("检验结果查询请求处理失败，料号: {ITEMID}, 原因: {Message}",
+                request.ITEMID, result.Message);
+            return BadRequest(result);
         }
         #endregion
 
