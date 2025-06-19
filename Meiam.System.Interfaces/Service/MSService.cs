@@ -106,7 +106,7 @@ namespace Meiam.System.Interfaces
             var dataTable = Db.Ado.GetDataTable(sql);
             if (dataTable.Rows.Count > 0)
             {
-                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
+                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString().Trim();
             }
             return INSPECT_CODE;
         }
@@ -199,6 +199,8 @@ namespace Meiam.System.Interfaces
                 {
                     Success = true,
                     Message = "MES 工单数据同步成功",
+                    // 可以返回生成的FPI检验单号
+                    Data = new { InspectionId = inspectionFpiId }
                 };
             }
             catch (Exception ex)
@@ -245,7 +247,7 @@ namespace Meiam.System.Interfaces
             var dataTable = Db.Ado.GetDataTable(sql);
             if (dataTable.Rows.Count > 0)
             {
-                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
+                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString().Trim();
             }
             return INSPECT_CODE;
         }
@@ -268,11 +270,11 @@ namespace Meiam.System.Interfaces
             const string sql = @"
                 INSERT INTO INSPECT_FPI (
                     TENID, INSPECT_FPIID, INSPECT_FPICREATEUSER, 
-                    INSPECT_FPICREATEDATE, MODI, INSPECT_FPICODE, 
+                    INSPECT_FPICREATEDATE, MOID, INSPECT_FPICODE, 
                     ITEMNAME, ITEMID, MESFIRSTINSPECTID, ORGID
                 ) VALUES (
                     @TenId, @InspectFpiId, @InspectFpiCreateUser, 
-                    @InspectFpiCreateDate, @Modi, @InspectFpiCode,
+                    @InspectFpiCreateDate, @MoId, @InspectFpiCode,
                     @ItemName, @ItemId, @MesFirstInspectId, @OrgId
                 )";
 
@@ -283,7 +285,7 @@ namespace Meiam.System.Interfaces
                 new SugarParameter("@InspectFpiId", inspectionFpiId),
                 new SugarParameter("@InspectFpiCreateUser", "system"),
                 new SugarParameter("@InspectFpiCreateDate", request.CREATEDATE),
-                new SugarParameter("@Modi", request.MOID),
+                new SugarParameter("@MoId", request.MOID),
                 new SugarParameter("@InspectFpiCode", inspectionFpiId),
                 new SugarParameter("@ItemName", request.ITEMNAME),
                 new SugarParameter("@ItemId", request.ITEMID),
@@ -492,10 +494,11 @@ namespace Meiam.System.Interfaces
                     ON target.ITEMID = source.ITEMID
                     WHEN MATCHED THEN
                         UPDATE SET ITEMNAME = source.ITEMNAME,
-                                   ORGID=source.ORGID
+                                   ORGID = source.ORGID,
+                                   ITEMCREATEDATE = getdate()
                     WHEN NOT MATCHED THEN
-                        INSERT (ITEMID, ITEMCODE, ITEMNAME, ORGID)
-                        VALUES (source.ITEMID, source.ITEMID, source.ITEMNAME, source.ORGID);";
+                        INSERT (ITEMID, ITEMCODE, ITEMNAME, ORGID, ITEMCREATEUSER, ITEMCREATEDATE)
+                        VALUES (source.ITEMID, source.ITEMID, source.ITEMNAME, source.ORGID, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
@@ -637,10 +640,11 @@ namespace Meiam.System.Interfaces
                 ON target.CUSTOMID = source.CUSTOMID
                 WHEN MATCHED THEN
                     UPDATE SET CUSTOMNAME = source.CUSTOMNAME,
-                                ORGID=source.ORGID
+                                ORGID = source.ORGID,
+                                CUSTOMCREATEDATE = getdate()
                 WHEN NOT MATCHED THEN
-                    INSERT (CUSTOMID, CUSTOMCODE, CUSTOMNAME, ORGID)
-                    VALUES (source.CUSTOMID, source.CUSTOMID, source.CUSTOMNAME, source.ORGID);";
+                    INSERT (CUSTOMID, CUSTOMCODE, CUSTOMNAME, ORGID, CUSTOMCREATEUSER, CUSTOMCREATEDATE)
+                    VALUES (source.CUSTOMID, source.CUSTOMID, source.CUSTOMNAME, source.ORGID, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
