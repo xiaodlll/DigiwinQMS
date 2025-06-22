@@ -15,6 +15,12 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "项次内码(ID)是必填字段")]
         public string ID { get; set; }
 
+        /// <summary>
+        /// 行号
+        /// </summary>
+        public string SEQ { get; set; }
+
+
         [Required(ErrorMessage = "分录内码(ENTRYID)是必填字段")]
         public string ENTRYID { get; set; }
 
@@ -24,7 +30,6 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "品号(ITEMID)是必填字段")]
         public string ITEMID { get; set; }
 
-        [Required(ErrorMessage = "品名(ITEMNAME)是必填字段")]
         public string ITEMNAME { get; set; }
 
         [Required(ErrorMessage = "组织内码(ORGID)是必填字段")]
@@ -66,6 +71,11 @@ namespace Meiam.System.Model
 
         // 供应商名称
         public string SUPPNAME { get; set; }
+
+        /// <summary>
+        /// 金蝶单据类型
+        /// </summary>
+        public string BUSINESSTYPE { get; set; }
     }
 
     public class ApiResponse
@@ -74,6 +84,13 @@ namespace Meiam.System.Model
         public string Message { get; set; }
         public object Data { get; set; }
     }
+
+    public class ErpApiResponse
+    {
+        public bool success { get; set; }
+        public string message { get; set; }
+    }
+    
 
     /// <summary>
     /// 首检单据
@@ -88,8 +105,6 @@ namespace Meiam.System.Model
 
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
         public string ITEMID { get; set; }
-
-        [Required(ErrorMessage = "品名（ITEMNAME）是必填字段")]
         public string ITEMNAME { get; set; }
 
         [Required(ErrorMessage = "组织内码ID（ORGID）是必填字段")]
@@ -112,12 +127,29 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "内码ID（EntryID）是必填字段")]
         public string EntryID { get; set; }
 
+        public string BillNo { get; set; }
+
+        /// <summary>
+        /// 检验单号
+        /// </summary>
+        public string InspectBillNo { get; set; }
+
+
         [Required(ErrorMessage = "组织内码ID（OrgID）是必填字段")]
         public string OrgID { get; set; }
 
         [Required(ErrorMessage = "检验结果（Result）是必填字段")]
         public string Result { get; set; }
 
+        /// <summary>
+        /// 合格数
+        /// </summary>
+        public int? OKQty { get; set; }
+
+        /// <summary>
+        /// 不合格数
+        /// </summary>
+        public int? NGQty { get; set; }
     }
 
     /// <summary>
@@ -125,6 +157,7 @@ namespace Meiam.System.Model
     /// </summary>
     public class WorkOrderResultRequest
     {
+        
         [Required(ErrorMessage = "工单单号（BillNo）是必填字段")]
         public string BillNo { get; set; }
 
@@ -137,12 +170,15 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "检验结果（Result）是必填字段")]
         public string Result { get; set; }
 
-    }
+        /// <summary>
+        /// 合格数
+        /// </summary>
+        public int? OKQty{ get; set; }
 
-    public class ErpApiResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; }
+        /// <summary>
+        /// 不合格数
+        /// </summary>
+        public int? NGQty { get; set; }
     }
 
     /// <summary>
@@ -174,7 +210,6 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
         public string ITEMID { get; set; }
 
-        [Required(ErrorMessage = "品名（ITEMNAME）是必填字段")]
         public string ITEMNAME { get; set; }
 
         [Required(ErrorMessage = "组织内码ID（ORGID）是必填字段")]

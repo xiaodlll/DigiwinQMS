@@ -23,14 +23,14 @@ namespace Meiam.System.Interfaces
         /// </summary>
         /// <param name="request">收料通知单请求数据</param>
         /// <returns>处理结果</returns>
-        Task<ApiResponse> ProcessLotNoticeAsync(LotNoticeRequest request);
+        Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequest> request);
 
         /// <summary>
         /// 首检单据
         /// </summary>
         /// <param name="request">首检单据请求数据</param>
         /// <returns>处理结果</returns>
-        Task<ApiResponse> ProcessWorkOrderAsync(WorkOrderSyncRequest request);
+        Task<ApiResponse> ProcessWorkOrderAsync(List<WorkOrderSyncRequest> request);
 
         /// <summary>
         /// 产品检验结果(入库检)

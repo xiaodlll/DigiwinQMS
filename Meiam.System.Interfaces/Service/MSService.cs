@@ -38,42 +38,41 @@ namespace Meiam.System.Interfaces
         }
 
         #region ERP收料通知单
-        public async Task<ApiResponse> ProcessLotNoticeAsync(LotNoticeRequest request)
+        public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequest> requests)
         {
-            _logger.LogInformation("开始处理收料通知单，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
+            _logger.LogInformation("开始处理收料通知单");
             try
             {
-                // 验证数据
-                if (request.LOT_QTY <= 0)
+                foreach (var request in requests)
                 {
-                    _logger.LogWarning("到货数量无效: {LotQty}", request.LOT_QTY);
-                    throw new ArgumentException("到货数量必须大于0");
+                    // 验证数据
+                    if (request.LOT_QTY <= 0)
+                    {
+                        _logger.LogWarning("到货数量无效: {LotQty}", request.LOT_QTY);
+                        throw new ArgumentException("到货数量必须大于0");
+                    }
+
+                    // 生成检验单号
+                    var inspectionId = GenerateInspectionId();
+                    _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
+
+                    // 保存到数据库
+                    _logger.LogDebug("正在保存收料通知单到数据库...");
+                    SaveToDatabase(request, inspectionId);
+
+                    await Task.Delay(10); // 模拟异步操作
                 }
 
-                // 生成检验单号
-                var inspectionId = GenerateInspectionId();
-                _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
-
-                // 保存到数据库
-                _logger.LogDebug("正在保存收料通知单到数据库...");
-                SaveToDatabase(request, inspectionId);
-
-                await Task.Delay(10); // 模拟异步操作
-
-                _logger.LogInformation("收料通知单处理成功，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
+                _logger.LogInformation("收料通知单处理成功");
 
                 return new ApiResponse
                 {
                     Success = true,
                     Message = "收料通知单接收成功",
-                    // 可以返回生成的检验单号
-                    Data = new { InspectionId = inspectionId }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "处理收料通知单失败，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
-
                 return new ApiResponse
                 {
                     Success = false,
@@ -133,7 +132,7 @@ namespace Meiam.System.Interfaces
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
                     PRO_DATE, LENGTH, WIDTH,
-                    INUM, ENTRYID, ORGID,
+                    INUM, ENTRYID, ORGID, SEQ,BUSINESSTYPE,
                     KEEID
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
@@ -141,7 +140,7 @@ namespace Meiam.System.Interfaces
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
                     @ApplyDate, @ItemSpecification, @QuaDate,
                     @ProDate, @Length, @Width,
-                    @Inum, @EntryId, @OrgId,
+                    @Inum, @EntryId, @OrgId, @Seq,@BusinessType,
                     @KeeId
                 )";
 
@@ -166,6 +165,8 @@ namespace Meiam.System.Interfaces
                 new SugarParameter("@Inum", request.INUM),
                 new SugarParameter("@EntryId", request.ENTRYID),
                 new SugarParameter("@OrgId", request.ORGID),
+                new SugarParameter("@Seq", request.SEQ),
+                new SugarParameter("@BusinessType", request.BUSINESSTYPE),
                 new SugarParameter("@KeeId", request.ID)
             };
 
@@ -175,37 +176,36 @@ namespace Meiam.System.Interfaces
         #endregion
 
         #region 首检单据 
-        public async Task<ApiResponse> ProcessWorkOrderAsync(WorkOrderSyncRequest request)
+        public async Task<ApiResponse> ProcessWorkOrderAsync(List<WorkOrderSyncRequest> requests)
         {
-            _logger.LogInformation("开始同步工单首检数据，工单号: {MOID}", request.MOID);
+            _logger.LogInformation("开始同步工单首检数据");
 
             try
             {
-                // 验证数据
-                ValidateRequest(request);
+                foreach (var request in requests)
+                {
+                    // 验证数据
+                    ValidateRequest(request);
 
-                // 生成FPI检验单号
-                var inspectionFpiId = GenerateInspectionFpiId();
-                _logger.LogInformation("生成检验单号: {InspectionFpiId}", inspectionFpiId);
+                    // 生成FPI检验单号
+                    var inspectionFpiId = GenerateInspectionFpiId();
+                    _logger.LogInformation("生成检验单号: {InspectionFpiId}", inspectionFpiId);
 
-                // 业务处理
-                _logger.LogDebug("正在处理首检单据...");
-                ProcessFirstArticleInspection(request, inspectionFpiId);
+                    // 业务处理
+                    _logger.LogDebug("正在处理首检单据...");
+                    ProcessFirstArticleInspection(request, inspectionFpiId);
 
-                await Task.Delay(10);
-                _logger.LogInformation("工单首检数据同步成功，工单号: {MOID}", request.MOID);
-
+                    await Task.Delay(10);
+                    _logger.LogInformation("工单首检数据同步成功，工单号: {MOID}", request.MOID);
+                }
                 return new ApiResponse
                 {
                     Success = true,
                     Message = "MES 工单数据同步成功",
-                    // 可以返回生成的FPI检验单号
-                    Data = new { InspectionId = inspectionFpiId }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "工单首检数据同步失败，工单号: {MOID}", request.MOID);
                 return new ApiResponse
                 {
                     Success = false,
@@ -316,7 +316,7 @@ namespace Meiam.System.Interfaces
 
                 return new CheckResultResponse
                 {
-                    Success = true,
+                    Success = (result == "合格" ? true : false),
                     Message = "调用成功",
                     Result = MapStateToResult(result)
                 };

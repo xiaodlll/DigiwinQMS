@@ -1,4 +1,5 @@
-﻿using Autofac.Core;
+﻿using Aspose.Pdf.Operators;
+using Autofac.Core;
 using Mapster;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using Meiam.System.Common;
@@ -59,9 +60,8 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("lotNotice")]
-        public async Task<IActionResult> PostLotNotice([FromBody] LotNoticeRequest request)
+        public async Task<IActionResult> PostLotNotice([FromBody] List<LotNoticeRequest> request)
         {
-            _logger.LogInformation("收到收料通知单请求，单号: {ErpArrivedId}", request?.ERP_ARRIVEDID);
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("请求参数验证失败: {@ModelState}", ModelState);
@@ -77,12 +77,11 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
             if (result.Success)
             {
-                _logger.LogInformation("收料通知单处理成功，单号: {ErpArrivedId}", request.ERP_ARRIVEDID);
                 return Ok(result);
             }
 
-            _logger.LogError("收料通知单处理失败，单号: {ErpArrivedId}, 原因: {Message}",
-                request.ERP_ARRIVEDID, result.Message);
+            _logger.LogError("收料通知单处理失败， 原因: {Message}",
+                result.Message);
             return BadRequest(result);
         }
         #endregion
@@ -94,10 +93,8 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("workorderSync")]
-        public async Task<IActionResult> PostWorkOrderSync([FromBody] WorkOrderSyncRequest request)
+        public async Task<IActionResult> PostWorkOrderSync([FromBody] List<WorkOrderSyncRequest> request)
         {
-            _logger.LogInformation("收到工单同步请求，工单号: {MOID}", request?.MOID);
-
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
@@ -113,12 +110,9 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
             if (result.Success)
             {
-                _logger.LogInformation("工单同步请求处理成功，工单号: {MOID}", request.MOID);
                 return Ok(result);
             }
 
-            _logger.LogError("工单同步请求处理失败，工单号: {MOID}, 原因: {Message}",
-                request.MOID, result.Message);
             return BadRequest(result);
         }
         #endregion
@@ -127,12 +121,12 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <summary>
         /// 收料检验结果回传ERP
         /// </summary>
-        /// <param name="request"></param>
+        /// <param name="requests"></param>
         /// <returns></returns>
         [HttpPost("UpdateReceiveInspectResult")]
-        public async Task<IActionResult> PostLotNoticeSync([FromBody] LotNoticeResultRequest request)
+        public async Task<IActionResult> PostLotNoticeSync([FromBody] List<LotNoticeResultRequest> requests)
         {
-            string erpApiUrl =  AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateFirstInspectResult";
+            string erpApiUrl =  AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateReceiveInspectResult";
 
             if (!ModelState.IsValid)
             {
@@ -147,22 +141,23 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
             try
             {
-                string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
-
-                var result = JsonConvert.DeserializeObject<ApiResponse>(postResult);
-
-                if (result?.Success == true)
+                foreach (var request in requests)
                 {
-                    return Ok(result);
+                    string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
+
+                    if (postResult.Contains("false")) { 
+                        return BadRequest(new ApiResponse
+                        {
+                            Success = false,
+                            Message = $"{postResult}"
+                        });
+                    }
                 }
-                else
+                return Ok(new ApiResponse
                 {
-                    return BadRequest(result ?? new ApiResponse
-                    {
-                        Success = false,
-                        Message = "更新检验结果失败，返回内容无法解析"
-                    });
-                }
+                    Success = true,
+                    Message = $"调用成功！"
+                });
             }
             catch (Exception ex)
             {
@@ -171,7 +166,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                 return StatusCode(500, new ApiResponse
                 {
                     Success = false,
-                    Message = $"系统异常：{ex.Message}"
+                    Message = $"系统异常：{erpApiUrl} :  {ex.ToString()}"
                 });
             }
         }
@@ -184,7 +179,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("UpdateFirstInspectResult")]
-        public async Task<IActionResult> PostWorkOrderResultSync([FromBody] WorkOrderResultRequest request)
+        public async Task<IActionResult> PostWorkOrderResultSync([FromBody] List<WorkOrderResultRequest> request)
         {
             string erpApiUrl = AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateFirstInspectResult";
 
@@ -203,18 +198,20 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             {
                 string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
 
-                var result = JsonConvert.DeserializeObject<ApiResponse>(postResult);
-
-                if (result?.Success == true)
+                if (postResult.Contains("true"))
                 {
-                    return Ok(result);
+                    return Ok(new ApiResponse
+                    {
+                        Success = true,
+                        Message = $"调用成功！"
+                    });
                 }
                 else
                 {
-                    return BadRequest(result ?? new ApiResponse
+                    return BadRequest(new ApiResponse
                     {
                         Success = false,
-                        Message = "更新检验结果失败，返回内容无法解析"
+                        Message = $"{postResult}"
                     });
                 }
             }
