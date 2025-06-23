@@ -124,18 +124,18 @@
             <param name="request"></param>
             <returns></returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostLotNoticeSync(System.Collections.Generic.List{Meiam.System.Model.LotNoticeResultRequest})">
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostLotNoticeSync(Meiam.System.Model.QmsLotNoticeResultRequest)">
             <summary>
             收料检验结果回传ERP
             </summary>
-            <param name="requests"></param>
+            <param name="qmsrequest"></param>
             <returns></returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostWorkOrderResultSync(System.Collections.Generic.List{Meiam.System.Model.WorkOrderResultRequest})">
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostWorkOrderResultSync(Meiam.System.Model.QmsWorkOrderResultRequest)">
             <summary>
             工单首检检验结果回传MES
             </summary>
-            <param name="request"></param>
+            <param name="qmsrequest"></param>
             <returns></returns>
         </member>
         <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.PostLotCheckResult(Meiam.System.Model.LotCheckResultRequest)">

@@ -90,7 +90,6 @@ namespace Meiam.System.Model
         public bool success { get; set; }
         public string message { get; set; }
     }
-    
 
     /// <summary>
     /// 首检单据
@@ -119,12 +118,17 @@ namespace Meiam.System.Model
     /// <summary>
     /// 收料检验结果回传ERP
     /// </summary>
+    public class QmsLotNoticeResultRequest
+    {
+    
+    }
+    /// <summary>
+    /// 收料检验结果回传ERP
+    /// </summary>
     public class LotNoticeResultRequest
     {
-        [Required(ErrorMessage = "内码（ID）是必填字段")]
         public string ID { get; set; }
 
-        [Required(ErrorMessage = "内码ID（EntryID）是必填字段")]
         public string EntryID { get; set; }
 
         public string BillNo { get; set; }
@@ -135,10 +139,8 @@ namespace Meiam.System.Model
         public string InspectBillNo { get; set; }
 
 
-        [Required(ErrorMessage = "组织内码ID（OrgID）是必填字段")]
         public string OrgID { get; set; }
 
-        [Required(ErrorMessage = "检验结果（Result）是必填字段")]
         public string Result { get; set; }
 
         /// <summary>
@@ -152,22 +154,26 @@ namespace Meiam.System.Model
         public int? NGQty { get; set; }
     }
 
+
+    /// <summary>
+    /// 工单首检检验结果回传MES
+    /// </summary>
+    public class QmsWorkOrderResultRequest
+    {
+
+    }
+
     /// <summary>
     /// 工单首检检验结果回传MES
     /// </summary>
     public class WorkOrderResultRequest
     {
-        
-        [Required(ErrorMessage = "工单单号（BillNo）是必填字段")]
         public string BillNo { get; set; }
 
-        [Required(ErrorMessage = "内码ID（MESFirstInspectID）是必填字段")]
         public string MESFirstInspectID { get; set; }
 
-        [Required(ErrorMessage = "组织内码ID（OrgID）是必填字段")]
         public string OrgID { get; set; }
 
-        [Required(ErrorMessage = "检验结果（Result）是必填字段")]
         public string Result { get; set; }
 
         /// <summary>

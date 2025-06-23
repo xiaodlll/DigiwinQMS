@@ -121,23 +121,13 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <summary>
         /// 收料检验结果回传ERP
         /// </summary>
-        /// <param name="requests"></param>
+        /// <param name="qmsrequest"></param>
         /// <returns></returns>
         [HttpPost("UpdateReceiveInspectResult")]
-        public async Task<IActionResult> PostLotNoticeSync([FromBody] List<LotNoticeResultRequest> requests)
+        public async Task<IActionResult> PostLotNoticeSync([FromBody] QmsLotNoticeResultRequest qmsrequest)
         {
+            List<LotNoticeResultRequest> requests = _msService.GetQmsLotNoticeResultRequest();
             string erpApiUrl =  AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateReceiveInspectResult";
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "参数验证失败",
-                    Data = ModelState
-                });
-            }
 
             try
             {
@@ -151,6 +141,10 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                             Success = false,
                             Message = $"{postResult}"
                         });
+                    }
+                    else
+                    {
+                        _msService.CallBackQmsLotNoticeResult(request);
                     }
                 }
                 return Ok(new ApiResponse
@@ -176,44 +170,44 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <summary>
         /// 工单首检检验结果回传MES
         /// </summary>
-        /// <param name="request"></param>
+        /// <param name="qmsrequest"></param>
         /// <returns></returns>
         [HttpPost("UpdateFirstInspectResult")]
-        public async Task<IActionResult> PostWorkOrderResultSync([FromBody] List<WorkOrderResultRequest> request)
+        public async Task<IActionResult> PostWorkOrderResultSync([FromBody] QmsWorkOrderResultRequest qmsrequest)
         {
-            string erpApiUrl = AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateFirstInspectResult";
 
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "参数验证失败",
-                    Data = ModelState
-                });
-            }
+            List<WorkOrderResultRequest> request = _msService.GetQmsWorkOrderResultRequest();
+            string erpApiUrl = AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateFirstInspectResult";
 
             try
             {
-                string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
+                if (request != null && request.Count > 0)
+                {
+                    string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
 
-                if (postResult.Contains("true"))
-                {
-                    return Ok(new ApiResponse
+                    if (postResult.Contains("true"))
                     {
-                        Success = true,
-                        Message = $"调用成功！"
-                    });
-                }
-                else
-                {
-                    return BadRequest(new ApiResponse
+                        _msService.CallBackQmsWorkOrderResult(request);
+                        return Ok(new ApiResponse
+                        {
+                            Success = true,
+                            Message = $"调用成功！"
+                        });
+                    }
+                    else
                     {
-                        Success = false,
-                        Message = $"{postResult}"
-                    });
+                        return BadRequest(new ApiResponse
+                        {
+                            Success = false,
+                            Message = $"{postResult}"
+                        });
+                    }
                 }
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = $"调用成功！"
+                });
             }
             catch (Exception ex)
             {

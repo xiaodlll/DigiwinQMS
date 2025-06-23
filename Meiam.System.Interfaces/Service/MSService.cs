@@ -52,6 +52,14 @@ namespace Meiam.System.Interfaces
                         throw new ArgumentException("到货数量必须大于0");
                     }
 
+                    //判断重复
+                    bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ENTRYID = '{request.ENTRYID}' AND KEEID = '{request.ID}' AND OrgID = '{request.ORGID}'") > 0;
+                    if(isExist)
+                    {
+                        _logger.LogWarning($"收料通知单已存在: {request.ID}");
+                        continue;
+                    }
+
                     // 生成检验单号
                     var inspectionId = GenerateInspectionId();
                     _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
@@ -186,6 +194,14 @@ namespace Meiam.System.Interfaces
                 {
                     // 验证数据
                     ValidateRequest(request);
+
+                    //判断重复
+                    bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_FPI WHERE MESFirstInspectID = '{request.ID}' AND MOID = '{request.MOID}' AND OrgID = '{request.ORGID}'") > 0;
+                    if (isExist)
+                    {
+                        _logger.LogWarning($"首检单据已存在: {request.ID}");
+                        continue;
+                    }
 
                     // 生成FPI检验单号
                     var inspectionFpiId = GenerateInspectionFpiId();
@@ -654,6 +670,38 @@ namespace Meiam.System.Interfaces
             };
 
             Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        #endregion
+
+        #region 回写ERP MES方法
+        public List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest(){
+            var sql = @"select top 100 ERP_ARRIVEDID as BillNo, INSPECT_IQCCODE as InspectBillNo,KEEID as ID,ENTRYID as EntryID ,
+(case when OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_008') then 1 else 0 end) as Result,ORGID,FQC_CNT as OKQty,FQC_NOT_CNT as NGQty from INSPECT_IQC
+where (ISSY<>'1' or ISSY IS NULL) AND OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_007','PSTATE_008') order by INSPECT_IQCCREATEDATE desc";
+
+            var list = Db.Ado.SqlQuery<LotNoticeResultRequest>(sql);
+            return list;
+        }
+        public void CallBackQmsLotNoticeResult(LotNoticeResultRequest request)
+        {
+            var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' and ENTRYID='{1}' and OrgID='{2}' ", request.ID, request.EntryID, request.OrgID);
+            Db.Ado.ExecuteCommand(sql);
+        }
+        public List<WorkOrderResultRequest> GetQmsWorkOrderResultRequest(){
+            var sql = @"select top 100 MOID as BillNo,MESFirstInspectID,OrgID,
+(case when OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_007','PSTATE_008') then 1 else 0 end) as Result from INSPECT_FPI
+where (ISSY<>'1' or ISSY IS NULL) AND OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_007','PSTATE_008') order by INSPECT_FPICREATEDATE desc";
+
+            var list = Db.Ado.SqlQuery<WorkOrderResultRequest>(sql);
+            return list;
+        }
+        public void CallBackQmsWorkOrderResult(List<WorkOrderResultRequest> requests)
+        {
+            foreach (var request in requests)
+            {
+                var sql = string.Format(@"update INSPECT_FPI set ISSY='1' where MOID='{0}' and MESFirstInspectID='{1}' and OrgID='{2}' ", request.BillNo, request.MESFirstInspectID, request.OrgID);
+                Db.Ado.ExecuteCommand(sql);
+            }
         }
         #endregion
     }

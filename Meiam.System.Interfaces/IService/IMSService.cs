@@ -52,5 +52,9 @@ namespace Meiam.System.Interfaces
         /// <param name="materials">ERP客户同步请求数据</param>
         /// <returns>处理结果</returns>
         Task<CustomerSyncResponse> ProcessCustomersSynBatch(List<CustomerSyncItem> customers);
+        List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest();
+        void CallBackQmsLotNoticeResult(LotNoticeResultRequest request);
+        List<WorkOrderResultRequest> GetQmsWorkOrderResultRequest();
+        void CallBackQmsWorkOrderResult(List<WorkOrderResultRequest> request);
     }
 }
