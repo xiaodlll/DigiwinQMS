@@ -69,6 +69,9 @@ namespace Meiam.System.Model
         // 失效日期
         public string QUA_DATE { get; set; }
 
+        // 供应商编码
+        public string SUPPCODE { get; set; }
+
         // 供应商名称
         public string SUPPNAME { get; set; }
 

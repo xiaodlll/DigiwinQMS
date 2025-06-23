@@ -133,13 +133,30 @@ namespace Meiam.System.Interfaces
 
         private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
         {
+            string SuppID = Db.Ado.GetString($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'");
+            if (string.IsNullOrEmpty(SuppID))
+            {
+                SuppID = Db.Ado.GetString($@"select max(SUPPID)+1 from SUPP");
+                if (string.IsNullOrEmpty(SuppID))
+                {
+                    SuppID = "1001";
+                }
+                Db.Ado.ExecuteCommand($@"INSERT INTO SUPP (
+    TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
+    SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME
+)
+VALUES (
+    '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
+    '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', NULL, '{SuppID}', '{request.SUPPNAME}')");
+            }
+
             const string sql = @"
                 INSERT INTO INSPECT_IQC (
                     TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
                     INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
-                    PRO_DATE, LENGTH, WIDTH,
+                    PRO_DATE, LENGTH, WIDTH, SUPPID,
                     INUM, ENTRYID, ORGID, SEQ,BUSINESSTYPE,
                     KEEID
                 ) VALUES (
@@ -147,7 +164,7 @@ namespace Meiam.System.Interfaces
                     getdate(), @ItemName, @ErpArrivedId,
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
                     @ApplyDate, @ItemSpecification, @QuaDate,
-                    @ProDate, @Length, @Width,
+                    @ProDate, @Length, @Width,@SuppID,
                     @Inum, @EntryId, @OrgId, @Seq,@BusinessType,
                     @KeeId
                 )";
@@ -174,6 +191,7 @@ namespace Meiam.System.Interfaces
                 new SugarParameter("@EntryId", request.ENTRYID),
                 new SugarParameter("@OrgId", request.ORGID),
                 new SugarParameter("@Seq", request.SEQ),
+                new SugarParameter("@SuppID", SuppID),
                 new SugarParameter("@BusinessType", request.BUSINESSTYPE),
                 new SugarParameter("@KeeId", request.ID)
             };
