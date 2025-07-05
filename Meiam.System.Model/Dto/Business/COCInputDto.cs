@@ -41,6 +41,13 @@ namespace Meiam.System.Model.Dto {
         /// </summary>
         [Display(Name = "ID")]
         public string ID { get; set; }
+
+        public string INSPECT_PROGRESSID { get; set; }
+        
+        public string INSPECT_DEV1ID { get; set; }
+
+        public string DOCTYPE { get; set; }
+        
     }
 
 }

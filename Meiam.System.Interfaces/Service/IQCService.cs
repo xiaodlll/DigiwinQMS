@@ -2408,7 +2408,7 @@ ORDER BY
             string newFile = FillExcelFileContent(filePath, cocName, listZoneIDs, dicDataSource, parm);
 
             //保存到SCANDOC
-            SaveCOCToScanDoc("COC报告", newFile, parm.ID, parm.COCID, parm.COCID, parm.COCID);
+            SaveCOCToScanDoc("COC报告", newFile, parm);
         }
 
         private string FillExcelFileContent(string tempFilePath, string tempFileName, List<string> listZoneIDs, Dictionary<string, DataTable> dicDataSource, COCInputDto parm) {
@@ -3153,12 +3153,19 @@ ORDER BY
             return resultTable;
         }
 
-        private void SaveCOCToScanDoc(string docType, string scandocName, string peopleId, string INSPECT_DEV1ID, string COLUM002ID, string COLUM001ID) {
+        private void SaveCOCToScanDoc(string docType, string scandocName,COCInputDto parm) {
+            string peopleId = parm.ID;
+            string COLUM002ID = parm.COCID;
+            string COLUM001ID = parm.COCID;
+            string INSPECT_PROGRESSID = parm.INSPECT_PROGRESSID ?? string.Empty;
+            string INSPECT_DEV1ID = parm.INSPECT_DEV1ID ?? string.Empty;
+            string DOCTYPE = parm.DOCTYPE ?? string.Empty;
+
             Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
 
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID)";
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID,INSPECT_PROGRESSID,DOCTYPE)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID,@INSPECT_PROGRESSID,@DOCTYPE)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -3169,7 +3176,9 @@ ORDER BY
                 new SugarParameter("@PEOPLEID", peopleId),
                 new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID),
                 new SugarParameter("@COLUM002ID", COLUM002ID),
-                new SugarParameter("@COLUM001ID", COLUM001ID)
+                new SugarParameter("@COLUM001ID", COLUM001ID),
+                new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID),
+                new SugarParameter("@DOCTYPE", DOCTYPE)
             };
 
             // 执行 SQL 命令
