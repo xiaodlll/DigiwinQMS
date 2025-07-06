@@ -3159,26 +3159,25 @@ ORDER BY
             string COLUM001ID = parm.COCID;
             string INSPECT_PROGRESSID = parm.INSPECT_PROGRESSID ?? string.Empty;
             string INSPECT_DEV1ID = parm.INSPECT_DEV1ID ?? string.Empty;
-            string DOCTYPE = parm.DOCTYPE ?? string.Empty;
+            string DOCTYPE = parm.DOCTYPE ?? docType;
 
             Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
 
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID,INSPECT_PROGRESSID,DOCTYPE)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID,@INSPECT_PROGRESSID,@DOCTYPE)";
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID,INSPECT_PROGRESSID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID,@INSPECT_PROGRESSID)";
 
             // 定义参数
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
-                new SugarParameter("@DOCTYPE", docType),
+                new SugarParameter("@DOCTYPE", DOCTYPE),
                 new SugarParameter("@PEOPLEID", peopleId),
                 new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID),
                 new SugarParameter("@COLUM002ID", COLUM002ID),
                 new SugarParameter("@COLUM001ID", COLUM001ID),
-                new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID),
-                new SugarParameter("@DOCTYPE", DOCTYPE)
+                new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID)
             };
 
             // 执行 SQL 命令
