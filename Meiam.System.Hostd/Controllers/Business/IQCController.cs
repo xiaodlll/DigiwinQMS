@@ -77,6 +77,44 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             //return File(fileContents, "image/jpeg", "拉力机检测报告.jpg");
         }
 
+        [HttpPost]
+        public IActionResult DEV1_UNION([FromBody] InspectInputDto parm)
+        {
+            
+            try
+            {
+                _iqcService.GET_DEV1_UNION("");
+            }
+            catch (Exception ex)
+            {
+                return toResponse(StatusCodeType.Error, ex.ToString());
+            }
+            return toResponse(StatusCodeType.Success,  "关联成功！");
+
+        }
+
+
+        /// <summary>
+        /// 产生检验单随机值
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult INSPECT_VIEW_RANK([FromBody] InspectInputByCodeDto parm)
+        {
+
+            try
+            {
+
+                _iqcService.INSPECT_VIEW_RANK(parm.DOC_CODE);
+
+            }
+            catch (Exception ex)
+            {
+                return toResponse(StatusCodeType.Error, parm.DOC_CODE + "∫" + ex.ToString());
+            }
+            return toResponse(StatusCodeType.Success, parm.DOC_CODE + "∫" + "产生成功！");
+
+        }
         /// <summary>
         /// 批量拉力机检测报告
         /// </summary>
@@ -496,6 +534,5 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             }
             return toResponse(StatusCodeType.Success, "COC数据报告生成成功！");
         }
-
     }
 }

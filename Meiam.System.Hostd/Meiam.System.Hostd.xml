@@ -53,6 +53,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.INSPECT_VIEW_RANK(Meiam.System.Model.Dto.InspectInputByCodeDto)">
+            <summary>
+            产生检验单随机值
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Bisuness.IQCController.InspectBatchReport(Meiam.System.Model.Dto.InspectInputByCodeDto)">
             <summary>
             批量拉力机检测报告

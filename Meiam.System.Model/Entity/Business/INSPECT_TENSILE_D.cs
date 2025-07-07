@@ -134,6 +134,7 @@ namespace Meiam.System.Model {
         /// </summary>
         [Display(Name = "Flag")]
         public bool Flag { get; set; }
-
+        [Display(Name = "INSPECT_PROGRESSID")]
+        public string INSPECT_PROGRESSID { get; set; }
     }
 }

@@ -11,6 +11,7 @@ using Meiam.System.Common;
 using Meiam.System.Interfaces.Extensions;
 using Meiam.System.Model;
 using Meiam.System.Model.Dto;
+using Microsoft.AspNetCore.Components.Forms;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using OxyPlot;
@@ -30,41 +31,560 @@ using System.Text.RegularExpressions;
 using HorizontalAlignment = NPOI.SS.UserModel.HorizontalAlignment;
 using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
 
-namespace Meiam.System.Interfaces
-{
+
+namespace Meiam.System.Interfaces {
     public class IQCService : BaseService<INSPECT_TENSILE>, IIQCService {
 
         public IQCService(IUnitOfWork unitOfWork) : base(unitOfWork) {
         }
+        #region xujie
+        public void INSPECT_VIEW_RANK(string ID)
+        {
 
-        #region GetInspectReport 
+            string state = "";
+            string _ITEMID = "";
+            string sql0 = @$"SELECT PSTATE FROM INSPECT_VIEW WHERE INSPECT_VIEWID=@ID";
+            string CustomID = AppSettings.Configuration["AppSettings:CustomID"];
+            // 定义参数
+            var parameters0 = new SugarParameter[] { new SugarParameter("@ID", ID) }; //检验单号
+            // 执行 SQL 命令
+            var dataTable0 = Db.Ado.GetDataTable(sql0, parameters0);
+
+            if (dataTable0.Rows.Count > 0)
+            {
+                state = dataTable0.Rows[0]["PSTATE"].ToString();
+                _ITEMID = dataTable0.Rows[0]["ITEMID"].ToString();
+                if (state == "PSTATE_003")
+                    throw new Exception("检验单已完成，无法产生报告！");
+            }
+            else
+            {
+                throw new Exception("未获取到检验单状态");
+            }
+
+            //1.处理拉力机（DEV1）
+            #region //1.1 DEV1主动关联检验单
+            GET_DEV1_UNION(_ITEMID);
+            #endregion
+            #region //1.2 检验单产生DEV1，并GetInspectReport
+
+            string sql = @"
+            SELECT  INSPECT_PROGRESSID,PSTATE,INSPECT_PROGRESSNAME,INSPECT_SPEC,INSPECT_VIEW.ITEMID ITEMID,INSPECT_VIEWID FROM INSPECT_PROGRESS
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE ISNULL(INSPECT_PROGRESS.INSPECT_DEV1ID,'')=''  AND DOC_CODE=@ID AND INSPECT_PROGRESS.INSPECT_DEV='INSPECT_DEV_002'        --拉力机
+            ";
+            // 定义参数
+            var parameters = new SugarParameter[] { new SugarParameter("@ID", ID) }; //检验单号
+                                                                                     //执行SQL命令
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+
+            if (dataTable != null)
+            {
+                if (dataTable.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dataTable.Rows.Count; i++)
+                    {
+                        string INSPECT_PROGRESSID = dataTable.Rows[i]["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_PROGRESSNAME = dataTable.Rows[i]["INSPECT_PROGRESSNAME"].ToString();
+                        string INSPECT_SPEC = dataTable.Rows[i]["INSPECT_SPEC"].ToString();
+                        string ITEMID = dataTable.Rows[i]["ITEMID"].ToString();
+                        string INSPECT_VIEWID = dataTable.Rows[i]["INSPECT_VIEWID"].ToString();
+                        string PSTATE = dataTable.Rows[i]["PSTATE"].ToString();
+                        if (PSTATE != "PSTATE_003")
+                        {
+                            if (IsNotNULL(INSPECT_SPEC))
+                            {
+                                string newid = Guid.NewGuid().ToString();
+                                Db.Ado.ExecuteCommand(@"        UPDATE INSPECT_PROGRESS SET INSPECT_DEV1ID='" + newid + @"' WHERE INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"'  ;
+
+                                                                INSERT INSPECT_DEV1(INSPECT_CODE,TENID,INSPECT_DEV1ID,INSPECT_DATE,DEVID
+                                                                ,TESTTYPE
+                                                                --,PEOPLE02,APPEOPLE02
+                                                                ,SAMPLE_CNT,BATCHID,ITEMID,ITEMNAME,LOTID
+                                                                ,DOC_CODE,INSPECT_CODE	--来源单号  --来源单号
+                                                                ,INSPECT_SPEC
+                                                                ,INSPECT_DEV
+                                                                ,INSPECTTYPE1
+                                                                ,ISBUILD
+                                                                )
+                                                                SELECT '" + INSPECT_VIEWID + @"',A.TENID,'" + newid + @"',A.INSPECT_DATE,'检验单触发'
+                                                                ,''  --不赋材料OR成品，用于避免反向匹配
+                                                                --,A.PEOPLE01,A.APPPEOPLE01
+                                                                ,INSPECT_PROGRESS.INSPECT_CNT,'',A.ITEMID,A.ITEMNAME,A.LOTNO
+                                                                ,A.INSPECT_VIEWID,A.INSPECT_VIEWID
+                                                                ,INSPECT_PROGRESS.INSPECT_SPEC
+                                                                ,'INSPECT_DEV_002'
+                                                                ,INSPECT_PROGRESS.INSPECT_PROGRESSNAME
+                                                                ,'1'
+                                                                FROM INSPECT_PROGRESS
+                                                                LEFT JOIN INSPECT_VIEW A ON A.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE 
+                                                                WHERE  INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' 
+                                                        ");
+
+                                GetInspectReport(new InspectInputDto() { INSPECT_DEV1ID = newid, UserName = "system" });
+                            }
+                            else
+                            {
+                                //Db.Ado.ExecuteCommand(@"    UPDATE INSPECT_PROGRESS SET ISREPORT='未设置规格' WHERE INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"'")  ;                         
+                                throw new Exception("<" + INSPECT_PROGRESSNAME + ">:未设置规格");
+                            }
+
+                        }
+
+                    }
+                }
+            }
+
+            #endregion
+
+            //2.处理FTIR
+            if(CustomID=="JT")
+                 ReplaceFTIRPdf(new FTIRInputDto() { INSPECTCODE = ID, INSPECTTYPE = "", UserName = "system" });
+            else if (CustomID == "MS") //小电流 淼昇
+                ReplaceFTIRPdf_MS(new FTIRInputDto() { INSPECTCODE = ID, INSPECTTYPE = "", UserName = "system" });
+
+            if (CustomID == "JT")
+                //3.处理ROSH
+                ReplaceRosh(new FTIRInputDto() { INSPECTCODE = ID, INSPECTTYPE = "", UserName = "system" });
+            else if (CustomID == "MS") //小电流 淼昇
+                ReplaceRosh_MS(new FTIRInputDto() { INSPECTCODE = ID, INSPECTTYPE = "", UserName = "system" });
+            //5.处理硅元素
+            if (CustomID == "MS") //小电流 淼昇
+                ReplaceSI_MS(new FTIRInputDto() { INSPECTCODE = ID, INSPECTTYPE = "", UserName = "system" });
+
+
+            #region//4.处理二次元(图纸项目)
+            string sql2 = @"
+            SELECT  INSPECT_PROGRESSID,INSPECT_VIEW.PSTATE,INSPECT_VIEW.ITEMID,ISREPORT,INSPECT_DEV2ID FROM INSPECT_PROGRESS
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE  DOC_CODE=@ID AND INSPECT_PROGRESS.COC_ATTR='COC_ATTR_003' AND INSPECT_PROGRESS.INSPECT_DEV='INSPECT_DEV_001'        --
+            ";
+            // 定义参数
+            var parameters2 = new SugarParameter[] { new SugarParameter("@ID", ID) }; //检验单号
+            // 执行 SQL 命令
+            var dataTable2 = Db.Ado.GetDataTable(sql2, parameters2);
+            if (dataTable2 != null)
+            {
+                if (dataTable2.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dataTable2.Rows.Count; i++)
+                    {
+                        string INSPECT_PROGRESSID = dataTable2.Rows[i]["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_DEV2ID = dataTable2.Rows[i]["INSPECT_DEV2ID"].ToString();
+                        string ISREPORT = dataTable2.Rows[i]["ISREPORT"].ToString();
+                        //string ISBUILD = dataTable2.Rows[i]["ISBUILD"].ToString();
+                        string ITEMID = dataTable2.Rows[i]["ITEMID"].ToString();
+                        string guid2 = Guid.NewGuid().ToString();
+                        if (!IsNotNULL(INSPECT_DEV2ID)) //没有关联就产生DEV2
+                        {
+                            INSPECT_DEV2ID = guid2;
+                            Db.Ado.ExecuteCommand(@" 
+                            DECLARE @_INSPECT_DEV2ID NVARCHAR(50)
+
+                            SELECT TOP 1 @_INSPECT_DEV2ID=INSPECT_DEV2ID FROM INSPECT_DEV2  WHERE ITEMID='" + ITEMID + @"' AND ISBUILD!='1' 
+							ORDER BY INSPECT_DATE,INSPECT_DEV2ID DESC
+                            IF(ISNULL(@_INSPECT_DEV2ID,'')!='')
+                            BEGIN
+                                --自动找关联
+                                UPDATE INSPECT_PROGRESS SET INSPECT_DEV2ID=@_INSPECT_DEV2ID WHERE INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"'  --真
+                                UPDATE INSPECT_DEV2 SET ISBUILD='1' WHERE INSPECT_DEV2ID=@_INSPECT_DEV2ID
+                            END
+                            ELSE
+                            BEGIN
+                                --产生INSPECT_DEV2
+                                INSERT INSPECT_DEV2(TENID, INSPECT_DEV2ID, INSPECT_DATE, DEVID,PEOPLE02, APPEOPLE02, SAMPLE_CNT, BATCHID, ITEMID, ITEMNAME, LOTID
+                                , INSPECT_CODE
+                                --,INSPECT_SPEC
+                                , INSPECT_DEV
+                                , ISBUILD
+                                )
+                                SELECT A.TENID,'" + guid2 + @"',A.INSPECT_DATE,'检验单触发',A.PEOPLEID,A.APPPEOPLEID,'','',A.ITEMID,A.ITEMNAME,A.LOTNO
+                                ,'" + ID + @"'
+                                --,INSPECT_PROGRESS.INSPECT_SPEC
+                                ,'INSPECT_DEV_001'
+                                ,'1'
+                                FROM INSPECT_VIEW A
+                                LEFT JOIN INSPECT_PROGRESS ON A.INSPECT_VIEWID = INSPECT_PROGRESS.DOC_CODE
+                                WHERE A.INSPECT_VIEWID = '" + ID + @"' AND  INSPECT_PROGRESSID = '" + INSPECT_PROGRESSID + @"'
+                                --关联INSPECT_PROGRESS
+                                UPDATE INSPECT_PROGRESS SET INSPECT_DEV2ID = '" + guid2 + @"' WHERE INSPECT_PROGRESSID = '" + INSPECT_PROGRESSID + @"'
+                                
+                            END                         
+                            ");
+
+
+                        }
+                        if (ISREPORT != "1")
+                        {
+                            GetCPKfile(INSPECT_DEV2ID, "system");
+
+                        }
+
+                    }
+                }
+            }
+            #endregion
+
+            #region
+            //5.处理其他常规建议项目
+            string sql3 = @"
+            SELECT  INSPECT_PROGRESSID,INSPECT_VIEW.PSTATE,INSPECT_VIEW.ITEMID,ISREPORT,INSPECT_DEV2ID,INSPECT_CNT FROM INSPECT_PROGRESS
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE  DOC_CODE=@ID AND ISNULL(INSPECT_PROGRESS.COC_ATTR,'')='' AND ISNULL(INSPECT_PROGRESS.INSPECT_DEV,'')=''  AND COUNTTYPE='COUNTTYPE_002'      --
+            ";
+            // 定义参数
+            var parameters3 = new SugarParameter[] { new SugarParameter("@ID", ID) }; //检验单号
+            // 执行 SQL 命令
+            var dataTable3 = Db.Ado.GetDataTable(sql3, parameters3);
+            if (dataTable3 != null)
+            {
+                if (dataTable3.Rows.Count > 0)
+                {
+                    for (int k = 0; k < dataTable3.Rows.Count; k++)
+                    {
+                        string _INSPECT_PROGRESSID = dataTable3.Rows[k]["INSPECT_PROGRESSID"].ToString();
+                        string _INSPECT_CNT = dataTable3.Rows[k]["INSPECT_CNT"].ToString();
+
+                        Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{_INSPECT_PROGRESSID}', '{_INSPECT_CNT}'"); //产生随机值
+
+                    }
+                }
+            }
+            #endregion
+
+        }
+
+        public static bool IsNotNULL(string A)
+        {
+            if (string.IsNullOrEmpty(A))
+                return false;
+            if (A == "")
+                return false;
+            if (A == "null")
+                return false;
+            if (A == null)
+                return false;
+            if (A == "undefined")
+                return false;
+            return true;
+        }
+
+
+        public void GET_DEV1_UNION(string _ITEMID)
+        {
+           
+            Db.Ado.ExecuteCommand(@"
+            --UPDATE INSPECT_DEV1 SET ISBUILD='未指定材料或成品'
+            --WHERE ISNULL(REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), ''),'') NOT IN('材料','成品')
+
+UPDATE INSPECT_DEV1 SET ISBUILD='未指定品名'
+WHERE ISNULL(REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), ''),'')  IN('材料','成品')
+AND ISNULL(ITEMNAME,'')=''  AND ISNULL(ISBUILD,'')!='1'
+
+UPDATE INSPECT_DEV1 SET ISBUILD='未匹配到内部编码'  FROM INSPECT_DEV1
+LEFT JOIN ITEM ON INSPECT_DEV1.ITEMNAME=ITEM.ITEMNAME 
+WHERE REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), '') ='材料'
+AND  ISNULL(ITEM.ITEMID,'')=''  AND ISNULL(ISBUILD,'')!='1'
+
+UPDATE INSPECT_DEV1 SET ISBUILD='未匹配到内部编码'  FROM INSPECT_DEV1
+LEFT JOIN ITEM ON INSPECT_DEV1.ITEMNAME=ITEM.ITEMID  --成品是内部编码 
+WHERE REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), '') ='成品'
+AND  ISNULL(ITEM.ITEMID,'')=''  AND ISNULL(ISBUILD,'')!='1'   
+
+--赋品号
+--久泰品名栏位上写的是材料品名
+UPDATE INSPECT_DEV1 SET INSPECT_DEV1.ITEMID=ITEM.ITEMID  FROM INSPECT_DEV1
+LEFT JOIN ITEM ON INSPECT_DEV1.ITEMNAME=ITEM.ITEMNAME  --材料是品名 
+WHERE REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), '') ='材料'
+AND  ISNULL(ITEM.ITEMID,'')!=''  AND ISNULL(ISBUILD,'')!='1'   
+--久泰品名栏位上写的是成品编码
+UPDATE INSPECT_DEV1 SET INSPECT_DEV1.ITEMID=ITEM.ITEMID  FROM INSPECT_DEV1
+LEFT JOIN ITEM ON INSPECT_DEV1.ITEMNAME=ITEM.ITEMID  --成品是内部编码 
+WHERE REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), '') ='成品'
+AND  ISNULL(ITEM.ITEMID,'')!=''  AND ISNULL(ISBUILD,'')!='1'   
+--更新规格
+UPDATE INSPECT_DEV1 SET INSPECT_DEV1.INSPECT_SPEC=INSPECT_PROGRESS.INSPECT_SPEC  FROM INSPECT_DEV1
+LEFT JOIN INSPECT_PROGRESS ON INSPECT_PROGRESS.DOC_CODE=INSPECT_DEV1.INSPECT_CODE AND INSPECT_PROGRESS.INSPECT_PROGRESSNAME=INSPECT_DEV1.INSPECTTYPE1
+WHERE  INSPECT_PROGRESS.INSPECT_DEV='INSPECT_DEV_002'  AND  ISNULL(INSPECT_DEV1.INSPECTTYPE1,'')!=''  AND  INSPECT_DEV1.ISREPORT!='1'
+
+");
+            string sql = "";
+            if (_ITEMID != "")
+                sql = @"
+SELECT  
+INSPECT_DEV1ID
+,ITEMID
+,ITEMNAME
+,TESTTYPE       --分类
+,INSPECTTYPE1   --检验单检验名称
+,ISNULL(INSPECT_SPEC,'') INSPECT_SPEC
+,ISBUILD
+,ISREPORT
+,INSPECT_DATE
+FROM INSPECT_DEV1
+WHERE 
+--REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), '') in('材料','成品') AND
+ISNULL(INSPECT_DEV1.ITEMID,'')!=''  
+AND (ISNULL(ISBUILD,'')!='1' OR ISNULL(ISREPORT,'')!='1')
+AND INSPECT_DEV=@INSPECT_DEV
+AND ITEMID='" + _ITEMID + @"'
+ORDER BY INSPECT_DATE
+";
+            else
+                sql = @"
+SELECT  
+INSPECT_DEV1ID
+,ITEMID
+,ITEMNAME
+,TESTTYPE       --分类
+,INSPECTTYPE1   --检验单检验名称
+,ISNULL(INSPECT_SPEC,'') INSPECT_SPEC
+,ISBUILD
+,ISREPORT
+,INSPECT_DATE
+FROM INSPECT_DEV1
+WHERE 
+--REPLACE(REPLACE(LTRIM(RTRIM(INSPECT_DEV1.TESTTYPE)),CHAR(13), ''),CHAR(10), '') in('材料','成品') AND
+ISNULL(INSPECT_DEV1.ITEMID,'')!=''  
+AND (ISNULL(ISBUILD,'')!='1' OR ISNULL(ISREPORT,'')!='1')
+AND INSPECT_DEV=@INSPECT_DEV
+ORDER BY INSPECT_DATE
+";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@INSPECT_DEV", "INSPECT_DEV_002")  //拉力机
+            };
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql, parameters);
+            if (dataTable.Rows.Count > 0)
+            {
+                #region//关联规格         
+                for (int i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    string PUR = dataTable.Rows[i]["TESTTYPE"].ToString();
+                    string ITEMID = dataTable.Rows[i]["ITEMID"].ToString();                     //拉力机系统中填写的物料名称关联到的物料编码
+                    string INSPECT_DEV1ID = dataTable.Rows[i]["INSPECT_DEV1ID"].ToString();
+                    string INSPECT_PROGRESSNAME = dataTable.Rows[i]["INSPECTTYPE1"].ToString(); //拉力机系统中填写的检验项目名称
+                    string APPLY_DATE = dataTable.Rows[i]["INSPECT_DATE"].ToString();           //拉力机实际检验日期
+                    string TABLENAME = "";
+                    string INSPECT_SPEC = dataTable.Rows[i]["INSPECT_SPEC"].ToString(); ;
+
+                    if (string.IsNullOrEmpty(INSPECT_PROGRESSNAME))  //检验单检验内容为空，代表是材料
+                    {
+
+                        if (!IsNotNULL(INSPECT_SPEC))
+                            Db.Ado.ExecuteCommand(@"   
+                                    DECLARE @DOC_CODE NVARCHAR(50)
+                                    DECLARE @INSPECT_SPEC NVARCHAR(50)
+
+                                    SELECT TOP 1 @INSPECT_SPEC=INSPECT_PROGRESS.INSPECT_SPEC                        
+                                    FROM INSPECT_VIEW
+                                    LEFT JOIN INSPECT_PROGRESS ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+                                    WHERE  ISNULL(INSPECT_VIEW.ITEMID,'')='" + ITEMID + @"'  --物料编码相同
+                                    --AND ISNULL([PSTATE],'')!='PSTATE_003'                  
+                                    AND INSPECT_DEV='INSPECT_DEV_002'                        --拉力机
+                                    AND INSPECT_PROGRESS.INSPECT_SPEC!=''                    --没有规格
+                                    --AND CONVERT(VARCHAR(10),DATEADD(d,-1,CAST(APPLY_DATE AS DATETIME)),120) <= CONVERT(VARCHAR(10),CAST('" + APPLY_DATE + @"' AS DATETIME),120) 
+                                    --GROUP BY INSPECT_VIEWID,INSPECT_PROGRESSID,INSPECT_PROGRESS.INSPECT_SPEC
+                                    --HAVING COUNT(INSPECT_PROGRESSID)=1
+                                    if(ISNULL(@INSPECT_SPEC,'')='')
+                                        UPDATE INSPECT_DEV1 SET ISBUILD='未设定规格' WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                                    ELSE
+                                        UPDATE INSPECT_DEV1 SET INSPECT_SPEC=@INSPECT_SPEC WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                            ");
+                    }
+                    else
+                    {
+                        if (!IsNotNULL(INSPECT_SPEC))
+                        {
+                            Db.Ado.ExecuteCommand(@"   
+                                DECLARE @DOC_CODE NVARCHAR(50)
+                                DECLARE @INSPECT_SPEC NVARCHAR(50)
+
+                                SELECT TOP 1 @INSPECT_SPEC=INSPECT_PROGRESS.INSPECT_SPEC                           
+                                FROM INSPECT_VIEW
+                                LEFT JOIN INSPECT_PROGRESS ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+                                WHERE  ISNULL(INSPECT_VIEW.ITEMID,'')='" + ITEMID + @"'  --物料编码相同
+                                --AND [PSTATE] in ('PSTATE_001','PSTATE_002')   
+                                AND INSPECT_DEV='INSPECT_DEV_002'  --拉力机
+                                AND INSPECT_PROGRESS.INSPECT_SPEC!='' 
+                                --AND CONVERT(VARCHAR(10),DATEADD(d,-1,CAST(APPLY_DATE AS DATETIME)),120) <= CONVERT(VARCHAR(10),CAST('" + APPLY_DATE + @"' AS DATETIME),120) 
+                                AND INSPECT_PROGRESSNAME='" + INSPECT_PROGRESSNAME + @"'  --检验项目相同
+                                --GROUP BY INSPECT_VIEWID,INSPECT_PROGRESSID,INSPECT_PROGRESS.INSPECT_SPEC
+                               
+                                if(ISNULL(@INSPECT_SPEC,'')='')
+                                    UPDATE INSPECT_DEV1 SET INSPECT_SPEC='未设定规格' WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                                ELSE
+                                    UPDATE INSPECT_DEV1 SET INSPECT_SPEC=@INSPECT_SPEC WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                                
+                            ");
+                        }
+                    }
+                }
+                #endregion
+                //关联后拉力机
+                for (int i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    string PUR = dataTable.Rows[i]["TESTTYPE"].ToString();
+                    string ITEMID = dataTable.Rows[i]["ITEMID"].ToString();
+                    string INSPECT_DEV1ID = dataTable.Rows[i]["INSPECT_DEV1ID"].ToString();
+                    string INSPECT_PROGRESSNAME = dataTable.Rows[i]["INSPECTTYPE1"].ToString();
+                    string ISBUILD = dataTable.Rows[i]["ISBUILD"].ToString();
+                    string ISREPORT = dataTable.Rows[i]["ISREPORT"].ToString();
+                    string APPLY_DATE = dataTable.Rows[i]["INSPECT_DATE"].ToString();
+
+                    string TABLENAME = "";
+
+                    //if (PUR == "材料")
+                    //    TABLENAME = "INSPECT_IQC";
+                    //else if (PUR == "成品")
+                    //    TABLENAME = "INSPECT_OQC";
+                    if (ISBUILD != "1")
+                    {
+                        if (!IsNotNULL(INSPECT_PROGRESSNAME)) //检验单检验内容为空，去检验单找单个的
+                        {
+                            Db.Ado.ExecuteCommand(@"   
+                                DECLARE @DOC_CODE           NVARCHAR(50)
+                                DECLARE @INSPECT_PROGRESSID NVARCHAR(50)
+                                DECLARE @INSPECT_SPEC       NVARCHAR(50)
+                                --久泰：拉力机数据无检验项目时，去找只有一笔拉力机检验项目的检验单
+                                SELECT TOP 1 @DOC_CODE=INSPECT_VIEWID ,@INSPECT_PROGRESSID=INSPECT_PROGRESSID                        
+                                FROM INSPECT_VIEW
+                                LEFT JOIN INSPECT_PROGRESS ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+                                WHERE 
+								ISNULL(INSPECT_VIEW.ITEMID,'')='" + ITEMID + @"' 
+                                --AND [PSTATE]!='PSTATE_003'  --待检验，检验中 
+                                AND INSPECT_DEV='INSPECT_DEV_002'  --拉力机
+                                AND ISNULL(INSPECT_PROGRESS.INSPECT_DEV1ID,'')=''  --未匹配拉力机数据
+                                GROUP BY INSPECT_VIEWID,INSPECT_VIEW.APPLY_DATE,INSPECT_PROGRESSID
+                                HAVING COUNT(INSPECT_PROGRESSID)=1  --只有一笔拉力机检验项目的检验单
+								ORDER BY INSPECT_VIEW.APPLY_DATE DESC
+
+                                
+                                IF(ISNULL(@DOC_CODE,'')='') 
+                                    --久泰：如没找到检验单号，提示错误
+                                    UPDATE INSPECT_DEV1 SET ISBUILD='没有匹配到检验单' WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'  
+                                ELSE
+                                BEGIN
+                                    --久泰：如找到检验单号,更新检验单的INSPECT_PROGRESS.INSPECT_DEV1ID
+                                    UPDATE INSPECT_DEV1 SET ISBUILD='1',INSPECT_CODE=@DOC_CODE,INSPECT_PROGRESSID=@INSPECT_PROGRESSID  WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"';
+
+                                    UPDATE INSPECT_PROGRESS SET  INSPECT_PROGRESS.INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                                    FROM INSPECT_PROGRESS
+                                    WHERE  INSPECT_PROGRESSID IN(SELECT 
+                                    INSPECT_PROGRESSID                   
+                                    FROM INSPECT_VIEW
+                                    LEFT JOIN INSPECT_PROGRESS ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+                                    WHERE  
+                                    ISNULL(INSPECT_VIEW.ITEMID,'')='" + ITEMID + @"' 
+                                    --AND [PSTATE]!='PSTATE_003'   --待检验，检验中 
+                                    AND INSPECT_DEV='INSPECT_DEV_002'  --拉力机 
+                                    AND ISNULL(INSPECT_PROGRESS.INSPECT_DEV1ID,'')='' --未匹配
+                                    AND INSPECT_VIEW.INSPECT_VIEWID=@DOC_CODE    --过滤检验单号
+                                    GROUP BY INSPECT_VIEWID,INSPECT_PROGRESSID
+                                    HAVING COUNT(INSPECT_PROGRESSID)=1)
+
+                                END
+                                ");
+                        }
+                        else
+                        {
+                            Db.Ado.ExecuteCommand(@"   
+                                DECLARE @DOC_CODE NVARCHAR(50)
+ DECLARE @INSPECT_PROGRESSID NVARCHAR(50)
+                                SELECT TOP 1 @DOC_CODE=INSPECT_VIEWID       ,@INSPECT_PROGRESSID=INSPECT_PROGRESSID                     
+                                FROM INSPECT_VIEW
+                                LEFT JOIN INSPECT_PROGRESS ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+                                WHERE  ISNULL(INSPECT_VIEW.ITEMID,'')='" + ITEMID + @"'
+                                --AND [PSTATE]!='PSTATE_003'  --待检验，检验中 
+                                AND INSPECT_DEV='INSPECT_DEV_002'            --拉力机
+                                AND ISNULL(INSPECT_PROGRESS.INSPECT_DEV1ID,'')='' --未匹配
+                                AND INSPECT_PROGRESSNAME='" + INSPECT_PROGRESSNAME + @"'  --相同检验项目
+                                ORDER BY INSPECT_VIEW.APPLY_DATE DESC
+
+
+                                IF(ISNULL(@DOC_CODE,'')='')
+                                    UPDATE INSPECT_DEV1 SET ISBUILD='没有匹配到检验单' WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                                ELSE
+                                BEGIN
+                                    UPDATE INSPECT_DEV1 SET ISBUILD='1',INSPECT_CODE=@DOC_CODE,INSPECT_PROGRESSID=@INSPECT_PROGRESSID WHERE INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"';
+
+                                    UPDATE INSPECT_PROGRESS SET  INSPECT_PROGRESS.INSPECT_DEV1ID='" + INSPECT_DEV1ID + @"'
+                                    FROM INSPECT_PROGRESS
+                                    WHERE  INSPECT_PROGRESSID IN(SELECT 
+                                    INSPECT_PROGRESSID                         
+                                    FROM INSPECT_VIEW
+                                    LEFT JOIN INSPECT_PROGRESS ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+                                    WHERE  
+                                    ISNULL(INSPECT_VIEW.ITEMID,'')='" + ITEMID + @"'
+                                    --AND [PSTATE]!='PSTATE_003'   --待检验，检验中 
+                                    AND INSPECT_DEV='INSPECT_DEV_002'  --拉力机
+                                    AND INSPECT_PROGRESSNAME='" + INSPECT_PROGRESSNAME + @"' --相同检验项目
+                                    AND ISNULL(INSPECT_PROGRESS.INSPECT_DEV1ID,'')=''  --未匹配
+                                    AND INSPECT_VIEW.INSPECT_VIEWID=@DOC_CODE    --过滤检验单号
+                                    )
+                                END
+                                ");
+                        }
+
+                        GetInspectReport(new InspectInputDto() { INSPECT_DEV1ID = INSPECT_DEV1ID, UserName = "system" });
+                        
+                    }
+                    else if (ISREPORT != "1")
+                    {
+                         GetInspectReport(new InspectInputDto() { INSPECT_DEV1ID = INSPECT_DEV1ID, UserName = "system" });
+                       
+                    }
+
+                }
+            }
+           
+        }
+
+
+        public void LogTask(string TaskName, string result)
+        {
+            Db.Ado.ExecuteCommand(@"INSERT LOGTASK(LOGTASKID,LOGTASKCODE,LOGTASKNAME,RESULT,LOGTASKCREATEDATE,TENID,LOGTASKCREATEUSER) 
+                        VALUES(newid(),convert(varchar(20),getdate(),120),'" + TaskName + @"','" + result + @"',convert(varchar(20),getdate(),120),'001','system')");
+        }
+         
         public void GetInspectReport(InspectInputDto parm)
         {
             string INSPECT_CODE;//检验单号
             string INSPECT_PUR; //检验来源
-            string COLUM002ID;//检验项目ID
+            //string INSPECT_DEV1ID;
             string ITEMID;//物料编码
             string LOTID;//批次号
             string INSPECT_DATE;
-            string COLUM001ID;//COLUM001ID
             string INSPECT_SPEC;
+            string INSPECT_PROGRESSNAME;
+            string PSTATE;
+            int inspect_Qyt = 0;
+            string INSPECT_PROGRESSID = "";
+            string ISBUILD;
+            string ISREPORT;
+            string error = "";
 
-
-
-            //1. 获取编码
-            string INPECT_CODE = Db.Ado.GetString(@$"DEV1_GET_INPECT_CODE '{parm.INSPECT_DEV1ID}'");
-            if (INPECT_CODE.Contains("错误"))
-            {
-                throw new Exception($"DEV1_GET_INPECT_CODE获取异常：{INPECT_CODE}");
-            }
-
-            #region 获得检验单号和检验来源
-            string sql = @"SELECT TOP 1 ISNULL(INSPECT_DEV1.INSPECT_CODE,''),ISNULL(INSPECT_DEV1.INSPECT_PUR,''),
-INSPECT_DEV1.COLUM002ID,INSPECT_DEV1.ITEMID,INSPECT_DEV1.LOTID,INSPECT_DEV1.INSPECT_DATE,INSPECT_DEV1.COLUM001ID,INSPECT_SPEC
-FROM INSPECT_DEV1 
-LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV1.INSPECT_FLOWID
-LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV1.COLUM002ID
-WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID";
+            #region 获得检验单号和检验来源 徐杰修改
+            string sql = @"SELECT  
+             ISNULL(INSPECT_VIEW.INSPECT_CODE,'') INSPECT_CODE
+            ,ISNULL(INSPECT_VIEW.INSPECT_TYPE,'') INSPECT_PUR
+            ,INSPECT_PROGRESS.INSPECT_PROGRESSID INSPECT_PROGRESSID  --检验单检验项目ID
+            ,INSPECT_VIEW.ITEMID
+            ,INSPECT_VIEW.LOTNO
+            ,INSPECT_DEV1.INSPECT_DATE
+            ,ISNULL(INSPECT_PROGRESS.INSPECT_CNT,'0') INSPECT_CNT --应样本数
+            ,ISNULL(INSPECT_DEV1.INSPECT_SPEC,'')  INSPECT_SPEC
+            ,INSPECT_VIEW.PSTATE
+            ,INSPECT_DEV1.INSPECT_DEV1ID
+            ,INSPECT_DEV1.ISBUILD
+            ,INSPECT_DEV1.ISREPORT
+            ,INSPECT_PROGRESS.INSPECT_PROGRESSNAME
+            FROM INSPECT_DEV1 
+            LEFT JOIN INSPECT_PROGRESS ON INSPECT_DEV1.INSPECT_DEV1ID=INSPECT_PROGRESS.INSPECT_DEV1ID
+            LEFT JOIN INSPECT_VIEW ON INSPECT_PROGRESS.DOC_CODE=INSPECT_VIEW.INSPECT_CODE
+            WHERE INSPECT_DEV1.INSPECT_DEV1ID=@INSPECT_DEV1ID";
             // 定义参数
             var parameters = new SugarParameter[]
             {
@@ -76,268 +596,293 @@ WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID";
 
             if (dataTable.Rows.Count > 0)
             {
-                INSPECT_CODE = dataTable.Rows[0][0].ToString();
-                INSPECT_PUR = dataTable.Rows[0][1].ToString();
-                COLUM002ID = dataTable.Rows[0][2].ToString();
-                ITEMID = dataTable.Rows[0][3].ToString();
-                LOTID = dataTable.Rows[0][4].ToString();
-                INSPECT_DATE = DateTime.Parse(dataTable.Rows[0][5].ToString()).ToString("yyyyMMddHHmmss");
-                COLUM001ID = dataTable.Rows[0][6].ToString();
-                INSPECT_SPEC = dataTable.Rows[0][7].ToString();
-            }
-            else
-            {
-                throw new Exception("未获取到检验单号和检验来源");
-            }
-            #endregion
-
-            #region 判断检验单是否已经完成
-            //如果 检验单号 不为空 并且 检验来源 不为空 @动态表名 =“INSPECT_”+@INSPECT_PUR
-            //@动态表面ID栏位 = @动态表名 +“ID”
-            //    SELECT STATE FROM @动态表名 WHERE @动态表面ID栏位 = @INSPECT_CODE
-            //    如果 STATE =“已完成”
-            //    返回错误：”检验单已完成，无法再次产生检验报告” 提出API
-            string table = string.Empty;
-            string surfaceId = string.Empty;
-            if (!string.IsNullOrEmpty(INSPECT_CODE) && !string.IsNullOrEmpty(INSPECT_PUR))
-            {
-                table = "INSPECT_" + INSPECT_PUR;
-                surfaceId = table + "ID";
-                string state = "";
-
-                sql = @$"SELECT STATE FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
-                // 定义参数
-                parameters = new SugarParameter[]
+                #region //校验
+                for (int i = 0; i < dataTable.Rows.Count; i++)
                 {
-                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
-                };
-                // 执行 SQL 命令
-                dataTable = Db.Ado.GetDataTable(sql, parameters);
+                    ISBUILD = dataTable.Rows[i]["ISBUILD"].ToString();
+                    INSPECT_CODE = dataTable.Rows[i]["INSPECT_CODE"].ToString();
+                    INSPECT_PUR = dataTable.Rows[i]["INSPECT_PUR"].ToString();
+                    //INSPECT_DEV1ID = dataTable.Rows[i]["INSPECT_DEV1ID"].ToString();
+                    INSPECT_PROGRESSID = dataTable.Rows[i]["INSPECT_PROGRESSID"].ToString();
+                    ITEMID = dataTable.Rows[i]["ITEMID"].ToString();
+                    LOTID = dataTable.Rows[i]["LOTNO"].ToString();
+                    if (IsNotNULL(dataTable.Rows[i]["INSPECT_DATE"].ToString()))
+                        INSPECT_DATE = DateTime.Parse(dataTable.Rows[i]["INSPECT_DATE"].ToString()).ToString("yyyyMMddHHmmss");
+                    else
+                        INSPECT_DATE = "";
+                    INSPECT_PROGRESSNAME = dataTable.Rows[i]["INSPECT_PROGRESSNAME"].ToString();
+                    inspect_Qyt = int.Parse(dataTable.Rows[i]["INSPECT_CNT"].ToString());  //xujie add
+                    INSPECT_SPEC = dataTable.Rows[i]["INSPECT_SPEC"].ToString();
+                    PSTATE = dataTable.Rows[i]["PSTATE"].ToString();
 
-                if (dataTable.Rows.Count > 0)
-                {
-                    state = dataTable.Rows[0][0].ToString();
-                }
-                else
-                {
-                    throw new Exception("未获取到检验单状态");
-                }
+                    if (!IsNotNULL(INSPECT_SPEC))
+                    {
+                        error = "检验项目未设置规格";
+                        Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='" + error + @"' where INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"' ");
+                    }
 
-                if (state == "已完成")
-                {
-                    throw new Exception("检验单已完成，无法再次产生检验报告");
-                }
-            }
-            else
-            {
-                throw new Exception("检验单号或检验来源为空");
-            }
-            #endregion
+                    //else if (PSTATE == "PSTATE_003")
+                    //{
+                    //    error = INSPECT_CODE + "<" + INSPECT_PROGRESSNAME + ">:关联的检验单已完成，无法产生！";
+                    //    Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='" + error + @"' where INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"' ");
+                    //    //throw new Exception(error);
+                    //}
+                    else if (ISBUILD != "1")
+                    {
+                        error = "未关联检验单！";
+                        Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='" + error + @"' where INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"' ");
+                        Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='" + error + @"' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        //throw new Exception(error);
+                    }
+                    else if (error == "")
+                    {
+                        if (inspect_Qyt == 0)
+                            inspect_Qyt = 1;//测试1笔
 
-            #region 获取应检样本数
-            int lot_Qyt = 0;
-            sql = @$"SELECT top 1 LOT_QTY FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
-            // 定义参数
-            parameters = new SugarParameter[]
-            {
-                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
-            };
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
-            if (dataTable.Rows.Count > 0)
-            {
-                int.TryParse(dataTable.Rows[0][0].ToString(), out lot_Qyt);
-            }
-            else
-            {
-                throw new Exception("未获取到检验批次数量LOT_QTY");
-            }
+                        //2.获得@实际记录量
+                        int actCount = Db.Ado.GetInt(@$"SELECT COUNT(1) FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'  ");
 
-            //1. 获得应检样本量
-            int inspect_Qyt = Db.Ado.GetInt(@$"GET_INPECT_CNT  '{COLUM002ID}','{lot_Qyt}'");
-            if (inspect_Qyt == 0)
-                inspect_Qyt = 1;//测试1笔
-            //2.获得@实际记录量
-            int actCount = Db.Ado.GetInt(@$"SELECT COUNT(1) FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
-
-            //3.如果@实际记录量<应检样本量
-            if (actCount < inspect_Qyt)
-            {
-                //历史样本数
-                int historyCount = Db.Ado.GetInt(@$"Select COUNT(1) FROM INSPECT_TENSILE 
+                        //3.如果@实际记录量<应检样本量
+                        if (actCount < inspect_Qyt)
+                        {
+                            //SAMPLE_CNT
+                            //历史样本数
+                            int historyCount = Db.Ado.GetInt(@$"Select COUNT(1) FROM INSPECT_TENSILE 
 LEFT JOIN INSPECT_DEV1 ON INSPECT_TENSILE.INSPECT_DEV1ID=INSPECT_DEV1.INSPECT_DEV1ID
-WHERE INSPECT_DEV1.ITEMID='{ITEMID}'  AND INSPECT_TENSILE.INSPECT_DEV1ID<>'{parm.INSPECT_DEV1ID}'
+WHERE INSPECT_DEV1.ITEMID='{ITEMID}'  
+AND INSPECT_TENSILE.INSPECT_DEV1ID<>'{parm.INSPECT_DEV1ID}'
 AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}'");
-                if (historyCount < inspect_Qyt - actCount)
-                {
-                    throw new Exception("历史数据记录笔数不满足，无法产生报告");
-                }
-            }
-            #endregion
-
-            //重新获取主资料
-            var dtMain = Db.Ado.GetDataTable(@$"SELECT 
-INSPECT_DEV1.INSPECT_CODE   -- 检验单号  
-,INSPECT_DEV1.INSPECT_PUR     -- 检验来源    IQC OQC
-,INSPECT_FLOW.ITEMID		      -- 物料编码    (有个低代码待办)
-,INSPECT_DEV1.LOTID			      -- 批次号      
-,INSPECT_DEV1.DOC_CODE		      -- 来源单号  
-,INSPECT_DEV1.COLUM002ID
-,COLUM002.COC_ATTR           --特殊设定
-,INSPECT_DEV1.INSPECT_FLOWID	
-FROM INSPECT_DEV1 
-LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV1.INSPECT_FLOWID
-LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV1.COLUM002ID
-WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
-
-            List<INSPECT_TENSILE_D> listToSave = new List<INSPECT_TENSILE_D>();
-            //实际检测集合
-            var dtActiveMain = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt} *,FLAG=0 FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
-            foreach (DataRow item in dtActiveMain.Rows)
-            {
-                listToSave.Add(GetDetailByInspect(item, parm.INSPECT_DEV1ID));
-            }
-            //四.如果@应检样本数>@实际记录笔
-            if (inspect_Qyt > dtActiveMain.Rows.Count)
-            {
-                var dtRandomAddData = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt - dtActiveMain.Rows.Count} *,FLAG=1
-FROM INSPECT_TENSILE
-LEFT JOIN INSPECT_DEV1 
-ON INSPECT_TENSILE.INSPECT_DEV1ID = INSPECT_DEV1.INSPECT_DEV1ID
-WHERE INSPECT_DEV1.ITEMID ='{ITEMID}'
-AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}'
-AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
-                foreach (DataRow item in dtRandomAddData.Rows)
-                {
-                    listToSave.Add(GetDetailByInspect(item, parm.INSPECT_DEV1ID));
-                }
-            }
-
-            #region SaveToInspectDetail
-            try
-            {
-                // 开启事务
-                Db.Ado.BeginTran();
-
-                Db.Ado.ExecuteCommand($"DELETE INSPECT_TENSILE_D WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
-                Db.Ado.ExecuteCommand($"DELETE INSPECT_TENSILE_D_R WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
-
-                // 批量插入数据
-                Db.Insertable<INSPECT_TENSILE_D>(listToSave).ExecuteCommand();
-
-                List<INSPECT_TENSILE_D_R> listInspectDataR = new List<INSPECT_TENSILE_D_R>();
-                foreach (var detail in listToSave)
-                {
-                    // 去除字符串首尾的花括号
-                    string trimmedInput = detail.Y_AXIS.Trim('{', '}');
-                    // 按逗号分割字符串
-                    string[] numberStrings = trimmedInput.Split(',');
-                    // 将分割后的字符串数组转换为双精度浮点数数组
-                    decimal[] numbers = Array.ConvertAll(numberStrings, decimal.Parse);
-                    decimal max = numbers.Max();
-                    decimal min = numbers.Min();
-                    decimal avg = numbers.Average();
-
-                    var drItem = new INSPECT_TENSILE_D_R()
-                    {
-                        INSPECT_TENSILE_D_RID = Guid.NewGuid().ToString(),
-                        INSPECT_TENSILE_DID = detail.INSPECT_TENSILE_DID,
-                        INSPECT_DEV1ID = detail.INSPECT_DEV1ID,
-                        SAMPLEID = detail.SAMPLEID,
-                        MaxValue = max,
-                        MinValue = min,
-                        AvgValue = avg
-                    };
-                    listInspectDataR.Add(drItem);
-                }
-
-                Db.Insertable<INSPECT_TENSILE_D_R>(listInspectDataR).ExecuteCommand();
-
-                //将【INSPECT_TENSILE_D_R】中的平均值作为检验结果同步给QMS
-                Db.Ado.ExecuteCommand($"DELETE INSPECT_ZONE WHERE COLUM002ID='{COLUM002ID}' AND INSPECTCODE='{INSPECT_CODE}'");
-
-                var cOLUM001CODE = Db.Ado.GetString($"SELECT TOP 1 COLUM001CODE FROM COLUM001 WHERE COLUM001ID='{COLUM001ID}'");
-                //2. 获得@检验值
-                var avgValue = Db.Ado.GetString($"SELECT avg(AvgValue) FROM INSPECT_TENSILE_D_R WHERE  INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'");
-                sql = @$"INSERT INSPECT_ZONE (INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO,{cOLUM001CODE}) VALUES  (
-'{parm.UserName}'                        --传参@userName
-,CONVERT(varchar(20),GETDATE(),120)
-,newid()
-,'{INSPECT_PUR}'                      --@INSPECT_PUR
-,'{COLUM002ID}'                       --@COLUM002ID
-,'{ITEMID}'                           --@ITEMID
-,'{LOTID}'                            --@LOTID
-,'{INSPECT_CODE}'                     --@INSPECT_CODE 检验单号
-,'0'                                  --样本序号 (第1个SAMPLEID 给1，第2个给2,依次类推)
-,'0'                                 --固定给 0
-,'{avgValue}' )";
-                Db.Ado.ExecuteCommand(sql);
-                #region delete old
-                /*
-                var dtSAMPLEID = Db.Ado.GetDataTable(@$"SELECT SAMPLEID FROM INSPECT_TENSILE_D_R WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}' GROUP BY SAMPLEID");
-                int number = 1;
-                foreach (DataRow item in dtSAMPLEID.Rows)
-                {
-                    string sampleId = item[0].ToString();
-                    //1. 获得@检验内容编码
-                    DataTable dtCOLUM001CODE = Db.Ado.GetDataTable($"SELECT COLUM001CODE FROM COLUM001 WHERE COLUM001ID='{COLUM001ID}'");
-                    string COLUM001CODEs = string.Empty;
-                    foreach (DataRow dr in dtCOLUM001CODE.Rows)
-                    {
-                        COLUM001CODEs += "," + dr[0].ToString();
+                            if (historyCount < inspect_Qyt - actCount)
+                            {
+                                error = "历史数据记录笔数不满足";
+                                Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='" + error + @"' where INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"' ");
+                                Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='" + error + @"' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                                //throw new Exception("历史数据记录笔数不满足，无法产生报告");
+                            }
+                        }
                     }
-                    COLUM001CODEs = COLUM001CODEs.TrimEnd(',');
-                    //2. 获得@检验值
-                    DataTable dtAvgValue = Db.Ado.GetDataTable($"SELECT AvgValue FROM INSPECT_TENSILE_D_R WHERE  INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}' AND SAMPLEID ='{sampleId}'");
-                    string AvgValues = string.Empty;
-                    foreach (DataRow dr in dtAvgValue.Rows)
-                    {
-                        AvgValues += ",'" + dr[0].ToString() + "'";
-                    }
-                    AvgValues = AvgValues.TrimEnd(',');
-                    if(dtCOLUM001CODE.Rows.Count!= dtAvgValue.Rows.Count)
-                    {
-                        throw new Exception($"{sampleId}检验内容编码{COLUM001CODEs}和检测值{AvgValues}数量不匹配");
-                    }
-
-                    sql = @$"INSERT INSPECT_ZONE (INSPECT_ZONECREATEUSER,INSPECT_ZONECREATEDATE,INSPECT_ZONEID,INSPECTTYPE,COLUM002ID,CUSTOM_ITEMID,LOTNO,INSPECTCODE,PCSCODE,ISAUTO {COLUM001CODEs} ) VALUES  (
-'{parm.UserName}'                        --传参@userName
-,CONVERT(varchar(20),GETDATE(),120)
-,newid()
-,'{INSPECT_PUR}'                      --@INSPECT_PUR
-,'{COLUM002ID}'                       --@COLUM002ID
-,'{ITEMID}'                           --@ITEMID
-,'{LOTID}'                            --@LOTID
-,'{INSPECT_CODE}'                     --@INSPECT_CODE 检验单号
-,'{number++}'                         --样本序号 (第1个SAMPLEID 给1，第2个给2,依次类推)
-,'0'                                 --固定给 0
-{AvgValues} )";
-                    Db.Ado.ExecuteCommand(sql);
-                }*/
+                }
                 #endregion
+                //产生报告
+                if (error == "")
+                {
+                    for (int i = 0; i < dataTable.Rows.Count; i++)
+                    {
+                        ISBUILD = dataTable.Rows[i]["ISBUILD"].ToString();
+                        INSPECT_CODE = dataTable.Rows[i]["INSPECT_CODE"].ToString();
+                        INSPECT_PUR = dataTable.Rows[i]["INSPECT_PUR"].ToString();
+                        //INSPECT_DEV1ID = dataTable.Rows[i]["INSPECT_DEV1"].ToString();
+                        INSPECT_PROGRESSID = dataTable.Rows[i]["INSPECT_PROGRESSID"].ToString();
+                        ITEMID = dataTable.Rows[i]["ITEMID"].ToString();
+                        LOTID = dataTable.Rows[i]["LOTNO"].ToString();
+                        try
+                        {
+                            INSPECT_DATE = DateTime.Parse(dataTable.Rows[i]["INSPECT_DATE"].ToString()).ToString("yyyyMMddHHmmss");
+                        }
+                        catch
+                        {
+                            INSPECT_DATE = "1900-01-01";
+                        }
+                        INSPECT_PROGRESSNAME = dataTable.Rows[i]["INSPECT_PROGRESSNAME"].ToString();
+                        inspect_Qyt = int.Parse(dataTable.Rows[i]["INSPECT_CNT"].ToString());  //xujie add
+                        INSPECT_SPEC = dataTable.Rows[i]["INSPECT_SPEC"].ToString();
+                        PSTATE = dataTable.Rows[i]["PSTATE"].ToString();
 
-                // 提交事务
-                Db.Ado.CommitTran();
+                        if (!IsNotNULL(INSPECT_SPEC))
+                        {
+                            error = "未获取到规格";
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='" + error + @"' where INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"' ");
+                        }
+                        if (error == "")
+                        {
+                            if (inspect_Qyt == 0)
+                                inspect_Qyt = 1;//测试1笔
+
+                            //2.获得@实际记录量
+                            int actCount = Db.Ado.GetInt(@$"SELECT COUNT(1) FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'  ");
+
+                            //3.如果@实际记录量<应检样本量
+                            if (actCount < inspect_Qyt)
+                            {
+                                //历史样本数
+                                int historyCount = Db.Ado.GetInt(@$"Select COUNT(1) FROM INSPECT_TENSILE 
+LEFT JOIN INSPECT_DEV1 ON INSPECT_TENSILE.INSPECT_DEV1ID=INSPECT_DEV1.INSPECT_DEV1ID
+WHERE INSPECT_DEV1.ITEMID='{ITEMID}'  
+AND INSPECT_TENSILE.INSPECT_DEV1ID<>'{parm.INSPECT_DEV1ID}'
+
+AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}'");
+                                if (historyCount < inspect_Qyt - actCount)
+                                {
+                                    error = "历史数据记录笔数不满足，无法产生报告";
+                                    Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='" + error + @"' where INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"' ");
+                                    //throw new Exception("历史数据记录笔数不满足，无法产生报告");
+                                }
+                            }
+                            if (error == "")
+                            {
+
+                                List<INSPECT_TENSILE_D> listToSave = new List<INSPECT_TENSILE_D>();
+                                int s1 = 0;
+                                //实际检测集合
+                                var dtActiveMain = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt} *,FLAG=0 FROM INSPECT_TENSILE WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'   ");
+                                foreach (DataRow item in dtActiveMain.Rows)
+                                {
+                                    s1++;
+
+                                    listToSave.Add(GetDetailByInspect(item, parm.INSPECT_DEV1ID, INSPECT_PROGRESSID, s1.ToString()));
+                                }
+                                //四.如果@应检样本数>@实际记录笔
+                                if (inspect_Qyt > dtActiveMain.Rows.Count)
+                                {
+                                    var dtRandomAddData = Db.Ado.GetDataTable(@$"SELECT TOP {inspect_Qyt - dtActiveMain.Rows.Count} *,FLAG=1
+                                                                                FROM INSPECT_TENSILE
+                                                                                LEFT JOIN INSPECT_DEV1 
+                                                                                ON INSPECT_TENSILE.INSPECT_DEV1ID = INSPECT_DEV1.INSPECT_DEV1ID
+                                                                                WHERE INSPECT_DEV1.ITEMID ='{ITEMID}'
+                                                                                AND INSPECT_TENSILE.INSPECT_DEV1ID <>'{parm.INSPECT_DEV1ID}'
+                                                                                AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
+                                    foreach (DataRow item in dtRandomAddData.Rows)
+                                    {
+                                        s1++;
+                                        listToSave.Add(GetDetailByInspect(item, parm.INSPECT_DEV1ID, INSPECT_PROGRESSID, s1.ToString()));
+                                    }
+                                }
+
+                                #region SaveToInspectDetail
+                                try
+                                {
+
+                                    // 开启事务
+                                    Db.Ado.BeginTran();
+
+                                    Db.Ado.ExecuteCommand($"DELETE INSPECT_TENSILE_D WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'  AND INSPECT_PROGRESSID='{INSPECT_PROGRESSID}'");
+                                    Db.Ado.ExecuteCommand($"DELETE INSPECT_TENSILE_D_R WHERE INSPECT_DEV1ID='{parm.INSPECT_DEV1ID}'  AND INSPECT_PROGRESSID='{INSPECT_PROGRESSID}'");
+
+                                    // 批量插入数据
+                                    Db.Insertable<INSPECT_TENSILE_D>(listToSave).ExecuteCommand();
+
+                                    List<INSPECT_TENSILE_D_R> listInspectDataR = new List<INSPECT_TENSILE_D_R>();
+                                    foreach (var detail in listToSave)
+                                    {
+                                        // 去除字符串首尾的花括号
+                                        string trimmedInput = detail.Y_AXIS.Trim('{', '}');
+
+                                        // 按逗号分割字符串
+                                        string[] numberStrings = trimmedInput.Split(',');
+                                        // 将分割后的字符串数组转换为双精度浮点数数组
+                                        decimal[] numbers = Array.ConvertAll(numberStrings, decimal.Parse);
+                                        decimal max = numbers.Max();
+                                        decimal min = numbers.Min();
+                                        decimal avg = numbers.Average();
+
+                                        var drItem = new INSPECT_TENSILE_D_R()
+                                        {
+                                            INSPECT_TENSILE_D_RID = Guid.NewGuid().ToString(),
+                                            INSPECT_TENSILE_DID = detail.INSPECT_TENSILE_DID,
+                                            INSPECT_DEV1ID = detail.INSPECT_DEV1ID,
+                                            INSPECT_PROGRESSID = detail.INSPECT_PROGRESSID,
+                                            SAMPLEID = detail.SAMPLEID,
+                                            MaxValue = max,
+                                            MinValue = min,
+                                            AvgValue = avg
+                                        };
+                                        listInspectDataR.Add(drItem);
+                                    }
+
+                                    Db.Insertable<INSPECT_TENSILE_D_R>(listInspectDataR).ExecuteCommand();
+
+
+                                    sql = @"SELECT AvgValue
+                        FROM INSPECT_TENSILE_D_R 
+                        WHERE INSPECT_DEV1ID=@INSPECT_DEV1ID  
+                                AND INSPECT_PROGRESSID=@INSPECT_PROGRESSID
+                        ";
+                                    // 定义参数
+                                    var para = new SugarParameter[]
+                                    {
+                                new SugarParameter("@INSPECT_DEV1ID", parm.INSPECT_DEV1ID)
+                               ,new SugarParameter("@INSPECT_PROGRESSID",INSPECT_PROGRESSID)
+                                    };
+
+                                    // 执行 SQL 命令
+                                    var dataTable1 = Db.Ado.GetDataTable(sql, para);
+                                    string SETVALUES = "";
+                                    if (dataTable1 != null && dataTable1.Rows.Count > 0)
+                                    {
+                                        for (int ii = 0; ii < dataTable1.Rows.Count; ii++)
+                                        {
+                                            if (SETVALUES == "")
+                                                SETVALUES += "A" + (ii + 1).ToString() + "='" + dataTable1.Rows[ii]["AvgValue"].ToString() + "'";
+                                            else
+                                                SETVALUES += ",A" + (ii + 1).ToString() + "='" + dataTable1.Rows[ii]["AvgValue"].ToString() + "'";
+                                        }
+
+                                        if (SETVALUES != "")
+                                        {
+                                            sql = @"UPDATE INSPECT_PROGRESS SET " + SETVALUES + " WHERE  INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + "' ";
+                                            Db.Ado.ExecuteCommand(sql);
+                                        }
+                                    }
+
+
+
+
+
+                                    // 提交事务
+                                    Db.Ado.CommitTran();
+                                }
+                                catch (Exception)
+                                {
+                                    // 回滚事务
+                                    Db.Ado.RollbackTran();
+                                    throw;
+                                }
+                                #endregion
+
+                                byte[] fileContents = GetInspectImage(listToSave);
+
+                                //返回文件流
+                                var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.jpg";
+                                string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\TENSILE\{ITEMID}\{fileName}");
+
+                                //保存到SCANDOC
+                                SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID, INSPECT_PROGRESSID, ITEMID);
+
+
+
+                                Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT='1' WHERE INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"'");
+                                Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='1' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                                COCInputDto COCInputDto = new COCInputDto();
+                                COCInputDto.COCID = "005";
+                                string[] FIX=new string[1];
+                                FIX[0] = INSPECT_CODE;
+                                COCInputDto.FIX_VALUE= FIX;
+                                COCInputDto.ID = INSPECT_CODE;
+                                COCInputDto.INSPECT_DEV1ID= parm.INSPECT_DEV1ID;
+                                COCInputDto.INSPECT_PROGRESSID = INSPECT_PROGRESSID;
+                                COCInputDto.DOCTYPE = "拉力机报告";
+
+                                GetCOCfile(COCInputDto);
+                                Db.Ado.ExecuteCommand(@" UPDATE INSPECT_DEV1 SET ISREPORT1='1' WHERE INSPECT_DEV1ID='" + parm.INSPECT_DEV1ID + @"'");
+
+                                // return "{\"INSPECT_DEV1ID\":\"" + parm.INSPECT_DEV1ID + "\",\"INSPECT_CODE\":\"" + INSPECT_CODE + "\",\"INSPECT_PROGRESSID\":\"" + INSPECT_PROGRESSID + "\"}";
+                                // LogTask("拉力机报告", INSPECT_CODE + ";" + INSPECT_PROGRESSNAME + " 成功");
+                                // 产生拉力机报告
+                            }
+
+                        }
+
+                    }
+
+                }
+
             }
-            catch (Exception)
-            {
-                // 回滚事务
-                Db.Ado.RollbackTran();
-                throw;
-            }
+
             #endregion
-
-            byte[] fileContents = GetInspectImage(listToSave);
-
-            //返回文件流
-            var fileName = $"{ITEMID}_{LOTID}{INSPECT_DATE}.jpg";
-            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\TENSILE\{ITEMID}\{fileName}");
-
-            //保存到SCANDOC
-            SaveToScanDoc("拉力机检测图", fileContents, filePath, INSPECT_CODE, parm.INSPECT_DEV1ID, COLUM002ID, COLUM001ID);
         }
 
-        private INSPECT_TENSILE_D GetDetailByInspect(DataRow item,string INSPECT_DEV1ID)
+ 
+        private INSPECT_TENSILE_D GetDetailByInspect(DataRow item, string INSPECT_DEV1ID, string INSPECT_PROGRESSID, string s1)
         {
             var newItem = new INSPECT_TENSILE_D();
             newItem.INSPECT_TENSILE_DID = Guid.NewGuid().ToString();
@@ -348,20 +893,28 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 // 赋值逻辑
                 if (item.Table.Columns.Contains(columnName) && item[columnName] != DBNull.Value)
                 {
+                    // 获取属性类型（处理可空类型）
                     Type propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
                     object value = Convert.ChangeType(item[columnName], propType);
                     prop.SetValue(newItem, value);
                 }
             }
             newItem.INSPECT_DEV1ID = INSPECT_DEV1ID;
+            newItem.INSPECT_PROGRESSID = INSPECT_PROGRESSID;
+            newItem.SAMPLEID = s1;
+
+
             return newItem;
         }
-        
-        private byte[] GetInspectImage(List<INSPECT_TENSILE_D> listInspectData){
+
+        private byte[] GetInspectImage(List<INSPECT_TENSILE_D> listInspectData)
+        {
             byte[] result = null;
 
             // 创建一个 PlotModel 对象，它代表整个图表
-            var plotModel = new PlotModel {
+            var plotModel = new PlotModel
+            {
                 Title = "拉力机检测图",
                 Background = OxyColors.White
             };
@@ -398,11 +951,12 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             yMax = (int)Math.Ceiling(yMax * 1.1);
 
             // 创建一个线性坐标轴作为 X 轴
-            plotModel.Axes.Add(new LinearAxis {
-            Position = AxisPosition.Bottom,
-            Title = "变形(mm)",
-            Minimum = 0,
-            Maximum = xMax,
+            plotModel.Axes.Add(new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "变形(mm)",
+                Minimum = 0,
+                Maximum = xMax,
                 MajorGridlineStyle = OxyPlot.LineStyle.Solid,
                 MinorGridlineStyle = OxyPlot.LineStyle.Dot,
                 MajorGridlineColor = OxyColors.LightGray,
@@ -410,7 +964,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             });
 
             // 创建一个线性坐标轴作为 Y 轴
-            plotModel.Axes.Add(new LinearAxis {
+            plotModel.Axes.Add(new LinearAxis
+            {
                 Position = AxisPosition.Left,
                 Title = "力(gt)",
                 Minimum = 0,
@@ -423,7 +978,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             int i = 1;
             Random random = new Random();
-            foreach (var detail in listInspectData) {
+            foreach (var detail in listInspectData)
+            {
                 string trimmedInput = detail.X_AXIS.Trim('{', '}');
                 string[] numberStrings = trimmedInput.Split(',');
                 double[] dataArraysX = Array.ConvertAll(numberStrings, double.Parse);
@@ -438,17 +994,19 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 byte b = (byte)random.Next(256);
                 OxyColor randomColor = OxyColor.FromRgb(r, g, b);
 
-                var lineSeries = new LineSeries {
+                var lineSeries = new LineSeries
+                {
                     Title = $"Plot{i++}",
                     MarkerType = MarkerType.Circle,
                     MarkerSize = 0.2,
                     MarkerStroke = randomColor,
                     StrokeThickness = 1,
                     MarkerFill = OxyColors.White,
-                Color = randomColor
+                    Color = randomColor
                 };
 
-                for (int j = 0; j < dataArraysX.Length; j++) {
+                for (int j = 0; j < dataArraysX.Length; j++)
+                {
                     DataPoint p = new DataPoint(dataArraysX[j], dataArraysY[j]);
                     lineSeries.Points.Add(p);
                 }
@@ -459,7 +1017,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             // 保存图表为 PNG 图片
             var exporter = new PngExporter { Width = 800, Height = 600, Resolution = 50 };
-            using (MemoryStream stream = new MemoryStream()) {
+            using (MemoryStream stream = new MemoryStream())
+            {
                 exporter.Export(plotModel, stream);
                 stream.Position = 0;
                 result = stream.ToArray();
@@ -467,9 +1026,11 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             }
             return result;
         }
-        private void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV1ID,string COLUM002ID, string COLUM001ID) {
+        private void SaveToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV1ID, string INSPECT_PROGRESSID, string ITEMID)
+        {
             FileInfo file = new FileInfo(scandocName);
-            if (!file.Directory.Exists) {
+            if (!file.Directory.Exists)
+            {
                 file.Directory.Create();
             }
             if (fileContents != null)
@@ -477,11 +1038,16 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 File.WriteAllBytes(scandocName, fileContents);
             }
 
-            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
+            //Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE PEOPLEID='{peopleId}' AND COLUM001ID='{COLUM001ID}'");
 
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID)";
+            IF EXISTS(SELECT 1 FROM SCANDOC WHERE  INSPECT_PROGRESSID=@INSPECT_PROGRESSID)
+                UPDATE SCANDOC SET SCANDOCNAME=@SCANDOCNAME,INSPECT_DEV1ID=@INSPECT_DEV1ID,ITEMID=@ITEMID WHERE INSPECT_PROGRESSID=@INSPECT_PROGRESSID
+            ELSE
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,INSPECT_PROGRESSID,ITEMID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@INSPECT_PROGRESSID,@ITEMID)
+            
+";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -490,9 +1056,50 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
-                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID),
-                new SugarParameter("@COLUM002ID", COLUM002ID),
-                new SugarParameter("@COLUM001ID", COLUM001ID)
+                new SugarParameter("@ITEMID", ITEMID),
+                new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID),
+                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID)
+
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+
+        private void SaveROSHToScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV1ID, string INSPECT_PROGRESSID, string ITEMID)
+        {
+            FileInfo file = new FileInfo(scandocName);
+            if (!file.Directory.Exists)
+            {
+                file.Directory.Create();
+            }
+            if (fileContents != null)
+            {
+                File.WriteAllBytes(scandocName, fileContents);
+            }
+
+            //Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE PEOPLEID='{peopleId}' AND COLUM001ID='{COLUM001ID}'");
+
+            string sql = @"
+            IF EXISTS(SELECT 1 FROM SCANDOC WHERE  INSPECT_PROGRESSID=@INSPECT_PROGRESSID)
+                UPDATE SCANDOC SET SCANDOCNAME=@SCANDOCNAME,INSPECT_DEV1ID=@INSPECT_DEV1ID,ITEMID=@ITEMID WHERE INSPECT_PROGRESSID=@INSPECT_PROGRESSID
+            ELSE
+            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,INSPECT_PROGRESSID,ITEMID)
+            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@INSPECT_PROGRESSID,@ITEMID)
+            
+";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
+                new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
+                new SugarParameter("@DOCTYPE", docType),
+                new SugarParameter("@PEOPLEID", peopleId),
+                 new SugarParameter("@ITEMID", ITEMID),
+                new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID),
+                new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID)
+
             };
 
             // 执行 SQL 命令
@@ -501,7 +1108,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         #endregion
 
         #region GetInspectBatchReport
-        public void GetInspectBatchReport(InspectInputByCodeDto parm){
+        public void GetInspectBatchReport(InspectInputByCodeDto parm)
+        {
             var dtINSPECT_DEVID = Db.Ado.GetDataTable(@$"SELECT INSPECT_DEV1ID FROM INSPECT_DEV1 WHERE DOC_CODE = '{parm.DOC_CODE}' AND INSPECT_DEV ='{parm.INSPECT_DEV}'");
             if (dtINSPECT_DEVID.Rows.Count == 0)
             {
@@ -518,33 +1126,38 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         #region GetCPKfile
         public void GetCPKfile(string INSPECT_DEV2ID, string userName)
         {
+            string error = "";
+            string INSPECT_PROGRESSID = "";
+            string ITEMID = "";
+            string LOTID = "";
+            string INSPECT_CODE = "";
+            string INSPECT_DATE = "";
+            string ITEMNAME = "";
+            string strDP = "";
+            CpkRandomGenerator CpkRandomGenerator = new CpkRandomGenerator();
+            int lot_Qyt = 0;
+            int inspect_Qyt = 0;
 
-            string INSPECT_CODE;//检验单号
-            string INSPECT_PUR; //检验来源
+            #region 1．获得资料
 
-            //测试
-            //GET_INSPECT_LIST("INSPECT_ZONE_021", "IQC_2025030003", "IQC");
-            #region 三．执行存储过程  
-            //执行存储过程
-            //如果 返回值前两位 =“错误”，则 退出API，将返回值返回
-            // 执行 SQL 命令
-            string INPECT_CODE = Db.Ado.GetString(@$"EXEC DEV2_GET_INPECT_CODE '{INSPECT_DEV2ID}'");
-            if (INPECT_CODE.Contains("错误"))
-            {
-                throw new Exception($"DEV2_GET_INPECT_CODE获取异常：{INPECT_CODE}");
-            }
-            #endregion
-
-            #region 一．获得检验单号和检验来源
-            string sql = @"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE,'') AS INSPECT_CODE,ISNULL(INSPECT_DEV2.INSPECT_PUR,'') As INSPECT_PUR    
-                        FROM INSPECT_DEV2 
-                        LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID=INSPECT_DEV2.INSPECT_FLOWID
-                        LEFT JOIN COLUM002 ON COLUM002.COLUM002ID=INSPECT_DEV2.COLUM002ID
-                        WHERE INSPECT_DEV2ID=@INSPECT_DEV2ID";
-            // 定义参数
+            string sql = @"SELECT Top 1 ISNULL(INSPECT_VIEW.INSPECT_VIEWID, '') AS INSPECT_CODE
+                    ,ISNULL(INSPECT_VIEW.ITEMID, '') AS ITEMID-- 物料编码(有个低代码待办)
+                    ,ISNULL(INSPECT_VIEW.LOTNO, '') AS LOTID-- 批次号     
+                    ,ISNULL(INSPECT_PROGRESS.INSPECT_PROGRESSID, '') AS INSPECT_PROGRESSID
+                    ,ISNULL(INSPECT_PROGRESS.COC_ATTR, '') AS COC_ATTR--特殊设定
+                    ,ISNULL(INSPECT_PROGRESS.INSPECT_CNT, '') AS INSPECT_CNT --应检
+                    ,ISNULL(INSPECT_VIEW.LOT_QTY, '') AS LOT_QTY  --批次数量
+                    ,ISNULL(INSPECT_PROGRESS.INSPECT_DEV2ID, '') AS INSPECT_DEV2ID  --批次数量
+                    ,INSPECT_VIEW.INSPECT_DATE
+                    ,INSPECT_VIEW.ITEMNAME
+,ISNULL(INSPECT_NOR.DP,'0') DP
+                    FROM INSPECT_PROGRESS
+LEFT JOIN INSPECT_NOR ON INSPECT_PROGRESS.INSPECT_NORID=INSPECT_NOR.INSPECT_NORID
+                    LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID = INSPECT_PROGRESS.DOC_CODE
+                    WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID";
             var parameters = new SugarParameter[]
             {
-                new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID)
+              new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID)
             };
 
             // 执行 SQL 命令
@@ -552,548 +1165,92 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             if (dataTable.Rows.Count > 0)
             {
-                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
-                INSPECT_PUR = dataTable.Rows[0]["INSPECT_PUR"].ToString();
-            }
-            else
-            {
-                throw new Exception("未获取到检验单号和检验来源");
-            }
-            #endregion
-
-            #region 二．判断检验单是否已经完成
-            //如果 检验单号 不为空 并且 检验来源 不为空 @动态表名 =“INSPECT_”+@INSPECT_PUR
-            //@动态表面ID栏位 = @动态表名 +“ID”
-            //    SELECT STATE FROM @动态表名 WHERE @动态表面ID栏位 = @INSPECT_CODE
-            //    如果 STATE =“已完成”
-            //    返回错误：”检验单已完成，无法再次产生检验报告” 提出API
-            string table = string.Empty;
-            string surfaceId = string.Empty;
-
-            if (!string.IsNullOrEmpty(INSPECT_CODE) && !string.IsNullOrEmpty(INSPECT_PUR))
-            {
-                table = "INSPECT_" + INSPECT_PUR;
-                surfaceId = table + "ID";
-                string state = "";
-
-                sql = @$"SELECT STATE FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
-                // 定义参数
-                parameters = new SugarParameter[]
-                {
-                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
-                };
-                // 执行 SQL 命令
-                dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-                if (dataTable.Rows.Count > 0)
-                {
-                    state = dataTable.Rows[0]["STATE"].ToString();
-                }
-                else
-                {
-                    throw new Exception("未获取到检验单状态");
-                }
-
-                if (state == "已完成")
-                {
-                    throw new Exception("检验单已完成，无法再次产生检验报告");
-                }
-            }
-            else
-            {
-                throw new Exception("检验单号或检验来源为空");
-            }
-            #endregion
-
-            #region 四．重新获得主档资料
-            string COLUM002ID = "";
-            string ITEMID = "";
-            string LOTID = "";
-            string INSPECT_FLOWID = "";
-            string INSPECT_DATE = "";
-            string ITEMNAME = "";
-
-            sql = @"SELECT Top 1 ISNULL(INSPECT_DEV2.INSPECT_CODE, '') AS INSPECT_CODE
-                    ,ISNULL(INSPECT_DEV2.INSPECT_PUR, '') AS INSPECT_PUR  -- 检验来源 IQC OQC
-                    ,ISNULL(INSPECT_FLOW.ITEMID, '') AS ITEMID-- 物料编码(有个低代码待办)
-                    ,ISNULL(INSPECT_DEV2.LOTID, '') AS LOTID-- 批次号
-                    ,ISNULL(INSPECT_DEV2.DOC_CODE, '') AS DOC_CODE-- 来源单号
-                    ,ISNULL(INSPECT_DEV2.COLUM002ID, '') AS COLUM002ID
-                    ,ISNULL(COLUM002.COC_ATTR, '') AS COC_ATTR--特殊设定
-                    ,ISNULL(INSPECT_DEV2.INSPECT_FLOWID, '') AS INSPECT_FLOWID,INSPECT_DATE,ITEMNAME
-                    FROM INSPECT_DEV2
-                    LEFT JOIN INSPECT_FLOW ON INSPECT_FLOW.INSPECT_FLOWID = INSPECT_DEV2.INSPECT_FLOWID
-                    LEFT JOIN COLUM002 ON COLUM002.COLUM002ID = INSPECT_DEV2.COLUM002ID
-                    WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID";
-            parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID)
-            };
-
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-            if (dataTable.Rows.Count > 0)
-            {
-                COLUM002ID = dataTable.Rows[0]["COLUM002ID"].ToString();
+                INSPECT_PROGRESSID = dataTable.Rows[0]["INSPECT_PROGRESSID"].ToString();
                 ITEMID = dataTable.Rows[0]["ITEMID"].ToString();
                 LOTID = dataTable.Rows[0]["LOTID"].ToString();
-                INSPECT_FLOWID = dataTable.Rows[0]["INSPECT_FLOWID"].ToString();
+                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString();
                 INSPECT_DATE = dataTable.Rows[0]["INSPECT_DATE"].ToString();
                 ITEMNAME = dataTable.Rows[0]["ITEMNAME"].ToString();
+                inspect_Qyt = int.Parse(dataTable.Rows[0]["INSPECT_CNT"].ToString());  //获得应检样本量
+                lot_Qyt = int.Parse(dataTable.Rows[0]["LOT_QTY"].ToString());
+                INSPECT_DEV2ID = dataTable.Rows[0]["INSPECT_DEV2ID"].ToString();
+                strDP = dataTable.Rows[0]["DP"].ToString();
             }
 
             #endregion
 
-            #region 五．获得一些资料 为第七、第八步使用
-            //得到 @COLUM002结果集
-            sql = @"SELECT * FROM COLUM002 where COLUM002ID = @COLUM002ID";
-            parameters = new SugarParameter[]
+            string sqlPRO1 = @"SELECT * FROM INSPECT_DEV2 where INSPECT_DEV2ID = @INSPECT_DEV2ID";
+            var paraPRO1 = new SugarParameter[] { new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID) };
+            var dtPRO1 = Db.Ado.GetDataTable(sqlPRO1, paraPRO1);
+            if (dtPRO1.Rows.Count > 0)
             {
-                new SugarParameter("@COLUM002ID", COLUM002ID)
-            };
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
-            int count_COLUM002 = dataTable.Rows.Count;
-
-            int dtColumn1Count = Db.Ado.GetInt(@$"SELECT count(*) FROM COLUM001 where COLUM002ID = '{COLUM002ID}' AND COLUM001CODE LIKE 'A%'");
-
-            //得到 @第一个样本ID
-            sql = @"SELECT TOP 1 SAMPLEID FROM INSPECT_2D  WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID";
-            parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID)
-            };
-            int sampleId = Db.Ado.GetInt(sql, parameters);
-
-            if (sampleId == 0 && dtColumn1Count == 0)
-            {
-                throw new Exception("没有实测数据切检验内容为空!");
-            }
-
-            //如果 INSPECT_2D异常结果集 记录数> 0 则
-            //返回错误：“当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致”
-            //得到 INSPECT_2D异常结果集
-            sql = @"SELECT * FROM  INSPECT_2D
-                LEFT JOIN COLUM001 ON INSPECT_2D.LOCATION = COLUM001.COLUM001NAME
-                WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID  AND SAMPLEID = @SAMPLEID
-                AND COLUM001.COLUM002ID = @COLUM002ID  AND COLUM001.COLUM001CODE IS NULL
-                AND COLUM001.COLUM001CODE LIKE 'A%'
-                ORDER BY INSPECT_2D.LOCATION";
-            parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                new SugarParameter("@SAMPLEID", sampleId),
-                new SugarParameter("@COLUM002ID", COLUM002ID)
-            };
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-            int count_INSPECT_2D = dataTable.Rows.Count;
-
-            #region 七．进一步检验
-
-            if (count_INSPECT_2D > 0 && dtColumn1Count != 0)
-            {
-                throw new Exception("当前设备原始LOCATION资料和当前选择的检验项目的检验内容不一致");
-            }
-            #endregion
-
-            #endregion
-
-            #region 六 .获取应检样本数 @检验批次数量LOT_QTY
-            //六．获得应检样本数
-            //由@COLUM002ID获得应检样本数
-            //执行存储过程：GET_INPECT_CNT @COLUM002ID, @检验批次数量LOT_QTY
-            //@应检样本数 = 结果集CNT列的值
-
-            int lot_Qyt = 0;
-            sql = @$"SELECT top 1 ISNULL(LOT_QTY,0)  FROM {table} WHERE {surfaceId}=@INSPECT_CODE";
-            // 定义参数
-            parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_CODE", INSPECT_CODE)
-            };
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
-            if (dataTable.Rows.Count > 0)
-            {
-                lot_Qyt = int.Parse(dataTable.Rows[0][0].ToString());
-            }
-            else
-            {
-                throw new Exception("未获取到检验批次数量LOT_QTY");
-            }
-
-            //获得应检样本量
-            int inspect_Qyt = Db.Ado.GetInt(@$"EXEC GET_INPECT_CNT  '{COLUM002ID}','{lot_Qyt}'");
-
-            #endregion
-
-            #region 九．将 INSPECT_2D 的检验内容（检验位置）传递给QMS
-            //如果 @COLUM002结果集 记录数 = 0 或者为NULL
-            if (dtColumn1Count == 0)
-            {
-                try
+                string DEVID = dtPRO1.Rows[0]["DEVID"].ToString();
+                #region//由检验单自动产生数据
+                if (DEVID == "检验单触发")
                 {
-                    // 开启事务
-                    Db.Ado.BeginTran();
+                    // 产生随机值
+                    string sqlPRO = @"SELECT INSPECT_PROGRESS.INSPECT_PROGRESSID,LOCATION.CPK CPK,ISNULL(STD_VALUE,'0') STD_VALUE
+,ISNULL(INSPECT_PROGRESS.MAX_VALUE,'0') MAX_VALUE,ISNULL(INSPECT_PROGRESS.MIN_VALUE,'0') MIN_VALUE  FROM INSPECT_PROGRESS 
+                                      LEFT JOIN LOCATION ON LOCATION.LOCATIONID=INSPECT_PROGRESS.LOCATIONID
+                                      WHERE INSPECT_PROGRESS1ID = @INSPECT_PROGRESSID";
+                    var paraPRO = new SugarParameter[] { new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID) };
 
-                    #region 1.根据@COLUM002ID 产生检验内容（COLUM001）
-                    string CREATEUSER = "system";
-                    string TENID = "001";
-                    string COLUM001ID = "";
-                    string @CUSTOMID = "";
-                    string RE = "";
-                    string MAX_VALUE = "";  //--INSPECT_2D.VALUE2
-                    string STD_VALUE = "";  //标准值: INSPECT_2D.VALUE1
-                    string COLUM001NAME = "";//--INSPECT_2D.LOCATION
-                    string INSPECT_LEVELID = "";
-                    string OPTIONS = "";
-                    string COLUM001CODE = "";//--第一个A01，第二个A02，依次类推
-                    string MIN_VALUE = "";  //INSPECT_2D.VALUE3
-                    string REMARK1 = "二次元";
-                    string AC = "";
-                    string INSPECT_AQLCODE = "";
-                    string REMARK = "";
-                    string REMARK2 = "";
-                    string COLUM0A10 = "Num";
-                    string INSPECT_PLANID = "c6cae8ea-24e0-4fbe-ac6e-775843549e5b";
-                    string INSPECT_2DID;
-                    //根据 @COLUM002ID 产生检验内容（COLUM001）
-                    //--得到第一个样本的所有检验内容
-                    sql = @$"SELECT VALUE2,VALUE1,INSPECT_2D.LOCATION,VALUE3,INSPECT_2DID,* FROM  INSPECT_2D
-                        WHERE  INSPECT_DEV2ID = @INSPECT_DEV2ID  AND SAMPLEID = @SAMPLEID ORDER BY INSPECT_2D.LOCATION";
 
-                    parameters = new SugarParameter[]
+                    var dtPRO = Db.Ado.GetDataTable(sqlPRO, paraPRO);
+
+                    if (dtPRO.Rows.Count > 0)
                     {
-                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                    new SugarParameter("@SAMPLEID", sampleId),
-                    };
-                    // 执行 SQL 命令
-                    dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-                    if (dataTable.Rows.Count > 0)
-                    {
-                        for (int i = 0; i < dataTable.Rows.Count; i++)
+                        for (int i = 0; i < dtPRO.Rows.Count; i++)
                         {
-                            STD_VALUE = dataTable.Rows[i]["VALUE1"].ToString();
-                            MAX_VALUE = Math.Abs(double.Parse(dataTable.Rows[i]["VALUE2"].ToString())).ToString();
-                            MIN_VALUE = Math.Abs(double.Parse(dataTable.Rows[i]["VALUE3"].ToString())).ToString();
-                            COLUM001NAME = dataTable.Rows[i]["LOCATION"].ToString();
-                            COLUM001CODE = "A" + (i + 1).ToString("D2");
-                            INSPECT_2DID = dataTable.Rows[i]["INSPECT_2DID"].ToString();
-                            COLUM001ID = Guid.NewGuid().ToString();
+                            string _INSPECT_PROGRESSID = dtPRO.Rows[i]["INSPECT_PROGRESSID"].ToString();
+                            Db.Ado.ExecuteCommand(@$"UPDATE INSPECT_PROGRESS SET INSPECT_CNT='" + inspect_Qyt + @"' where INSPECT_PROGRESSID='" + _INSPECT_PROGRESSID + @"' "); //
 
-                            sql = @$"INSERT INTO COLUM001(COLUM001CREATEDATE, COLUM001CREATEUSER, TENID, COLUM001ID, 
-                                CUSTOMID, RE, MAX_VALUE, STD_VALUE, COLUM001NAME, INSPECT_LEVELID, OPTIONS, 
-                                COLUM001CODE, MIN_VALUE, COLUM002ID, REMARK1, AC, INSPECT_AQLCODE, REMARK, REMARK2, 
-                                COLUM0A10, INSPECT_PLANID) 
-                                VALUES( 
-                                CONVERT(VARCHAR(20), GETDATE(), 120), @CREATEUSER, @TENID, @COLUM001ID, @CUSTOMID, 
-                                @RE, @MAX_VALUE, @STD_VALUE, @COLUM001NAME, @INSPECT_LEVELID, @OPTIONS, @COLUM001CODE, 
-                                @MIN_VALUE, @COLUM002ID, @REMARK1, @AC, @INSPECT_AQLCODE, @REMARK, @REMARK2, @COLUM0A10, @INSPECT_PLANID)";
+                            string CPK = dtPRO.Rows[i]["CPK"].ToString();
+                            Double icpk = 0;
+                            Double STD_VALUE = Double.Parse(dtPRO.Rows[i]["STD_VALUE"].ToString());
+                            Double MAX_VALUE = Double.Parse(dtPRO.Rows[i]["MAX_VALUE"].ToString());
+                            Double MIN_VALUE = Double.Parse(dtPRO.Rows[i]["MIN_VALUE"].ToString());
+                            int DP = 0;
+                            if (!IsNotNULL(strDP))
+                                DP = 4;
+                            DP = int.Parse(strDP);
 
-                            parameters = new SugarParameter[]
+                            LogTask("拉力机报告", INSPECT_CODE + ";" + DP.ToString() + " 成功");
+
+                            double[] data;
+                            if (CPK == "CPK_002")
+                                icpk = 1.33;
+                            else if (CPK == "CPK_003")
+                                icpk = 1.67;
+                            else
+                                Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{_INSPECT_PROGRESSID}', '{inspect_Qyt}'"); //产生随机值
+
+                            if (icpk != 0)
                             {
-                            new SugarParameter("@CREATEUSER", CREATEUSER),
-                            new SugarParameter("@TENID", TENID),
-                            new SugarParameter("@COLUM001ID", COLUM001ID),
-                            new SugarParameter("@CUSTOMID", CUSTOMID),
-                            new SugarParameter("@RE", RE),
-                            new SugarParameter("@MAX_VALUE", MAX_VALUE),
-                            new SugarParameter("@STD_VALUE", STD_VALUE),
-                            new SugarParameter("@COLUM001NAME", COLUM001NAME),
-                            new SugarParameter("@INSPECT_LEVELID", INSPECT_LEVELID),
-                            new SugarParameter("@OPTIONS", OPTIONS),
-                            new SugarParameter("@COLUM001CODE", COLUM001CODE),
-                            new SugarParameter("@MIN_VALUE", MIN_VALUE),
-                            new SugarParameter("@COLUM002ID", COLUM002ID),
-                            new SugarParameter("@REMARK1", REMARK1),
-                            new SugarParameter("@AC", AC),
-                            new SugarParameter("@INSPECT_AQLCODE", INSPECT_AQLCODE),
-                            new SugarParameter("@REMARK", REMARK),
-                            new SugarParameter("@REMARK2", REMARK2),
-                            new SugarParameter("@COLUM0A10", COLUM0A10),
-                            new SugarParameter("@INSPECT_PLANID", INSPECT_PLANID),
-                            };
-                            // 执行 SQL 命令
-                            Db.Ado.ExecuteCommand(sql, parameters);
 
-                            #region 2.回写A01的编码给原始资料
-                            sql = @$"UPDATE INSPECT_2D SET COLUM001CODE = @COLUM001CODE WHERE INSPECT_2DID = @INSPECT_2DID";
-                            parameters = new SugarParameter[]
-                            {
-                            new SugarParameter("@COLUM001CODE", COLUM001CODE),
-                            new SugarParameter("@INSPECT_2DID", INSPECT_2DID),
-                            };
-                            // 执行 SQL 命令
-                            Db.Ado.ExecuteCommand(sql, parameters);
+                                data = CpkRandomGenerator.GenerateValues(STD_VALUE, MAX_VALUE, MIN_VALUE, inspect_Qyt, icpk);
 
-                            //Db.Ado.ExecuteCommand(@$"UPDATE INSPECT_2D SET COLUM001CODE ='{COLUM001CODE}' WHERE INSPECT_2DID = '{INSPECT_2DID}'");
-                            #endregion
-                        }
-                    }
-                    #endregion
-
-                    // 提交事务
-                    Db.Ado.CommitTran();
-                }
-                catch (Exception)
-                {
-                    // 回滚事务
-                    Db.Ado.RollbackTran();
-                    throw;
-                }
-            }
-            #endregion
-
-            #region 八．更新检验内容的CODE给 INSPECT_2D
-            //（通过LOCATION关联检验内容，更新设备原始记录）
-            sql = @$"UPDATE INSPECT_2D SET
-                        COLUM001CODE = COLUM001.COLUM001CODE,ADD_VALUE = COLUM001.ADD_VALUE
-                        FROM INSPECT_2D
-                        LEFT JOIN COLUM001 ON INSPECT_2D.LOCATION = COLUM001.COLUM001NAME
-                        WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID
-                        --AND SAMPLEID = @SAMPLEID
-                        AND COLUM001.COLUM002ID = @COLUM002ID
-                        AND COLUM001.COLUM001CODE IS NOT NULL";
-            // 定义参数
-            parameters = new SugarParameter[]
-            {
-                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                    //new SugarParameter("@SAMPLEID", sampleId),
-                    new SugarParameter("@COLUM002ID", COLUM002ID)
-
-            };
-
-            // 执行 SQL 命令
-            Db.Ado.ExecuteCommand(sql, parameters);
-            #endregion
-
-            #region 十.将INSPECT_2D实际值传入QMS
-            //1.获得INSPECT_2D实际测量的样本数量
-            int actCNT = Db.Ado.GetInt(@$"SELECT COUNT(DISTINCT SAMPLEID) AS CNT FROM INSPECT_2D WHERE INSPECT_DEV2ID ='{INSPECT_DEV2ID}'");
-            //2.如果 @CNT > 0 则
-            if (actCNT > 0)
-            {
-                try
-                {
-                    // 开启事务
-                    Db.Ado.BeginTran();
-
-                    //2.1 删除QMS中的记录：@COLUM002ID @INSPECT_CODE
-                    sql = @$" DELETE INSPECT_ZONE WHERE COLUM002ID = @COLUM002ID AND INSPECTCODE = @INSPECT_CODE";
-                    parameters = new SugarParameter[]
-                    {
-                    new SugarParameter("@COLUM002ID", COLUM002ID),
-                    new SugarParameter("@INSPECT_CODE", INSPECT_CODE),
-                    };
-                    Db.Ado.ExecuteCommand(sql, parameters);
-                    //2.2 开始同步记录
-                    //循环每个SAMPLEID
-                    sql = @$" SELECT  SAMPLEID  FROM INSPECT_2D WHERE  INSPECT_DEV2ID=@INSPECT_DEV2ID GROUP BY SAMPLEID";
-                    parameters = new SugarParameter[]
-                    {
-                    new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                    };
-                    dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-                    if (dataTable.Rows.Count > 0)
-                    {
-                        for (int i = 0; i < dataTable.Rows.Count; i++)
-                        {
-                            #region 1 循环结果集
-                            sql = @$"SELECT COLUM001CODE  AS 检验内容编码, MAX(VALUE)  AS 检验值
-                            FROM INSPECT_2D WHERE INSPECT_DEV2ID = @INSPECT_DEV2ID
-                            AND SAMPLEID = @SAMPLEID
-                            GROUP BY COLUM001CODE
-                            ORDER BY COLUM001CODE";
-                            parameters = new SugarParameter[]
-                            {
-                            new SugarParameter("@INSPECT_DEV2ID", INSPECT_DEV2ID),
-                            new SugarParameter("@SAMPLEID",  Convert.ToInt32(dataTable.Rows[i]["SAMPLEID"])),
-                            };
-                            var dataTable1 = Db.Ado.GetDataTable(sql, parameters);
-
-                            string sel_Col = "";
-                            string sel_VALUES = "";
-
-                            if (dataTable1.Rows.Count > 0)
-                            {
-                                for (int j = 0; j < dataTable1.Rows.Count; j++)
+                                string set = "";
+                                int k = 0;
+                                foreach (var val in data)
                                 {
-                                    sel_Col += "," + dataTable1.Rows[j]["检验内容编码"].ToString();
-                                    sel_VALUES += "," + "'" + dataTable1.Rows[j]["检验值"].ToString() + "'";
+                                    k++;
+                                    if (k == 1)
+                                        set += "A" + k.ToString() + "='" + Math.Round(val, DP).ToString() + "'";
+                                    else
+                                        set += ",A" + k.ToString() + "='" + Math.Round(val, DP).ToString() + "'";
                                 }
+                                Db.Ado.ExecuteCommand(@"UPDATE INSPECT_PROGRESS SET " + set + " WHERE INSPECT_PROGRESSID='" + _INSPECT_PROGRESSID + "'");
                             }
-                            #endregion
-                            #region 2.插入检验结果
-                            sql = @$"INSERT INSPECT_ZONE(INSPECT_ZONECREATEUSER, INSPECT_ZONECREATEDATE, INSPECT_ZONEID, INSPECTTYPE, COLUM002ID, 
-                            CUSTOM_ITEMID, LOTNO, INSPECTCODE, PCSCODE, ISAUTO{sel_Col}) 
-                            VALUES(
-                            '{userName}',CONVERT(varchar(20), GETDATE(), 120), '{Guid.NewGuid().ToString()}','{INSPECT_PUR}', '{COLUM002ID}',
-                            '{ITEMID}','{LOTID}','{INSPECT_CODE}','{i.ToString()}','1'{sel_VALUES})";
 
-                            Db.Ado.ExecuteCommand(sql);
 
-                            #endregion
+
                         }
                     }
-                    // 事务提交
-                    Db.Ado.CommitTran();
                 }
-                catch (Exception)
-                {
-                    // 回滚事务
-                    Db.Ado.RollbackTran();
-                    throw;
-                }
+                #endregion
             }
 
-            #endregion
-
-            #region 十一．让QMS产生随机值
-            //1.如果 @应检样本数 > @CNT 则 @产生样本数量 = @应检样本数 - @CNT
-            int generateQty = 0;
-
-            if (actCNT < inspect_Qyt)
-            {
-                generateQty = inspect_Qyt - actCNT;
-            }
-            //GET_INSPECT_RANK(COLUM002ID, INSPECT_CODE, generateQty, INSPECT_PUR, userName);
-            Db.Ado.ExecuteCommand(@$"EXEC GET_INSPECT_RANK  '{COLUM002ID}','{INSPECT_CODE}','{generateQty}','{INSPECT_PUR}','{userName}'");
-            #endregion
-
-            #region 十二．产生【CPK-扩展项目】的随机值
-            //1.得到CPK - 扩展项结果集
-            sql = @$"SELECT COLUM002ID FROM COLUM002 WHERE INSPECT_FLOWID = @INSPECT_FLOWID and COC_ATTR ='COC_ATTR_002'";
-            parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_FLOWID", INSPECT_FLOWID)
-            };
-            // 执行 SQL 命令
-            dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-            string kz_COLUM002ID = string.Empty;
-
-            //2.循环CPK - 扩展项结果集
-            if (dataTable.Rows.Count > 0)
-            {
-                for (int i = 0; i < dataTable.Rows.Count; i++)
-                {
-                    kz_COLUM002ID = dataTable.Rows[i]["COLUM002ID"].ToString();
-                    //1.获得应检样本量
-                    inspect_Qyt = Db.Ado.GetInt(@$"EXEC GET_INPECT_CNT  '{kz_COLUM002ID}','{lot_Qyt}'");
-                    //2.产生检验随机值
-                    //传入参数：
-                    //@COLUM002ID(检验项目)--CPK - 扩展项结果集.@COLUM002ID
-                    //@INSPECT_CODE(检验单号)(前文获取过）
-                    //@产生样本数--@CPK - 扩展项目应检样本数
-                    //@INSPECT_PUR--检验类别(前文获取过）
-                    //@userName
-                    //GET_INSPECT_RANK(kz_COLUM002ID, INSPECT_CODE, inspect_Qyt, INSPECT_PUR, userName);
-                    Db.Ado.ExecuteCommand(@$"EXEC GET_INSPECT_RANK  '{kz_COLUM002ID}','{INSPECT_CODE}','{inspect_Qyt}','{INSPECT_PUR}','{userName}'");
-                }
-            }
-            #endregion
-
-            #region 十三．产生CPK报告
-
-            #region 得到区块1的 
-
-            DataSet block1DateSet = GetCPKBlock1(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
-
-            // 确保 DataSet 中有表
-            if (block1DateSet != null && block1DateSet.Tables.Count > 0)
-            {
-                DataTable dt = block1DateSet.Tables[0];
-
-                // 找到 ISAUTO 的列索引
-                int isautoIndex = dt.Columns.IndexOf("ISAUTO");
-
-                if (isautoIndex != -1)
-                {
-                    // 创建要保留的列名列表
-                    List<string> columnsToKeep = new List<string>();
-
-                    for (int i = isautoIndex + 1; i < dt.Columns.Count; i++)
-                    {
-                        string colName = dt.Columns[i].ColumnName;
-
-                        if (colName.StartsWith("A", StringComparison.OrdinalIgnoreCase))
-                        {
-                            columnsToKeep.Add(colName);
-                        }
-                    }
-
-                    // 找出需要删除的列（不在保留列表中的）
-                    var columnsToRemove = dt.Columns
-                        .Cast<DataColumn>()
-                        .Where(col => !columnsToKeep.Contains(col.ColumnName))
-                        .ToList();
-
-                    // 执行删除
-                    foreach (var col in columnsToRemove)
-                    {
-                        dt.Columns.Remove(col);
-                    }
-                }
-            }
-            #endregion
-
-            #region 得到区块2的 DataSetlist
-
-            List<DataSet> block2DateSetList = GetCPKBlock2(INSPECT_FLOWID, INSPECT_CODE, INSPECT_PUR);
-
-            foreach (var ds in block2DateSetList)
-            {
-                if (ds != null && ds.Tables.Count > 0)
-                {
-                    DataTable dt = ds.Tables[0];
-
-                    // 找到 ISAUTO 的列索引
-                    int isautoIndex = dt.Columns.IndexOf("ISAUTO");
-
-                    if (isautoIndex != -1)
-                    {
-                        // 找出要保留的列名（ISAUTO 之后、且不是 A 开头）
-                        List<string> columnsToKeep = new List<string>();
-
-                        for (int i = isautoIndex + 1; i < dt.Columns.Count; i++)
-                        {
-                            string colName = dt.Columns[i].ColumnName;
-                            columnsToKeep.Add(colName);
-                        }
-
-                        // 找出需要删除的列（不在保留列表中的）
-                        var columnsToRemove = dt.Columns
-                            .Cast<DataColumn>()
-                            .Where(col => !columnsToKeep.Contains(col.ColumnName))
-                            .ToList();
-
-                        // 删除列
-                        foreach (var col in columnsToRemove)
-                        {
-                            dt.Columns.Remove(col);
-                        }
-                    }
-
-                }
-            }
-            #endregion
-
-            #endregion
-
-            //生成Excel
-            byte[] fileContents = GetExcelContent(block1DateSet, block2DateSetList, ITEMNAME, DateTime.Parse(INSPECT_DATE).ToString("yyyy/MM/dd"));
-
-            //返回文件流
-            var fileName = $"{ITEMID}_{LOTID}{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMddHHmmss")}.xlsx";
-            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\2D\{ITEMID}\{fileName}");
-
-            //保存到SCANDOC
-            SaveToCPKScanDoc("CPK报告", fileContents, filePath, INSPECT_CODE, INSPECT_DEV2ID, COLUM002ID);
         }
 
         #region GET_INSPECT_RANK
@@ -1306,13 +1463,13 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         #endregion
 
         #region GET_STD_VALUE_LIST
-        private DataTable GET_STD_VALUE_LIST(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
+        private DataTable GET_STD_VALUE_LIST(string INSPECT_PROGRESSID)
         {
-            string sql = @$"SELECT COLUM001CODE,STD_VALUE,REMARK1,MAX_VALUE,MIN_VALUE
-                    FROM COLUM001 WHERE COLUM002ID = @COLUM002ID and Colum001CODE like'A%' ORDER BY Colum001CODE";
+            string sql = @$"SELECT INSPECT_PROGRESSID COLUM001CODE,STD_VALUE,REMARK1,MAX_VALUE,MIN_VALUE
+                    FROM INSPECT_PROGRESS WHERE INSPECT_PROGRESSID = @INSPECT_PROGRESSID  ORDER BY INSPECT_PROGRESSNAME";
             var parameters = new SugarParameter[]
             {
-                new SugarParameter("@COLUM002ID", COLUM002ID)
+                new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID)
             };
             // 执行 SQL 命令
             DataTable originalTable = Db.Ado.GetDataTable(sql, parameters);
@@ -1320,7 +1477,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             // 创建一个新的 transposedTable 并将原始 originalTable 的行列转置到新的 transposedTable 中
             DataTable transposedTable = TransposeDataTable(originalTable);
 
-            return transposedTable;
+            return originalTable;
         }
         #endregion
 
@@ -1397,120 +1554,6 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         }
         #endregion
 
-        private DataSet GetCPKBlock1(string COLUM002ID, string INSPECT_CODE, string INSPECT_PUR)
-        {
-            // 获取两个 DataTable
-            //获得标准值结果集：
-            DataTable stdValueListTable = GET_STD_VALUE_LIST(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
-
-            //第15行的列名+32后数据
-            DataTable inspectListTable = Db.Ado.GetDataTable(@$"EXEC GET_INSPECT_LIST '{COLUM002ID}','{INSPECT_CODE}','{INSPECT_PUR}'");
-
-            // 创建一个新的 DataSet
-            DataSet dataSet = new DataSet("CombinedDataSet");
-            #region 获取标准实际Table
-            DataTable stdValueListTable1 = new DataTable(); // 复制 DataTabl
-            // 1. 获取列名：第1行（索引0），从第2列（索引1）开始
-            for (int col = 1; col < stdValueListTable.Columns.Count; col++)
-            {
-                string columnName = stdValueListTable.Rows[0][col]?.ToString();
-                if (!string.IsNullOrWhiteSpace(columnName))
-                    stdValueListTable1.Columns.Add(columnName);
-            }
-
-            // 2. 获取数据：第2~5行（索引1~4），从第2列（索引1）开始
-            for (int row = 1; row <= 4 && row < stdValueListTable.Rows.Count; row++)
-            {
-                DataRow newRow = stdValueListTable1.NewRow();
-                for (int col = 1; col < stdValueListTable.Columns.Count; col++)
-                {
-                    newRow[col - 1] = stdValueListTable.Rows[row][col];
-                }
-                stdValueListTable1.Rows.Add(newRow);
-            }
-            #endregion
-
-            DataTable inspectListTable1 = inspectListTable.Copy(); // 复制 DataTabl
-            inspectListTable1.TableName = "Table2";
-            #region 获取标准实际Table
-            var stdColumns = stdValueListTable1.Columns
-                .Cast<DataColumn>()
-                .Select(c => c.ColumnName)
-                .ToHashSet(); // 使用 HashSet 提高查找效率
-
-            // 找出 inspectListTable1 中不在 stdColumns 中的列
-            var columnsToRemove = inspectListTable1.Columns
-                .Cast<DataColumn>()
-                .Where(c => !stdColumns.Contains(c.ColumnName))
-                .ToList();
-
-            // 删除这些列
-            foreach (var col in columnsToRemove)
-            {
-                inspectListTable1.Columns.Remove(col);
-            }
-            #endregion
-
-            // 将 DataTable 添加到 DataSet
-            dataSet.Tables.Add(stdValueListTable1);
-            dataSet.Tables.Add(inspectListTable1);
-
-            return dataSet;
-        }
-        private List<DataSet> GetCPKBlock2(string INSPECT_FLOWID, string INSPECT_CODE, string INSPECT_PUR)
-        {
-            // 创建一个 DataSet 列表并将生成的 DataSet 放进去
-            List<DataSet> dataSetList = new List<DataSet>
-            {
-            };
-
-            //得到CPK - 扩展项结果集
-            string sql = @$"SELECT COLUM002ID FROM COLUM002 WHERE INSPECT_FLOWID = @INSPECT_FLOWID and COC_ATTR ='COC_ATTR_002'";
-            var parameters = new SugarParameter[]
-            {
-                new SugarParameter("@INSPECT_FLOWID", INSPECT_FLOWID)
-            };
-            // 执行 SQL 命令
-            var dataTable = Db.Ado.GetDataTable(sql, parameters);
-
-            string COLUM002ID = string.Empty;
-
-            //2.循环CPK - 扩展项结果集
-            if (dataTable.Rows.Count > 0)
-            {
-                for (int i = 0; i < dataTable.Rows.Count; i++)
-                {
-                    COLUM002ID = dataTable.Rows[i]["COLUM002ID"].ToString();
-
-                    DataSet block1DateSet = GetCPKBlock1(COLUM002ID, INSPECT_CODE, INSPECT_PUR);
-
-                    DataTable dt = block1DateSet.Tables[0];
-                    foreach (DataColumn column in dt.Columns.Cast<DataColumn>().ToList())
-                    {
-                        string oldColName = column.ColumnName;
-
-                        // 查询 COLUM001NAME
-                        string newColName = Db.Ado.GetString(@"
-            SELECT COLUM001NAME 
-            FROM COLUM001 
-            WHERE COLUM002ID = @COLUM002ID AND COLUM001CODE = @COLUM001CODE",
-                            new SugarParameter("@COLUM002ID", COLUM002ID),
-                            new SugarParameter("@COLUM001CODE", oldColName)
-                        );
-
-                        // 如果查到新列名且不为空，则替换
-                        if (!string.IsNullOrWhiteSpace(newColName))
-                        {
-                            column.ColumnName = newColName;
-                        }
-                    }
-
-                    dataSetList.Add(block1DateSet);
-                }
-            }
-
-            return dataSetList;
-        }
         private DataTable TransposeDataTable(DataTable originalTable)
         {
             DataTable transposedTable = new DataTable();
@@ -1535,7 +1578,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             return transposedTable;
         }
-        public byte[] GetExcelContent(DataSet dataSet1, List<DataSet> listDataSet1,string ITEMNAME, string INSPECT_DATE)
+
+        public byte[] GetExcelContent(DataSet dataSet1, List<DataSet> listDataSet1, string ITEMNAME, string INSPECT_DATE)
         {
             int columnCount = 0;
             listDataSet1.Insert(0, dataSet1);
@@ -1712,8 +1756,8 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                             cell.CellStyle = normalCellStyle;
                         }
                     }
-   
-                    
+
+
                     // 如果是第 0 列，应用加粗样式
                     if (j == 0)
                     {
@@ -1735,7 +1779,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                         else if (i == 12)
                         {
                             cell.CellStyle = blueCenteredStyle;
-                        }    
+                        }
                     }
                 }
             }
@@ -1783,7 +1827,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                     if (j == 0)
                     {
                         cell.CellStyle = boldCellStyle;
-                    } 
+                    }
                     // 非第 0 列，设置淡绿色背景+居中
                     else
                     {
@@ -1850,7 +1894,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                     {
                         cell.CellStyle = normalCellStyle;
                     }
-                        
+
                 }
             }
             // 假设的公式示例，你需要根据实际情况修改
@@ -1896,7 +1940,7 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                         {
                             cell.CellStyle = percentCellStyle;
                         }
-                        else if((i + 19)>= 20 && (i + 19) <= 23)
+                        else if ((i + 19) >= 20 && (i + 19) <= 23)
                         {
                             cell.CellStyle = number1CellStyle;
                         }
@@ -1926,9 +1970,9 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 {
                     ICell cell = row.CreateCell(j);
                     double textValue = 0;
-                    double.TryParse(dataTable2.Rows[i][j].ToString(),out textValue);
+                    double.TryParse(dataTable2.Rows[i][j].ToString(), out textValue);
                     cell.SetCellValue(textValue);
-                    if(j == 0)
+                    if (j == 0)
                     {
                         cell.CellStyle = normal1CellStyle;
                     }
@@ -2024,7 +2068,6 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
             return result;
         }
 
-
         private void SaveToCPKScanDoc(string docType, byte[] fileContents, string scandocName, string peopleId, string INSPECT_DEV2ID, string COLUM002ID)
         {
             FileInfo file = new FileInfo(scandocName);
@@ -2076,141 +2119,566 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
         }
         #endregion
 
-        #region ReplaceFTIRPdf
+        public void ReplaceRosh(FTIRInputDto parm)
+        {
+            var dtItem = Db.Ado.GetDataTable(@$"SELECT INSPECT_PROGRESS.INSPECT_PROGRESSID INSPECT_PROGRESSID
+,INSPECT_PROGRESS.INSPECT_PROGRESSNAME INSPECT_PROGRESSNAME
+,INSPECT_PROGRESS.INSPECT_CNT INSPECT_CNT
+            ,INSPECT_VIEW.ITEMNAME ITEMNAME,INSPECT_VIEW.LOTNO LOTNO,INSPECT_VIEW.ITEMID ITEMID
+            ,INSPECT_VIEW.INSPECT_DATE INSPECT_DATE
+            FROM  INSPECT_PROGRESS 
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE INSPECT_DEV= 'INSPECT_DEV_003' AND DOC_CODE='" + parm.INSPECTCODE + @"' ");
+            if (dtItem != null)
+            {
+                if (dtItem.Rows.Count > 0)
+                {
+                    foreach (DataRow dr in dtItem.Rows)
+                    {
+                        string INSPECT_PROGRESSID = dr["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_PROGRESSNAME = dr["INSPECT_PROGRESSNAME"].ToString();
+                        string INSPECT_CNT = dr["INSPECT_CNT"].ToString();
+                        string ITEMID = dr["ITEMID"].ToString();
+                        string INSPECT_DATE = dr["INSPECT_DATE"].ToString();  //2、	测试日期  6、	只改日期
+                        string DOC_CODE = parm.INSPECTCODE;  //1、	报告单号
+                        string ITEMNAME = dr["ITEMNAME"].ToString();  //5、	样品名称
+                        string LOTID = dr["LOTNO"].ToString(); //4、	批次号
+                        if (string.IsNullOrEmpty(INSPECT_CNT))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='应检数量不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMNAME))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='物料名称不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(LOTID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='批号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='品号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else
+                        {
+                            //产生随机值
+                            Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{INSPECT_PROGRESSID}','{INSPECT_CNT}'");
+                            //产生ROSH报告
+                            //在此补代码
+                            string tempFileDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @"ROSH");
+                            string tempFilePath = "";
+                            // 检查目录是否存在
+                            if (Directory.Exists(tempFileDirPath))
+                            {
+                                // 获取目录下所有XLSX文件
+                                string[] xlsxFiles = Directory.GetFiles(tempFileDirPath, "*.xlsx");
+                                // 检查是否有文件
+                                if (xlsxFiles.Length > 0)
+                                {
+                                    // 创建随机数生成器
+                                    Random random = new Random();
+                                    // 随机选择一个索引
+                                    int randomIndex = random.Next(0, xlsxFiles.Length);
+                                    // 获取随机选择的文件路径
+                                    tempFilePath = xlsxFiles[randomIndex];
+                                }
+                            }
+                            var newFileName = $"{LOTID}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+                            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\ROSH\{LOTID}\{newFileName}");
+                            FileInfo fi = new FileInfo(filePath);
+                            if (!fi.Directory.Exists)
+                            {
+                                fi.Directory.Create();
+                            }
+                            File.Copy(tempFilePath, filePath, true);
+                            using (ExcelHelper excelHelper = new ExcelHelper(filePath))
+                            {
+                                //单号
+                                excelHelper.AddTextToCell("TestSheet", "H5", DOC_CODE);
+                                //日期
+                                excelHelper.AddTextToCell("TestSheet", "B6", INSPECT_DATE);
+                                //供应商
+                                excelHelper.AddTextToCell("TestSheet", "B7", "");
+                                //批次号
+                                excelHelper.AddTextToCell("TestSheet", "B8", LOTID);
+                                //样品名称
+                                excelHelper.AddTextToCell("TestSheet", "G8", ITEMNAME);
+
+                                //A11-A16
+                                excelHelper.AddTextToCell("TestSheet", "A11", INSPECT_DATE + ", 120.00S");
+                                excelHelper.AddTextToCell("TestSheet", "A12", INSPECT_DATE + ", 120.00S");
+                                excelHelper.AddTextToCell("TestSheet", "A13", INSPECT_DATE + ", 120.00S");
+                                excelHelper.AddTextToCell("TestSheet", "A14", INSPECT_DATE + ", 120.00S");
+                                excelHelper.AddTextToCell("TestSheet", "A15", INSPECT_DATE + ", 120.00S");
+                                excelHelper.AddTextToCell("TestSheet", "A16", INSPECT_DATE + ", 120.00S");
+                            }
+
+                            //小电流在此转换png和pdf
+                            string pngpath = filePath.Replace("xlsx", "png");
+                            string pdfpath = filePath.Replace("xlsx", "pdf");
+
+
+
+                            SaveRoshToScanDoc(INSPECT_PROGRESSNAME, filePath, parm.INSPECTCODE, INSPECT_PROGRESSID);
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='1' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+
+                        }
+
+                    }
+                }
+
+            }
+        }
+
+        public void ReplaceRosh_MS(FTIRInputDto parm)
+        {
+            var dtItem = Db.Ado.GetDataTable(@$"SELECT INSPECT_PROGRESS.INSPECT_PROGRESSID INSPECT_PROGRESSID
+,INSPECT_PROGRESS.INSPECT_PROGRESSNAME INSPECT_PROGRESSNAME
+,INSPECT_PROGRESS.INSPECT_CNT INSPECT_CNT
+            ,INSPECT_VIEW.ITEMNAME ITEMNAME,INSPECT_VIEW.LOTNO LOTNO,INSPECT_VIEW.ITEMID ITEMID
+            ,INSPECT_VIEW.INSPECT_DATE INSPECT_DATE
+            FROM  INSPECT_PROGRESS 
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE INSPECT_DEV= 'INSPECT_DEV_003' AND DOC_CODE='" + parm.INSPECTCODE + @"' ");
+            if (dtItem != null)
+            {
+                if (dtItem.Rows.Count > 0)
+                {
+                    foreach (DataRow dr in dtItem.Rows)
+                    {
+                        string INSPECT_PROGRESSID = dr["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_PROGRESSNAME = dr["INSPECT_PROGRESSNAME"].ToString();
+                        string INSPECT_CNT = dr["INSPECT_CNT"].ToString();
+                        string ITEMID = dr["ITEMID"].ToString();
+                        string INSPECT_DATE = dr["INSPECT_DATE"].ToString();  //2、	测试日期  6、	只改日期
+                        string DOC_CODE = parm.INSPECTCODE;  //1、	报告单号
+                        string ITEMNAME = dr["ITEMNAME"].ToString();  //5、	样品名称
+                        string LOTID = dr["LOTNO"].ToString(); //4、	批次号
+                        if (string.IsNullOrEmpty(INSPECT_CNT))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='应检数量不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMNAME))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='物料名称不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(LOTID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='批号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='品号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else
+                        {
+                            //产生随机值
+                            Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{INSPECT_PROGRESSID}','{INSPECT_CNT}'");
+                            //产生ROSH报告
+                            string tempFileDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @"ROSH");
+                            string tempFilePath = "";
+                            // 检查目录是否存在
+                            if (Directory.Exists(tempFileDirPath))
+                            {
+                                // 获取目录下所有XLSX文件
+                                string[] xlsxFiles = Directory.GetFiles(tempFileDirPath, "*.pdf");
+                                // 检查是否有文件
+                                if (xlsxFiles.Length > 0)
+                                {
+                                    // 创建随机数生成器
+                                    Random random = new Random();
+                                    // 随机选择一个索引
+                                    int randomIndex = random.Next(0, xlsxFiles.Length);
+                                    // 获取随机选择的文件路径
+                                    tempFilePath = xlsxFiles[randomIndex];
+                                }
+                            }
+                            var newFileName = $"{LOTID}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.pdf";
+                            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\ROSH\{LOTID}\{newFileName}");
+                            FileInfo fi = new FileInfo(filePath);
+                            if (!fi.Directory.Exists)
+                            {
+                                fi.Directory.Create();
+                            }
+                            File.Copy(tempFilePath, filePath, true);
+
+                            //小电流在此改代码
+                            //修改PDF
+                            var inputFile = tempFilePath;
+                            string outputFile = filePath;
+
+                            using (Document pdfDoc = new Document(inputFile)) {
+                                string allPdfText = ExtractAllText(pdfDoc);
+
+                                string replaceText = ITEMNAME;
+                                // 提取样品名称 TESA58470_PE
+                                var pattern = @"样品名称\s*[\r\n]+[ \t]*([^\r\n]+)";
+                                var match = Regex.Match(allPdfText, pattern, RegexOptions.Singleline);
+                                string searchText = match.Success ? match.Groups[1].Value.Trim() : "未找到";
+                                ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                // 提取测量日期
+                                replaceText = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+                                pattern = @"\d{4}/\d{1,2}/\d{1,2}\s\d{1,2}:\d{1,2}:\d{1,2}";
+                                match = Regex.Match(allPdfText, pattern, RegexOptions.Singleline);
+                                searchText = match.Success ? match.Groups[0].Value.Trim() : "未找到";
+                                ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                FileInfo filePDF = new FileInfo(outputFile);
+                                if (!filePDF.Directory.Exists) {
+                                    filePDF.Directory.Create();
+                                }
+                                // 保存修改后的 PDF
+                                pdfDoc.Save(outputFile);
+                                try {
+                                    //去水印
+                                    string outputFileRemoveWarter = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\ROSH\{LOTID}\temp{newFileName}");
+                                    ITextHelper.RemoveWatermark(outputFile, outputFileRemoveWarter);
+                                    File.Copy(outputFileRemoveWarter, outputFile, true);
+                                    File.Delete(outputFileRemoveWarter);
+                                }
+                                catch {
+                                    //去水印失败，继续使用原文件
+                                }
+                            }
+
+                            //小电流在此转换png和pdf
+                            string pngpath = filePath.Replace("xlsx", "png");
+                            string pdfpath = filePath.Replace("xlsx", "pdf");
+
+
+
+                            SaveRoshToScanDoc(INSPECT_PROGRESSNAME, filePath, parm.INSPECTCODE, INSPECT_PROGRESSID);
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='1' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+
+                        }
+
+                    }
+                }
+
+            }
+        }
+
+        public void ReplaceSI_MS(FTIRInputDto parm)
+        {
+            var dtItem = Db.Ado.GetDataTable(@$"SELECT INSPECT_PROGRESS.INSPECT_PROGRESSID INSPECT_PROGRESSID
+,INSPECT_PROGRESS.INSPECT_PROGRESSNAME INSPECT_PROGRESSNAME
+,INSPECT_PROGRESS.INSPECT_CNT INSPECT_CNT
+            ,INSPECT_VIEW.ITEMNAME ITEMNAME,INSPECT_VIEW.LOTNO LOTNO,INSPECT_VIEW.ITEMID ITEMID
+            ,INSPECT_VIEW.INSPECT_DATE INSPECT_DATE
+            FROM  INSPECT_PROGRESS 
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE INSPECT_DEV= 'INSPECT_DEV_009' AND DOC_CODE='" + parm.INSPECTCODE + @"' ");  //硅元素
+            if (dtItem != null)
+            {
+                if (dtItem.Rows.Count > 0)
+                {
+                    foreach (DataRow dr in dtItem.Rows)
+                    {
+                        string INSPECT_PROGRESSID = dr["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_PROGRESSNAME = dr["INSPECT_PROGRESSNAME"].ToString();
+                        string INSPECT_CNT = dr["INSPECT_CNT"].ToString();
+                        string ITEMID = dr["ITEMID"].ToString();
+                        string INSPECT_DATE = dr["INSPECT_DATE"].ToString();  //2、	测试日期  6、	只改日期
+                        string DOC_CODE = parm.INSPECTCODE;  //1、	报告单号
+                        string ITEMNAME = dr["ITEMNAME"].ToString();  //5、	样品名称
+                        string LOTID = dr["LOTNO"].ToString(); //4、	批次号
+                        if (string.IsNullOrEmpty(INSPECT_CNT))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='应检数量不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMNAME))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='物料名称不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(LOTID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='批号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='品号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else
+                        {
+                            //产生随机值
+                            Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{INSPECT_PROGRESSID}','{INSPECT_CNT}'");
+                            //产生ROSH报告
+                           
+                            string tempFileDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @"SI");
+                            string tempFilePath = "";
+                            // 检查目录是否存在
+                            if (Directory.Exists(tempFileDirPath))
+                            {
+                                // 获取目录下所有XLSX文件
+                                string[] xlsxFiles = Directory.GetFiles(tempFileDirPath, "*.pdf");
+                                // 检查是否有文件
+                                if (xlsxFiles.Length > 0)
+                                {
+                                    // 创建随机数生成器
+                                    Random random = new Random();
+                                    // 随机选择一个索引
+                                    int randomIndex = random.Next(0, xlsxFiles.Length);
+                                    // 获取随机选择的文件路径
+                                    tempFilePath = xlsxFiles[randomIndex];
+                                }
+                            }
+                            var newFileName = $"{LOTID}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.pdf";
+                            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\SI\{LOTID}\{newFileName}");
+                            FileInfo fi = new FileInfo(filePath);
+                            if (!fi.Directory.Exists)
+                            {
+                                fi.Directory.Create();
+                            }
+                            File.Copy(tempFilePath, filePath, true);
+                            //小电流在此改代码
+                            //修改PDF
+                            var inputFile = tempFilePath;
+                            string outputFile = filePath;
+                            using (Document pdfDoc = new Document(inputFile)) {
+                                string allPdfText = ExtractAllText(pdfDoc);
+
+                                //小电流在此改代码 修改pdf
+                                string searchText = ExtractTextRightOfKeyword(allPdfText, "苏州淼昇电子有限公司");
+                                string replaceText = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                                ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                searchText = ExtractTextRightOfKeyword(allPdfText, "样品名称：");
+                                replaceText = string.Format("{0}-{1}",ITEMNAME, LOTID);
+                                ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                searchText = ExtractTextRightOfKeyword(allPdfText, "测试时间：");
+                                replaceText = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+                                ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                FileInfo filePDF = new FileInfo(outputFile);
+                                if (!filePDF.Directory.Exists) {
+                                    filePDF.Directory.Create();
+                                }
+                                // 保存修改后的 PDF
+                                pdfDoc.Save(outputFile);
+                                try {
+                                    //去水印
+                                    string outputFileRemoveWarter = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\SI\{LOTID}\temp{newFileName}");
+                                    ITextHelper.RemoveWatermark(outputFile, outputFileRemoveWarter);
+                                    File.Copy(outputFileRemoveWarter, outputFile, true);
+                                    File.Delete(outputFileRemoveWarter);
+                                }
+                                catch {
+                                    //去水印失败，继续使用原文件
+                                }
+                            }
+
+                            //小电流在此转换png和pdf
+                            string pngpath = filePath.Replace("xlsx", "png");
+                            string pdfpath = filePath.Replace("xlsx", "pdf");
+
+                            SaveRoshToScanDoc(INSPECT_PROGRESSNAME, filePath, parm.INSPECTCODE, INSPECT_PROGRESSID);
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='1' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+
+                        }
+
+                    }
+                }
+
+            }
+        }
+
+        #region xujie ReplaceFTIRPdf 
         public void ReplaceFTIRPdf(FTIRInputDto parm)
         {
-            string INSPECTTABLE = "INSPECT_" + parm.INSPECTTYPE;
-            string INSPECTTABLEID = INSPECTTABLE + "ID";
-            string INSPECTTABLENAME = INSPECTTABLE + "NAME";
-            var dtMain = Db.Ado.GetDataTable(@$"SELECT TOP 1 ITEMNAME,{INSPECTTABLENAME},LOTNO,INSPECT_FLOWID
-                FROM {INSPECTTABLE} WHERE {INSPECTTABLEID}='{parm.INSPECTCODE}'");
-            if(dtMain.Rows.Count == 0)
+            var dtItem = Db.Ado.GetDataTable(@$"SELECT INSPECT_PROGRESS.INSPECT_PROGRESSID INSPECT_PROGRESSID
+            ,INSPECT_PROGRESS.INSPECT_PROGRESSNAME INSPECT_PROGRESSNAME
+            ,INSPECT_PROGRESS.INSPECT_CNT INSPECT_CNT
+            ,(CASE WHEN INSPECT_VIEW.INSPECT_TYPE='OQC' THEN INSPECT_PROGRESS.ITEMNAME ELSE INSPECT_VIEW.ITEMNAME END) ITEMNAME
+            ,(CASE WHEN INSPECT_VIEW.INSPECT_TYPE='OQC' THEN INSPECT_PROGRESS.LOTNO ELSE INSPECT_VIEW.LOTNO END) LOTNO
+            ,INSPECT_VIEW.ITEMID ITEMID
+            ,INSPECT_VIEW.INSPECT_DATE INSPECT_DATE
+            FROM  INSPECT_PROGRESS 
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE INSPECT_DEV= 'INSPECT_DEV_004' AND DOC_CODE='" + parm.INSPECTCODE + @"' ");
+            if (dtItem != null)
             {
-                throw new Exception($"检验单{parm.INSPECTCODE}不存在");
-            }
-            if (dtMain.Rows.Count > 0)
-            {
-                DataRow dr = dtMain.Rows[0];
-                if(string.IsNullOrEmpty(dr["ITEMNAME"].ToString()))
+                if (dtItem.Rows.Count > 0)
                 {
-                    throw new Exception($"检验单{parm.INSPECTCODE}物料名称不能为空");
-                }
-                if (string.IsNullOrEmpty(dr[INSPECTTABLENAME].ToString()))
-                {
-                    throw new Exception($"检验单{parm.INSPECTCODE}检验日期不能为空");
-                }
-                if (string.IsNullOrEmpty(dr["LOTNO"].ToString()))
-                {
-                    throw new Exception($"检验单{parm.INSPECTCODE}批号不能为空");
-                }
-                if (string.IsNullOrEmpty(dr["INSPECT_FLOWID"].ToString()))
-                {
-                    throw new Exception($"检验单{parm.INSPECTCODE}INSPECT_FLOWID不能为空");
-                }
-            }
-            string ITEMNAME = dtMain.Rows[0]["ITEMNAME"].ToString();
-            string INSPECT_DATE = dtMain.Rows[0][INSPECTTABLENAME].ToString();
-
-            var dtItem = Db.Ado.GetDataTable(@$"SELECT COLUM002ID
-                    FROM  COLUM002 WHERE INSPECT_DEV= 'INSPECT_DEV_004' 
-                    AND  COLUM002.INSPECT_FLOWID='{dtMain.Rows[0]["INSPECT_FLOWID"].ToString()}'");
-            if (dtItem.Rows.Count == 0)
-            {
-                throw new Exception($"检验单{parm.INSPECTCODE}没有FTIR的检验项目");
-            }
-            foreach (DataRow dr in dtItem.Rows)
-            {
-                string COLUM002ID = dr["COLUM002ID"].ToString();
-                int LOT_QTY = Db.Ado.GetInt(@$"SELECT TOP 1 LOT_QTY FROM  {INSPECTTABLE} WHERE {INSPECTTABLEID}='{parm.INSPECTCODE}'");
-
-                int inspect_Qyt = Db.Ado.GetInt(@$"GET_INPECT_CNT  '{COLUM002ID}','{LOT_QTY}'");
-
-                Db.Ado.ExecuteCommand(@$"EXEC GET_INSPECT_RANK '{COLUM002ID}','{parm.INSPECTCODE}',{inspect_Qyt},'{parm.INSPECTTYPE}','{parm.UserName}'");
-
-                DataTable dt = Db.Ado.GetDataTable(@$"EXEC GET_INSPECT_LIST  '{COLUM002ID}','{parm.INSPECTCODE}','{parm.INSPECTTYPE}'");
-                if (dt.Rows.Count == 0)
-                {
-                    throw new Exception($"GET_INSPECT_LIST检验单{parm.INSPECTCODE}没有对应数据");
-                }
-                // 查找 "PCSCODE" 列的索引
-                int pcsCodeColumnIndex = -1;
-                foreach (DataColumn column in dt.Columns)
-                {
-                    if (column.ColumnName.Equals("PCSCODE", StringComparison.OrdinalIgnoreCase))
+                    foreach (DataRow dr in dtItem.Rows)
                     {
-                        pcsCodeColumnIndex = dt.Columns.IndexOf(column);
-                        break;
+                        string INSPECT_PROGRESSID = dr["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_PROGRESSNAME = dr["INSPECT_PROGRESSNAME"].ToString();
+                        string INSPECT_CNT = dr["INSPECT_CNT"].ToString();
+                        string ITEMID = dr["ITEMID"].ToString();
+                        string INSPECT_DATE = dr["INSPECT_DATE"].ToString();
+
+                        string ITEMNAME = dr["ITEMNAME"].ToString();
+                        string LOTID = dr["LOTNO"].ToString();
+                        if (string.IsNullOrEmpty(INSPECT_CNT))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='应检数量不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMNAME))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='物料名称不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(LOTID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='批号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='品号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else
+                        {
+                            //产生随机值
+                            Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{INSPECT_PROGRESSID}','{INSPECT_CNT}'");
+                            var dtRank = Db.Ado.GetDataTable(@$"SELECT * FROM  INSPECT_PROGRESS  WHERE INSPECT_PROGRESSID= '{INSPECT_PROGRESSID}' ");
+                            foreach (DataRow drRank in dtRank.Rows)
+                            {
+                                // 循环应检数
+                                for (int colIndex = 1; colIndex < int.Parse(INSPECT_CNT) + 1; colIndex++)
+                                {
+                                    string COLUMN001CODE = "A" + colIndex;  //
+                                    string RANKVALUE = drRank[COLUMN001CODE].ToString();
+                                    if (string.IsNullOrEmpty(COLUMN001CODE))
+                                        continue;
+                                    if (string.IsNullOrEmpty(RANKVALUE))
+                                        continue;
+                                    //在存储FTIR报告路径下，按文件夹名称=物料名称（ITEMNAME）查询，随机从中取一份报告图表
+                                    string inputFile = GetRandomFTIRReport(ITEMNAME);
+                                    //返回文件流
+                                    var fileName = $"{ITEMID}_{LOTID}_{COLUMN001CODE}_{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMddHHmmss")}.pdf";
+                                    string outputFile = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\{fileName}");
+
+                                    Document pdfDoc = new Document(inputFile);
+                                    string allPdfText = ExtractAllText(pdfDoc);
+
+                                    string searchText = ExtractTextRightOfKeyword(allPdfText, "质量检查结果:");
+                                    string replaceText = ITEMNAME + "标准样";
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    searchText = ExtractTextRightOfKeyword(allPdfText, "相关:");
+                                    replaceText = RANKVALUE;
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    searchText = ExtractTextRightOfKeyword(allPdfText, "光谱 2 标题:");
+                                    replaceText = $"#JT+{parm.UserName}{ITEMNAME}&{LOTID}&{parm.UserName}&{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMdd")}&{LOTID}";
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    searchText = ExtractTextRightOfKeyword(allPdfText, "日期:");
+                                    replaceText = ConvertToCustomDateFormat(GenerateRandomWorkTime(DateTime.Parse(INSPECT_DATE)));
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    FileInfo filePDF = new FileInfo(outputFile);
+                                    if (!filePDF.Directory.Exists)
+                                    {
+                                        filePDF.Directory.Create();
+                                    }
+                                    // 保存修改后的 PDF
+                                    pdfDoc.Save(outputFile);
+                                    try
+                                    {
+                                        //去水印
+                                        string outputFileRemoveWarter = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\temp{fileName}");
+                                        ITextHelper.RemoveWatermark(outputFile, outputFileRemoveWarter);
+                                        File.Copy(outputFileRemoveWarter, outputFile, true);
+                                        File.Delete(outputFileRemoveWarter);
+                                    }
+                                    catch
+                                    {
+                                        //去水印失败，继续使用原文件
+                                    }
+                                    //保存到SCANDOC
+                                    SavePDFToScanDoc(INSPECT_PROGRESSNAME, outputFile, parm.INSPECTCODE, INSPECT_PROGRESSID, colIndex.ToString());
+                                    Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='1' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                                }
+                            }
+                        }
+
                     }
                 }
 
-                // 如果没有找到 "PCSCODE" 列，抛出异常
-                if (pcsCodeColumnIndex == -1)
-                {
-                    throw new Exception("没有找到 PCSCODE 列！");
-                }
+            }
 
-                foreach (DataRow drRank in dt.Rows)
+        }
+        public void ReplaceFTIRPdf_MS(FTIRInputDto parm)
+        {
+            var dtItem = Db.Ado.GetDataTable(@$"SELECT INSPECT_PROGRESS.INSPECT_PROGRESSID INSPECT_PROGRESSID
+            ,INSPECT_PROGRESS.INSPECT_PROGRESSNAME INSPECT_PROGRESSNAME
+            ,INSPECT_PROGRESS.INSPECT_CNT INSPECT_CNT
+            ,(CASE WHEN INSPECT_VIEW.INSPECT_TYPE='OQC' THEN INSPECT_PROGRESS.ITEMNAME ELSE INSPECT_VIEW.ITEMNAME END) ITEMNAME
+            ,(CASE WHEN INSPECT_VIEW.INSPECT_TYPE='OQC' THEN INSPECT_PROGRESS.LOTNO ELSE INSPECT_VIEW.LOTNO END) LOTNO
+            ,INSPECT_VIEW.ITEMID ITEMID
+            ,INSPECT_VIEW.INSPECT_DATE INSPECT_DATE
+            FROM  INSPECT_PROGRESS 
+            LEFT JOIN INSPECT_VIEW ON INSPECT_VIEW.INSPECT_VIEWID=INSPECT_PROGRESS.DOC_CODE
+            WHERE INSPECT_DEV= 'INSPECT_DEV_004' AND DOC_CODE='" + parm.INSPECTCODE + @"' ");
+            if (dtItem != null)
+            {
+                if (dtItem.Rows.Count > 0)
                 {
-                    string ITEMID = drRank["ITEMID"].ToString();
-                    string LOTID = drRank["LOTNO"].ToString();
-                    // 从 "PCSCODE" 列的下一列开始遍历
-                    for (int colIndex = pcsCodeColumnIndex + 2; colIndex < dt.Columns.Count; colIndex++)
+                    foreach (DataRow dr in dtItem.Rows)
                     {
-                        string COLUMN001CODE = dt.Columns[colIndex].ColumnName;
-                        string RANKVALUE = drRank[dt.Columns[colIndex]].ToString(); 
-                        if (string.IsNullOrEmpty(COLUMN001CODE))
-                            continue;
-                        if (string.IsNullOrEmpty(RANKVALUE))
-                            continue;
-                        //在存储FTIR报告路径下，按文件夹名称=物料名称（ITEMNAME）查询，随机从中取一份报告图表
-                        string inputFile = GetRandomFTIRReport(ITEMNAME);
-                        //返回文件流
-                        var fileName = $"{ITEMID}_{LOTID}_{COLUMN001CODE}_{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMddHHmmss")}.pdf";
-                        string outputFile = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\{fileName}");
+                        string INSPECT_PROGRESSID = dr["INSPECT_PROGRESSID"].ToString();
+                        string INSPECT_PROGRESSNAME = dr["INSPECT_PROGRESSNAME"].ToString();
+                        string INSPECT_CNT = dr["INSPECT_CNT"].ToString();
+                        string ITEMID = dr["ITEMID"].ToString();
+                        string INSPECT_DATE = dr["INSPECT_DATE"].ToString();
 
-                        Document pdfDoc = new Document(inputFile);
-                        string allPdfText = ExtractAllText(pdfDoc);
-
-                        string searchText = ExtractTextRightOfKeyword(allPdfText, "质量检查结果:");
-                        string replaceText = ITEMNAME + "标准样";
-                        ReplacePdfText(searchText, replaceText, pdfDoc);
-
-                        searchText = ExtractTextRightOfKeyword(allPdfText, "相关:");
-                        replaceText = RANKVALUE;
-                        ReplacePdfText(searchText, replaceText, pdfDoc);
-
-                        searchText = ExtractTextRightOfKeyword(allPdfText, "光谱 2 标题:");
-                        replaceText = $"#JT+{parm.UserName}{ITEMNAME}&{LOTID}&{parm.UserName}&{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMdd")}&{LOTID}";
-                        ReplacePdfText(searchText, replaceText, pdfDoc);
-
-                        searchText = ExtractTextRightOfKeyword(allPdfText, "日期:");
-                        replaceText = ConvertToCustomDateFormat(GenerateRandomWorkTime(DateTime.Parse(INSPECT_DATE)));
-                        ReplacePdfText(searchText, replaceText, pdfDoc);
-                        
-                        FileInfo filePDF = new FileInfo(outputFile);
-                        if (!filePDF.Directory.Exists)
+                        string ITEMNAME = dr["ITEMNAME"].ToString();
+                        string LOTID = dr["LOTNO"].ToString();
+                        if (string.IsNullOrEmpty(INSPECT_CNT))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='应检数量不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMNAME))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='物料名称不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(LOTID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='批号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else if (string.IsNullOrEmpty(ITEMID))
+                            Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='品号不能为空' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                        else
                         {
-                            filePDF.Directory.Create();
+                            //产生随机值
+                            Db.Ado.ExecuteCommand(@$"EXEC [GET_INSPECT_RANK] '{INSPECT_PROGRESSID}','{INSPECT_CNT}'");
+                            var dtRank = Db.Ado.GetDataTable(@$"SELECT * FROM  INSPECT_PROGRESS  WHERE INSPECT_PROGRESSID= '{INSPECT_PROGRESSID}' ");
+                            foreach (DataRow drRank in dtRank.Rows)
+                            {
+                                // 循环应检数
+                               
+                                for (int colIndex = 1; colIndex < int.Parse(INSPECT_CNT) + 1; colIndex++)
+                                {
+                                    string COLUMN001CODE = "A" + colIndex;  //
+                                    string RANKVALUE = drRank[COLUMN001CODE].ToString();
+                                    if (string.IsNullOrEmpty(COLUMN001CODE))
+                                        continue;
+                                    if (string.IsNullOrEmpty(RANKVALUE))
+                                        continue;
+                                    //在存储FTIR报告路径下，按文件夹名称=物料名称（ITEMNAME）查询，随机从中取一份报告图表
+                                    string inputFile = GetRandomFTIRReport(ITEMNAME);
+                                    //返回文件流
+                                    var fileName = $"{ITEMID}_{LOTID}_{COLUMN001CODE}_{DateTime.Parse(INSPECT_DATE).ToString("yyyyMMddHHmmss")}.pdf";
+                                    string outputFile = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\{fileName}");
+
+                                    Document pdfDoc = new Document(inputFile);
+                                    string allPdfText = ExtractAllText(pdfDoc);
+
+                                    //小电流在此改代码 修改pdf
+                                    string searchText = ExtractTextRightOfKeyword(allPdfText, "Spectrum:");
+                                    string replaceText = string.Format("{0} {1} {2}", ITEMNAME,LOTID, colIndex);
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    string searchTextEx = searchText.Split(' ')[0];
+                                    replaceText = ITEMNAME;
+                                    ReplacePdfText(searchTextEx, replaceText, pdfDoc);
+
+                                    searchText = ExtractTextRightOfKeyword(allPdfText, "Match:");
+                                    replaceText = RANKVALUE.ToString();
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    // 提取测量日期  Mon Apr 07 14:46:47 2025
+                                    replaceText = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy", CultureInfo.InvariantCulture);
+                                    var pattern = @"[A-Z][a-z]{2}\s[A-Z][a-z]{2}\s\d{2}\s\d{2}:\d{2}:\d{2}\s\d{4}";
+                                    var match = Regex.Match(allPdfText, pattern, RegexOptions.Singleline);
+                                    searchText = match.Success ? match.Groups[0].Value.Trim() : "未找到";
+                                    ReplacePdfText(searchText, replaceText, pdfDoc);
+
+                                    FileInfo filePDF = new FileInfo(outputFile);
+                                    if (!filePDF.Directory.Exists)
+                                    {
+                                        filePDF.Directory.Create();
+                                    }
+                                    // 保存修改后的 PDF
+                                    pdfDoc.Save(outputFile);
+                                    try
+                                    {
+                                        //去水印
+                                        string outputFileRemoveWarter = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\temp{fileName}");
+                                        ITextHelper.RemoveWatermark(outputFile, outputFileRemoveWarter);
+                                        File.Copy(outputFileRemoveWarter, outputFile, true);
+                                        File.Delete(outputFileRemoveWarter);
+                                    }
+                                    catch
+                                    {
+                                        //去水印失败，继续使用原文件
+                                    }
+                                    //保存到SCANDOC
+                                    SavePDFToScanDoc(INSPECT_PROGRESSNAME, outputFile, parm.INSPECTCODE, INSPECT_PROGRESSID, colIndex.ToString());
+                                    Db.Ado.ExecuteCommand(@" UPDATE INSPECT_PROGRESS SET ISREPORT='1' where INSPECT_PROGRESSID='" + INSPECT_PROGRESSID + @"' ");
+                                }
+                            }
                         }
-                        // 保存修改后的 PDF
-                        pdfDoc.Save(outputFile);
-                        try
-                        {
-                            //去水印
-                            string outputFileRemoveWarter = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\FTIR\{ITEMID}\temp{fileName}");
-                            ITextHelper.RemoveWatermark(outputFile, outputFileRemoveWarter);
-                            File.Copy(outputFileRemoveWarter, outputFile, true);
-                            File.Delete(outputFileRemoveWarter);
-                        }
-                        catch
-                        {
-                            //去水印失败，继续使用原文件
-                        }
-                        //保存到SCANDOC
-                        SavePDFToScanDoc("FTIR报告", outputFile, parm.INSPECTCODE, COLUM002ID, COLUMN001CODE);
+
                     }
                 }
+
             }
+
         }
         private DateTime GenerateRandomWorkTime(DateTime date)
         {
@@ -2329,19 +2797,21 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
 
             return selectedPdf;
         }
-        private void SavePDFToScanDoc(string docType, string scandocName, string peopleId, string COLUM002ID, string COLUM001ID)
+        private void SavePDFToScanDoc(string docType, string scandocName, string peopleId, string INSPECT_PROGRESSID, string COLUM001ID)
         {
+
             FileInfo file = new FileInfo(scandocName);
             if (!file.Directory.Exists)
             {
                 file.Directory.Create();
             }
 
-            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE PEOPLEID='{peopleId}' AND COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
-
             string sql = @"
-            INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,COLUM002ID,COLUM001ID)
-            VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @COLUM002ID, @COLUM001ID)";
+            IF EXISTS(SELECT 1 FROM SCANDOC WHERE PEOPLEID=@PEOPLEID AND INSPECT_PROGRESSID=@INSPECT_PROGRESSID AND COLUM001ID=@COLUM001ID )
+                UPDATE SCANDOC SET SCANDOCNAME=@SCANDOCNAME WHERE PEOPLEID=@PEOPLEID AND INSPECT_PROGRESSID=@INSPECT_PROGRESSID AND COLUM001ID=@COLUM001ID 
+            ELSE
+                INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,COLUM001ID)
+                VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE+'-'+@COLUM001ID, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @COLUM001ID)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -2350,14 +2820,38 @@ AND INSPECT_DEV1.INSPECT_SPEC='{INSPECT_SPEC}' ORDER BY NEWID()");
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
                 new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
-                new SugarParameter("@COLUM002ID",COLUM002ID),
+                new SugarParameter("@INSPECT_PROGRESSID",INSPECT_PROGRESSID),
                 new SugarParameter("@COLUM001ID",COLUM001ID)
             };
 
             // 执行 SQL 命令
             Db.Ado.ExecuteCommand(sql, parameters);
         }
+        private void SaveRoshToScanDoc(string docType, string scandocName, string peopleId, string INSPECT_PROGRESSID)
+        {
 
+            string sql = @"
+            IF EXISTS(SELECT 1 FROM SCANDOC WHERE PEOPLEID=@PEOPLEID AND INSPECT_PROGRESSID=@INSPECT_PROGRESSID )
+                UPDATE SCANDOC SET SCANDOCNAME=@SCANDOCNAME WHERE PEOPLEID=@PEOPLEID AND INSPECT_PROGRESSID=@INSPECT_PROGRESSID  
+            ELSE
+                INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user)
+                VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID)";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
+                new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
+                new SugarParameter("@DOCTYPE", docType),
+                new SugarParameter("@PEOPLEID", peopleId),
+                new SugarParameter("@INSPECT_PROGRESSID",INSPECT_PROGRESSID),
+
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        
         #endregion
 
         #region GetCOCfile
@@ -2413,7 +2907,7 @@ ORDER BY
 
         private string FillExcelFileContent(string tempFilePath, string tempFileName, List<string> listZoneIDs, Dictionary<string, DataTable> dicDataSource, COCInputDto parm) {
             var newFileName = $"{tempFileName}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
-            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\COC\{parm.COCID}\{newFileName}");
+            string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @$"Test\COC\{parm.COCID}\{parm.ID}\{newFileName}");
             FileInfo fi = new FileInfo(filePath);
             if (!fi.Directory.Exists) {
                 fi.Directory.Create();
@@ -3159,10 +3653,10 @@ ORDER BY
             string COLUM001ID = parm.COCID;
             string INSPECT_PROGRESSID = parm.INSPECT_PROGRESSID ?? string.Empty;
             string INSPECT_DEV1ID = parm.INSPECT_DEV1ID ?? string.Empty;
-            string DOCTYPE = parm.DOCTYPE ?? docType;
+            string DOCTYPE = parm.DOCTYPE ?? string.Empty;
 
-            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
-
+            //Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE COLUM002ID='{COLUM002ID}' AND COLUM001ID='{COLUM001ID}'");
+            Db.Ado.ExecuteCommand($"DELETE SCANDOC WHERE PEOPLEID='{peopleId}' AND INSPECT_DEV1ID='{INSPECT_DEV1ID}'  AND INSPECT_PROGRESSID='{INSPECT_PROGRESSID}' AND  DOCTYPE='{docType}'");
             string sql = @"
             INSERT INTO SCANDOC (TENID, SCANDOCID, SCANDOCCODE, SCANDOCNAME, DOCTYPE, PEOPLEID, createdate, SCANDOC_user,INSPECT_DEV1ID,COLUM002ID, COLUM001ID,INSPECT_PROGRESSID)
             VALUES ('001', @SCANDOCID, @SCANDOCID, @SCANDOCNAME, @DOCTYPE, @PEOPLEID, CONVERT(VARCHAR(20), GETDATE(), 120), @PEOPLEID, @INSPECT_DEV1ID,@COLUM002ID, @COLUM001ID,@INSPECT_PROGRESSID)";
@@ -3172,13 +3666,16 @@ ORDER BY
             {
                 new SugarParameter("@SCANDOCID", Guid.NewGuid().ToString()),
                 new SugarParameter("@SCANDOCNAME", scandocName.Replace(AppSettings.Configuration["AppSettings:FileServerPath"],@"\")),
-                new SugarParameter("@DOCTYPE", DOCTYPE),
+                new SugarParameter("@DOCTYPE", docType),
                 new SugarParameter("@PEOPLEID", peopleId),
                 new SugarParameter("@INSPECT_DEV1ID", INSPECT_DEV1ID),
                 new SugarParameter("@COLUM002ID", COLUM002ID),
                 new SugarParameter("@COLUM001ID", COLUM001ID),
                 new SugarParameter("@INSPECT_PROGRESSID", INSPECT_PROGRESSID)
-            };
+                //new SugarParameter("@DOCTYPE", DOCTYPE)
+
+                
+        };
 
             // 执行 SQL 命令
             Db.Ado.ExecuteCommand(sql, parameters);
@@ -3196,7 +3693,7 @@ ORDER BY
                 string VLOOKID = drVLOOKID[0].ToString();
                 string COC_VLOOKCODE = Db.Ado.GetString($@"select TOP 1 COC_VLOOKCODE from COC_VLOOK WHERE COC_VLOOKID='{VLOOKID}'");
                 if (!string.IsNullOrEmpty(parm.VLOOKCODE)) {
-                    if(parm.VLOOKCODE != COC_VLOOKCODE) {
+                    if (parm.VLOOKCODE != COC_VLOOKCODE) {
                         continue;
                     }
                 }
@@ -3228,6 +3725,29 @@ ORDER BY
             //    //excelHelper.CopyCells("Sheet1","E8:G9", "H8:J9");
             //    //excelHelper.CopySheet(@"C:\Users\Administrator\Desktop\Temp\藤仓.xlsx", "Shear test Kiss cut", "Sheet1");
             //}
+            ////返回文件流
+            //var inputFile = $@"D:\DigiwinHR\Digiwin 规格\淼昇\LPT50H40ES-20250411190507.pdf";
+            //string outputFile = @"C:\Users\Administrator\Desktop\Temp\MS\SI.pdf";
+
+            //Document pdfDoc = new Document(inputFile);
+            //string allPdfText = ExtractAllText(pdfDoc);
+
+            ////小电流在此改代码 修改pdf
+            //string searchText = ExtractTextRightOfKeyword(allPdfText, "苏州淼昇电子有限公司");
+            //string replaceText = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            //ReplacePdfText(searchText, replaceText, pdfDoc);
+
+            //searchText = ExtractTextRightOfKeyword(allPdfText, "样品名称：");
+            //replaceText = "Test11111-GGGGGG";
+            //ReplacePdfText(searchText, replaceText, pdfDoc);
+
+            //searchText = ExtractTextRightOfKeyword(allPdfText, "测试时间：");
+            //replaceText = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            //ReplacePdfText(searchText, replaceText, pdfDoc);
+
+            //FileInfo filePDF = new FileInfo(outputFile);
+            //// 保存修改后的 PDF
+            //pdfDoc.Save(outputFile);
 
             return ds;
         }

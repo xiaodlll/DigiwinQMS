@@ -46,7 +46,8 @@ namespace Meiam.System.Model {
         /// </summary>
         [Display(Name = "INSPECT_DEV1ID")]
         public string INSPECT_DEV1ID { get; set; }
-
+        [Display(Name = "INSPECT_PROGRESSID")]
+        public string INSPECT_PROGRESSID { get; set; }
         /// <summary>
         /// 描述 : SAMPLEID
         /// 空值 : False

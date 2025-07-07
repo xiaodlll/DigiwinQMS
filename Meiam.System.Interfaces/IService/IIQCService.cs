@@ -27,6 +27,8 @@ namespace Meiam.System.Interfaces
         void ReplaceFTIRPdf(FTIRInputDto parm);
         void GetCOCfile(COCInputDto parm);
         DataSet GetCOCDataSource(COCInputDto parm);
+        void GET_DEV1_UNION(string _ITEMID);
+        void INSPECT_VIEW_RANK(string ID);
         #endregion
     }
 }
