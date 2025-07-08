@@ -133,12 +133,11 @@ namespace Meiam.System.Interfaces
 
         private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
         {
-            string SuppID = Db.Ado.GetString($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'");
-            if (string.IsNullOrEmpty(SuppID))
-            {
-                SuppID = Db.Ado.GetString($@"select max(SUPPID)+1 from SUPP");
-                if (string.IsNullOrEmpty(SuppID))
-                {
+            string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString();
+
+            if (string.IsNullOrEmpty(SuppID)) {
+                SuppID = Db.Ado.GetScalar($@"select max(SUPPID)+1 from SUPP")?.ToString();
+                if (string.IsNullOrEmpty(SuppID)) {
                     SuppID = "1001";
                 }
                 Db.Ado.ExecuteCommand($@"INSERT INTO SUPP (
