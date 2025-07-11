@@ -19,6 +19,7 @@ using Meiam.System.Common;
 using SqlSugar;
 using System.Data;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Meiam.System.Interfaces
 {
@@ -66,8 +67,13 @@ namespace Meiam.System.Interfaces
 
                     // 保存到数据库
                     _logger.LogDebug("正在保存收料通知单到数据库...");
-                    SaveToDatabase(request, inspectionId);
-
+                    try {
+                        SaveToDatabase(request, inspectionId);
+                    }
+                    catch (Exception ex) {
+                        _logger.LogError("保存收料通知单到数据库异常:" + ex.ToString());
+                        throw;
+                    }
                     await Task.Delay(10); // 模拟异步操作
                 }
 
@@ -120,51 +126,42 @@ namespace Meiam.System.Interfaces
 
         public void SaveToDatabase(LotNoticeRequest request, string inspectionId)
         {
-            try
-            {
-                // 保存数据
-                SaveMainInspection(request, inspectionId);
-            }
-            catch
-            {
-                throw;
-            }
+            // 保存数据
+            SaveMainInspection(request, inspectionId);
         }
 
-        private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
-        {
+        private void SaveMainInspection(LotNoticeRequest request, string inspectionId) {
             string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString();
 
             if (string.IsNullOrEmpty(SuppID)) {
-                SuppID = Db.Ado.GetScalar($@"select max(SUPPID)+1 from SUPP")?.ToString();
+                SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString();
                 if (string.IsNullOrEmpty(SuppID)) {
                     SuppID = "1001";
                 }
                 Db.Ado.ExecuteCommand($@"INSERT INTO SUPP (
     TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
-    SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME
-)
+    SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME)
 VALUES (
     '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-    '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', NULL, '{SuppID}', '{request.SUPPNAME}')");
+    '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{SuppID}', '{request.SUPPNAME}')");
             }
 
-            const string sql = @"
+            string sql = @"
                 INSERT INTO INSPECT_IQC (
                     TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
                     INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
                     PRO_DATE, LENGTH, WIDTH, SUPPID,
-                    INUM, ENTRYID, ORGID, SEQ,BUSINESSTYPE,
+                    INUM, ENTRYID, ORGID, SEQ, BUSINESSTYPE,
                     KEEID
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
                     @ApplyDate, @ItemSpecification, @QuaDate,
-                    @ProDate, @Length, @Width,@SuppID,
-                    @Inum, @EntryId, @OrgId, @Seq,@BusinessType,
+                    @ProDate, @Length, @Width, @SuppID,
+                    @Inum, @EntryId, @OrgId, @Seq, @BusinessType,
                     @KeeId
                 )";
 
@@ -179,18 +176,18 @@ VALUES (
                 new SugarParameter("@LotQty", request.LOT_QTY),
                 new SugarParameter("@InspectIqcCode", inspectionId),
                 new SugarParameter("@ItemId", request.ITEMID),
-                new SugarParameter("@LotNo", request.LOTNO),
+                new SugarParameter("@LotNo", (request.LOTNO==null?"":request.LOTNO.ToString())),
                 new SugarParameter("@ApplyDate", request.APPLY_DATE),
                 new SugarParameter("@ItemSpecification", request.MODEL_SPEC),
                 new SugarParameter("@QuaDate", request.QUA_DATE),
                 new SugarParameter("@ProDate", request.PRO_DATE),
                 new SugarParameter("@Length", request.LENGTH),
                 new SugarParameter("@Width", request.WIDTH),
+                new SugarParameter("@SuppID", SuppID),
                 new SugarParameter("@Inum", request.INUM),
                 new SugarParameter("@EntryId", request.ENTRYID),
                 new SugarParameter("@OrgId", request.ORGID),
                 new SugarParameter("@Seq", request.SEQ),
-                new SugarParameter("@SuppID", SuppID),
                 new SugarParameter("@BusinessType", request.BUSINESSTYPE),
                 new SugarParameter("@KeeId", request.ID)
             };
@@ -231,6 +228,7 @@ VALUES (
                     await Task.Delay(10);
                     _logger.LogInformation("工单首检数据同步成功，工单号: {MOID}", request.MOID);
                 }
+                _logger.LogInformation("工单首检数据同步完成!");
                 return new ApiResponse
                 {
                     Success = true,
@@ -692,9 +690,19 @@ VALUES (
 
         #region 回写ERP MES方法
         public List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest(){
-            var sql = @"select top 100 ERP_ARRIVEDID as BillNo, INSPECT_IQCCODE as InspectBillNo,KEEID as ID,ENTRYID as EntryID ,
-(case when OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_008') then 1 else 0 end) as Result,ORGID,FQC_CNT as OKQty,FQC_NOT_CNT as NGQty from INSPECT_IQC
-where (ISSY<>'1' or ISSY IS NULL) AND OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_007','PSTATE_008') order by INSPECT_IQCCREATEDATE desc";
+            var sql = @"SELECT TOP 100 
+    ERP_ARRIVEDID AS BillNo, 
+    INSPECT_IQCCODE AS InspectBillNo,
+    KEEID AS ID,
+    ENTRYID AS EntryID,
+    CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN 1 ELSE 0 END AS Result,
+    ORGID,
+    ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS OKQty,       -- 不可转换时返回0
+    ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS NGQty     -- 不可转换时返回0
+FROM INSPECT_IQC
+WHERE (ISSY <> '1' OR ISSY IS NULL) 
+    AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequest>(sql);
             return list;
@@ -705,9 +713,11 @@ where (ISSY<>'1' or ISSY IS NULL) AND OQC_STATE in ('PSTATE_005','PSTATE_006','P
             Db.Ado.ExecuteCommand(sql);
         }
         public List<WorkOrderResultRequest> GetQmsWorkOrderResultRequest(){
-            var sql = @"select top 100 MOID as BillNo,MESFirstInspectID,OrgID,
-(case when OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_007','PSTATE_008') then 1 else 0 end) as Result from INSPECT_FPI
-where (ISSY<>'1' or ISSY IS NULL) AND OQC_STATE in ('PSTATE_005','PSTATE_006','PSTATE_007','PSTATE_008') order by INSPECT_FPICREATEDATE desc";
+            var sql = @"select top 100 MOID as BillNo,MESFirstInspectID,OrgID,OQC_STATE,
+(case when OQC_STATE in ('OQC_STATE_005','OQC_STATE_006','OQC_STATE_007','OQC_STATE_008') then 1 else 0 end) as Result 
+from INSPECT_FPI
+where (ISSY<>'1' or ISSY IS NULL) AND 
+OQC_STATE in ('OQC_STATE_005','OQC_STATE_006','OQC_STATE_007','OQC_STATE_008') order by INSPECT_FPICREATEDATE desc";
 
             var list = Db.Ado.SqlQuery<WorkOrderResultRequest>(sql);
             return list;

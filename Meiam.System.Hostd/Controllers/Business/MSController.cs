@@ -133,7 +133,9 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             {
                 foreach (var request in requests)
                 {
+                    _logger.LogInformation(@$"请求UpdateReceiveInspectResult: erpApiUrl: {erpApiUrl} request: {JsonConvert.SerializeObject(request)}");
                     string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
+                    _logger.LogInformation(@$"回传UpdateReceiveInspectResult: postResult: {postResult}");
 
                     if (postResult.Contains("false")) { 
                         return BadRequest(new ApiResponse
@@ -183,7 +185,9 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             {
                 if (request != null && request.Count > 0)
                 {
+                    _logger.LogInformation(@$"请求UpdateFirstInspectResult: erpApiUrl: {erpApiUrl} request: {JsonConvert.SerializeObject(request)}");
                     string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
+                    _logger.LogInformation(@$"回传UpdateFirstInspectResult: postResult: {postResult}");
 
                     if (postResult.Contains("true"))
                     {
@@ -307,6 +311,21 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             return response.Success ?
                 Ok(response) :
                 BadRequest(response);
+        }
+        #endregion
+
+        #region 硅元素测试API
+        /// <summary>
+        /// 硅元素测试API
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("ReceiveSIData")]
+        public async Task<IActionResult> ReceiveSIData() {
+            using var reader = new StreamReader(Request.Body);
+            var rawData = await reader.ReadToEndAsync();
+            _logger.LogInformation("硅元素测试API,Request:" + rawData);
+
+            return Ok();
         }
         #endregion
     }

@@ -159,7 +159,7 @@ namespace Meiam.System.Hostd
             // 说明文档
             app.UseSwaggerSetup();
             // 请求日志监控
-            app.UseMiddleware<RequestMiddleware>();
+            app.UseMiddleware<ApiRequestLoggingMiddleware>();
             // 使用静态文件
             app.UseForwardedHeaders();
             // 使用静态文件

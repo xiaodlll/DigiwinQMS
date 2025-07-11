@@ -162,6 +162,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.MSController.ReceiveSIData">
+            <summary>
+            硅元素测试API
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
@@ -190,17 +196,6 @@
             <param name="throwMsg"></param>
             <param name="ex"></param>
             <returns></returns>
-        </member>
-        <member name="T:Meiam.System.Hostd.Middleware.RequestMiddleware">
-            <summary>
-            中间件
-            记录请求和响应数据
-            </summary>
-        </member>
-        <member name="F:Meiam.System.Hostd.Middleware.RequestMiddleware.logger">
-            <summary>
-            日志接口
-            </summary>
         </member>
         <member name="F:Meiam.System.Hostd.Queue.SubscriberService._logger">
             <summary>
