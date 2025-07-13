@@ -121,10 +121,9 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <summary>
         /// 收料检验结果回传ERP
         /// </summary>
-        /// <param name="qmsrequest"></param>
         /// <returns></returns>
         [HttpPost("UpdateReceiveInspectResult")]
-        public async Task<IActionResult> PostLotNoticeSync([FromBody] QmsLotNoticeResultRequest qmsrequest)
+        public async Task<IActionResult> PostLotNoticeSync()
         {
             List<LotNoticeResultRequest> requests = _msService.GetQmsLotNoticeResultRequest();
             string erpApiUrl =  AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateReceiveInspectResult";
@@ -172,10 +171,9 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         /// <summary>
         /// 工单首检检验结果回传MES
         /// </summary>
-        /// <param name="qmsrequest"></param>
         /// <returns></returns>
         [HttpPost("UpdateFirstInspectResult")]
-        public async Task<IActionResult> PostWorkOrderResultSync([FromBody] QmsWorkOrderResultRequest qmsrequest)
+        public async Task<IActionResult> PostWorkOrderResultSync()
         {
 
             List<WorkOrderResultRequest> request = _msService.GetQmsWorkOrderResultRequest();

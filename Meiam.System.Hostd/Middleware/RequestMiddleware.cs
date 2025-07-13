@@ -1,124 +1,59 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+using NLog;
 using System;
-using System.Linq;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Meiam.System.Hostd.Middleware {
-    public class ApiRequestLoggingMiddleware {
+    public class RequestMiddleware {
         private readonly RequestDelegate _next;
-        private readonly ILogger<ApiRequestLoggingMiddleware> _logger;
-        private readonly PathString _apiPathPrefix = new PathString("/api");
-        private readonly List<string> _excludedPaths = new List<string>
-        {
-        "/swagger",
-        "/favicon.ico",
-        "/health",
-        // 添加更多需要排除的路径前缀
-    };
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        public ApiRequestLoggingMiddleware(RequestDelegate next, ILogger<ApiRequestLoggingMiddleware> logger) {
+        public RequestMiddleware(RequestDelegate next) {
             _next = next;
-            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context) {
-            // 快速判断：只处理API请求并排除特定路径
-            if (!IsApiRequest(context.Request.Path) || IsExcludedPath(context.Request.Path)) {
+            // 只记录 API 请求
+            if (!context.Request.Path.Value.Contains("api", StringComparison.OrdinalIgnoreCase)) {
                 await _next(context);
                 return;
             }
 
-            var stopwatch = Stopwatch.StartNew();
-            string requestBody = null;
-            string responseBody = null;
-            int statusCode = 200;
+            // 1. 记录请求信息（Path + Body）
+            string requestBody = await ReadRequestBody(context.Request);
+            _logger.Info($"Request | Path: {context.Request.Path} | Body: {requestBody}");
 
-            try {
-                // 保存原始响应流
-                var originalResponseBodyStream = context.Response.Body;
-                using var responseBodyStream = new MemoryStream();
-                context.Response.Body = responseBodyStream;
+            // 2. 捕获响应
+            var originalResponseBody = context.Response.Body;
+            using var responseStream = new MemoryStream();
+            context.Response.Body = responseStream;
 
-                // 读取请求体（可重用）
-                context.Request.EnableBuffering();
-                if (IsReadableContent(context.Request)) {
-                    requestBody = await ReadRequestBody(context.Request);
-                    // 重置请求流位置，确保后续处理不受影响
-                    context.Request.Body.Position = 0;
-                }
+            // 3. 执行后续中间件
+            await _next(context);
 
-                // 执行后续中间件管道
-                await _next(context);
+            // 4. 记录响应信息（Status + Body）
+            string responseBody = await ReadResponseBody(context.Response);
+            _logger.Info($"Response | Status: {context.Response.StatusCode} | Body: {responseBody}");
 
-                // 读取响应体
-                statusCode = context.Response.StatusCode;
-                if (IsReadableContent(context.Response)) {
-                    responseBody = await ReadResponseBody(responseBodyStream);
-                    // 将响应写回原始流
-                    responseBodyStream.Position = 0;
-                    await responseBodyStream.CopyToAsync(originalResponseBodyStream);
-                }
-            }
-            finally {
-                stopwatch.Stop();
-
-                // 使用结构化日志记录关键信息
-                _logger.LogInformation(
-                    "API Request Completed - Method: {HttpMethod}, Path: {Path}, Status: {StatusCode}, Duration: {Duration}ms",
-                    context.Request.Method,
-                    context.Request.Path,
-                    statusCode,
-                    stopwatch.ElapsedMilliseconds);
-
-                // 记录详细内容（可根据需要调整日志级别）
-                if (_logger.IsEnabled(LogLevel.Debug)) {
-                    _logger.LogDebug("Request Body: {RequestBody}", requestBody ?? "No content");
-                    _logger.LogDebug("Response Body: {ResponseBody}", responseBody ?? "No content");
-                }
-            }
-        }
-
-        private bool IsApiRequest(PathString path)
-            => path.StartsWithSegments(_apiPathPrefix, StringComparison.OrdinalIgnoreCase);
-
-        private bool IsExcludedPath(PathString path)
-            => _excludedPaths.Any(p => path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase));
-
-        private bool IsReadableContent(HttpRequest request)
-            => request.Body.CanRead && IsTextBasedContentType(request.ContentType);
-
-        private bool IsReadableContent(HttpResponse response)
-            => response.Body.CanRead && IsTextBasedContentType(response.ContentType);
-
-        private bool IsTextBasedContentType(string contentType) {
-            if (string.IsNullOrEmpty(contentType)) return false;
-
-            return contentType.Contains("json", StringComparison.OrdinalIgnoreCase) ||
-                   contentType.Contains("xml", StringComparison.OrdinalIgnoreCase) ||
-                   contentType.Contains("text", StringComparison.OrdinalIgnoreCase) ||
-                   contentType.Contains("html", StringComparison.OrdinalIgnoreCase);
+            // 5. 回写响应到客户端
+            responseStream.Position = 0;
+            await responseStream.CopyToAsync(originalResponseBody);
         }
 
         private async Task<string> ReadRequestBody(HttpRequest request) {
-            using var reader = new StreamReader(
-                request.Body,
-                encoding: Encoding.UTF8,
-                detectEncodingFromByteOrderMarks: false,
-                bufferSize: 8192,
-                leaveOpen: true);
-
-            return await reader.ReadToEndAsync();
+            request.EnableBuffering(); // 允许重复读取 Body
+            using var reader = new StreamReader(request.Body, leaveOpen: true);
+            string body = await reader.ReadToEndAsync();
+            request.Body.Position = 0; // 重置流位置
+            return body;
         }
 
-        private async Task<string> ReadResponseBody(Stream stream) {
-            stream.Position = 0;
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            return await reader.ReadToEndAsync();
+        private async Task<string> ReadResponseBody(HttpResponse response) {
+            response.Body.Seek(0, SeekOrigin.Begin);
+            string body = await new StreamReader(response.Body).ReadToEndAsync();
+            response.Body.Seek(0, SeekOrigin.Begin); // 重置流位置
+            return body;
         }
     }
 }
