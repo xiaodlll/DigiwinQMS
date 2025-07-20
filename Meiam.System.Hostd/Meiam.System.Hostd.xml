@@ -32,6 +32,27 @@
             项目锁,防止并发问题
             </summary>
         </member>
+        <member name="T:Meiam.System.Hostd.Controllers.Bisuness.HMDController">
+            <summary>
+            HMD
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Bisuness.HMDController._logger">
+            <summary>
+            日志管理接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Bisuness.HMDController._hmdService">
+            <summary>
+            项目接口
+            </summary>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.ReceiveInspectData(Meiam.System.Model.Dto.HMDInputDto)">
+            <summary>
+            恒铭达测量数据上传
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.Bisuness.IQCController">
             <summary>
             IQC
