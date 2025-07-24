@@ -1,5 +1,7 @@
 using Autofac;
 using Autofac.Extras.DynamicProxy;
+using Hangfire;
+using Hangfire.SqlServer;
 using MapsterMapper;
 using Meiam.System.Core;
 using Meiam.System.Extensions;
@@ -8,6 +10,7 @@ using Meiam.System.Hostd.Global;
 using Meiam.System.Hostd.Middleware;
 using Meiam.System.Hostd.Setup;
 using Meiam.System.Interfaces;
+using Meiam.System.Interfaces.Service;
 using Meiam.System.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using SqlSugar;
 using System;
 using System.Reflection;
 
@@ -136,6 +140,49 @@ namespace Meiam.System.Hostd
 
             #endregion
 
+            #region Hangfire
+            // 添加 Hangfire 服务
+            services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection"), new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.Zero,
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }));
+
+            services.AddHangfireServer();
+
+            // 配置 SqlSugar
+            services.AddScoped<ISqlSugarClient>(provider =>
+            {
+                var sqlSugar = new SqlSugarScope(new ConnectionConfig()
+                {
+                    // 配置 Oracle 连接
+                    ConnectionString = Configuration.GetConnectionString("OracleConnection"),
+                    DbType = DbType.Oracle,
+                    IsAutoCloseConnection = true
+                },
+                db =>
+                {
+                    // 配置 Oracle 方言
+                    db.Aop.OnLogExecuting = (sql, pars) =>
+                    {
+                        Console.WriteLine(sql); // 输出 SQL 语句
+                    };
+                });
+
+                return sqlSugar;
+            });
+
+            // 注册数据同步服务
+            services.AddScoped<DataSyncService>();
+            #endregion
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -175,9 +222,15 @@ namespace Meiam.System.Hostd
             {
                 endpoints.MapControllers();
             });
-
+            // 使用 Hangfire 仪表板
+            app.UseHangfireDashboard();
             #endregion
 
+            // 初始化定时任务
+            RecurringJob.AddOrUpdate<DataSyncService>(
+                "OracleToSqlServerSync",
+                x => x.SyncDataFromOracleToSqlServer(),
+                Cron.Daily); // 可以根据需要调整定时表达式
         }
 
         #region 自动注入服务
