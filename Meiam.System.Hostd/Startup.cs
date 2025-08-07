@@ -1,6 +1,7 @@
 using Autofac;
 using Autofac.Extras.DynamicProxy;
 using Hangfire;
+using Hangfire.Dashboard;
 using Hangfire.SqlServer;
 using MapsterMapper;
 using Meiam.System.Core;
@@ -91,6 +92,28 @@ namespace Meiam.System.Hostd
             Console.WriteLine("Global Settings");
             #endregion
 
+            #region Hangfire配置
+            Console.WriteLine("Configuring Hangfire...");
+            services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(Configuration["ConnectionStrings:HangfireConnection"], new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.Zero,
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }));
+
+            services.AddHangfireServer(options =>
+            {
+                options.ServerName = "HMD_Sync_Server";
+                options.Queues = new[] { "sync" };
+            });
+            #endregion
+
             #region 全局设置
             //配置Json格式
             services.AddMvc().AddNewtonsoftJson(options =>
@@ -140,53 +163,17 @@ namespace Meiam.System.Hostd
 
             #endregion
 
-            #region Hangfire
-            // 添加 Hangfire 服务
-            services.AddHangfire(configuration => configuration
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection"), new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks = true
-                }));
-
-            services.AddHangfireServer();
-
-            // 配置 SqlSugar
-            services.AddScoped<ISqlSugarClient>(provider =>
-            {
-                var sqlSugar = new SqlSugarScope(new ConnectionConfig()
-                {
-                    // 配置 Oracle 连接
-                    ConnectionString = Configuration.GetConnectionString("OracleConnection"),
-                    DbType = DbType.Oracle,
-                    IsAutoCloseConnection = true
-                },
-                db =>
-                {
-                    // 配置 Oracle 方言
-                    db.Aop.OnLogExecuting = (sql, pars) =>
-                    {
-                        Console.WriteLine(sql); // 输出 SQL 语句
-                    };
-                });
-
-                return sqlSugar;
-            });
-
-            // 注册数据同步服务
-            services.AddScoped<DataSyncService>();
+            #region 同步服务注册
+            Console.WriteLine("Registering sync services...");
+            services.AddScoped<IHMDService, HMDService>();
             #endregion
 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ISysTasksQzService tasksQzService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ISysTasksQzService tasksQzService,
+            IRecurringJobManager recurringJobManager,
+            IHMDService syncService)
         {
 
             #region 开发错误提示
@@ -199,6 +186,19 @@ namespace Meiam.System.Hostd
 
             // 加上这句！
             app.UseCors("AllowAll");
+
+            #region Hangfire中间件
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                DashboardTitle = "数据同步监控",
+                Authorization = new[] { new HangfireAuthorizationFilter() }
+            });
+            #endregion
+
+            #region 初始化同步任务
+            Console.WriteLine("Initializing sync jobs...");
+            InitializeSyncJobs(recurringJobManager, syncService);
+            #endregion
 
             #region 服务注入
             //// 跨域设置
@@ -221,16 +221,10 @@ namespace Meiam.System.Hostd
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHangfireDashboard();
             });
-            // 使用 Hangfire 仪表板
-            app.UseHangfireDashboard();
-            #endregion
 
-            // 初始化定时任务
-            RecurringJob.AddOrUpdate<DataSyncService>(
-                "OracleToSqlServerSync",
-                x => x.SyncDataFromOracleToSqlServer(),
-                Cron.Daily); // 可以根据需要调整定时表达式
+            #endregion
         }
 
         #region 自动注入服务
@@ -243,5 +237,56 @@ namespace Meiam.System.Hostd
                .EnableInterfaceInterceptors(); //引用Autofac.Extras.DynamicProxy;
         }
         #endregion
+
+        #region 同步任务初始化
+        private void InitializeSyncJobs(IRecurringJobManager recurringJobManager, IHMDService syncService)
+        {
+            try
+            {
+                // 收货单同步 - 每30分钟执行一次
+                recurringJobManager.AddOrUpdate("RC_Sync",
+                    () => syncService.SyncRcDataAsync(syncService.GetLastSyncTime("INSPECT_IQC", "INSPECT_FPICREATEDATE")),
+                    Configuration["SyncConfig:RC:Cron"] ?? "*/30 * * * *");
+
+                // 报工单同步 - 每小时执行一次
+                recurringJobManager.AddOrUpdate("WR_Sync",
+                    () => syncService.SyncWrDataAsync(syncService.GetLastSyncTime("INSPECT_SI", "INSPECT_FPICREATEDATE")),
+                    Configuration["SyncConfig:WR:Cron"] ?? "0 * * * *");
+
+                // 物料同步 - 每天凌晨2点执行
+                recurringJobManager.AddOrUpdate("ITEM_Sync",
+                    () => syncService.SyncItemDataAsync(syncService.GetLastSyncTime("ITEM", "INSPECT_FPICREATEDATE")),
+                    Configuration["SyncConfig:ITEM:Cron"] ?? "0 2 * * *");
+
+                // 供应商同步 - 每天凌晨3点执行
+                recurringJobManager.AddOrUpdate("VEND_Sync",
+                    () => syncService.SyncVendDataAsync(syncService.GetLastSyncTime("SUPP", "INSPECT_FPICREATEDATE")),
+                    Configuration["SyncConfig:VEND:Cron"] ?? "0 3 * * *");
+
+                // 客户同步 - 每天凌晨4点执行
+                recurringJobManager.AddOrUpdate("CUST_Sync",
+                    () => syncService.SyncCustDataAsync(syncService.GetLastSyncTime("CUSTOM", "INSPECT_FPICREATEDATE")),
+                    Configuration["SyncConfig:CUST:Cron"] ?? "0 4 * * *");
+
+                Console.WriteLine("Sync jobs initialized successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing sync jobs: {ex.Message}");
+                throw;
+            }
+        }
+        #endregion
     }
+
+    #region Hangfire授权过滤器
+    public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
+    {
+        public bool Authorize(DashboardContext context)
+        {
+            // 生产环境应实现实际授权逻辑
+            return true;
+        }
+    }
+    #endregion
 }

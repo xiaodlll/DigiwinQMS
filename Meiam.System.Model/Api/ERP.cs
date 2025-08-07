@@ -123,7 +123,7 @@ namespace Meiam.System.Model
     /// </summary>
     public class QmsLotNoticeResultRequest
     {
-    
+
     }
     /// <summary>
     /// 收料检验结果回传ERP
@@ -182,7 +182,7 @@ namespace Meiam.System.Model
         /// <summary>
         /// 合格数
         /// </summary>
-        public int? OKQty{ get; set; }
+        public int? OKQty { get; set; }
 
         /// <summary>
         /// 不合格数
@@ -263,5 +263,78 @@ namespace Meiam.System.Model
     {
         public string CUSTOMCODE { get; set; }
         public string Error { get; set; }
+    }
+
+    /// <summary>
+    /// ERP供应商同步
+    /// </summary>
+    public class SuppSyncResponse : ApiResponse
+    {
+        public int TotalCount { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailedCount { get; set; }
+        public List<SuppSyncDetail> Details { get; set; } = new();
+    }
+
+    public class SuppSyncDetail
+    {
+        public string SUPPID { get; set; }
+        public string Error { get; set; }
+    }
+
+
+    public class erp_rc
+    {
+        public string ID { get; set; }
+        public string ERP_ARRIVEDID { get; set; }
+        public string ITEMID { get; set; }
+        public string ITEMNAME { get; set; }
+        public decimal LOT_QTY { get; set; }
+        public string APPLY_DATE { get; set; }
+        public string MODEL_SPEC { get; set; }
+        public string LOTNO { get; set; }
+        public decimal LENGTH { get; set; }
+        public decimal WIDTH { get; set; }
+        public decimal INUM { get; set; }
+        public string PRO_DATE { get; set; }
+        public string QUA_DATE { get; set; }
+        public string SUPPNAME { get; set; }
+        public string SUPPID { get; set; }
+        public string INSPECT_FPICREATEDATE { get; set; }
+    }
+
+    public class erp_wr
+    {
+        public string MOID { get; set; }
+        public decimal LOT_QTY { get; set; }
+        public decimal REPORT_QTY { get; set; }
+        public string ITEMID { get; set; }
+        public string ITEMNAME { get; set; }
+        public string CREATEDATE { get; set; }
+        public string INSPECT02CODE { get; set; }
+        public string INSPECT02NAME { get; set; }
+        public string INSPECT_FPICREATEDATE { get; set; }
+    }
+
+    public class erp_item
+    {
+        public string ITEMID { get; set; }
+        public string ITEMNAME { get; set; }
+        public string ITEM_GROUPID { get; set; }
+        public string INSPECT_FPICREATEDATE { get; set; }
+    }
+
+    public class erp_vend
+    {
+        public string SUPPNAME { get; set; }
+        public string SUPPID { get; set; }
+        public string INSPECT_FPICREATEDATE { get; set; }
+    }
+
+    public class erp_cust
+    {
+        public string CUSTOMCODE { get; set; }
+        public string CUSTOMNAME { get; set; }
+        public string INSPECT_FPICREATEDATE { get; set; }
     }
 }

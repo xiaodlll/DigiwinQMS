@@ -27,7 +27,8 @@ namespace Meiam.System.Interfaces
     /// <summary>
     /// 恒铭达
     /// </summary>
-    public class HMDService : BaseService<INSPECT_TENSILE_D>, IHMDService {
+    public class HMDService : BaseService<INSPECT_TENSILE_D>, IHMDService
+    {
 
         public HMDService(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
@@ -35,18 +36,22 @@ namespace Meiam.System.Interfaces
 
         private readonly ILogger<HMDService> _logger;
         private readonly string _connectionString;
+        private readonly SqlSugarScope _sqlSugar;
 
-        public HMDService(IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork)
+        public HMDService(SqlSugarScope sqlSugar, IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork)
         {
             _logger = logger;
+            _sqlSugar = sqlSugar;
         }
 
 
         #region ProcessHMDInspectDataAsync
-        public async Task<ApiResponse> ProcessHMDInspectDataAsync(HMDInputDto input) {
+        public async Task<ApiResponse> ProcessHMDInspectDataAsync(HMDInputDto input)
+        {
             _logger.LogInformation("开始同步恒铭达检测数据");
 
-            try {
+            try
+            {
                 //foreach (var request in requests) {
                 //    // 验证数据
                 //    ValidateRequest(request);
@@ -70,17 +75,543 @@ namespace Meiam.System.Interfaces
                 //}
                 await Task.Delay(10);
                 _logger.LogInformation("恒铭达检测数据同步完成!");
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "恒铭达检测数据同步成功",
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"恒铭达检测数据同步失败：{ex.Message}"
                 };
             }
+        }
+        #endregion
+
+        #region 同步收货数据
+        public async Task SyncRcDataAsync(string lastSyncTime)
+        {
+            _logger.LogInformation("开始处理收料通知单");
+            try
+            {
+                _logger.LogInformation("开始同步QMS_RC_VIEW数据...");
+
+                // 从Oracle视图查询增量数据
+                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
+                    $"FROM qms_rc_view " +
+                    $"WHERE TO_DATE(rvadate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+
+                if (oracleData.Any())
+                {
+                    // 转换为目标实体
+                    var entities = oracleData.Select(x => new erp_rc
+                    {
+                        ID = x.rvb02,
+                        ERP_ARRIVEDID = x.rva01,
+                        ITEMID = x.rvb05,
+                        ITEMNAME = x.rvb051,
+                        LOT_QTY = x.rvb07,
+                        APPLY_DATE = x.rva06,
+                        MODEL_SPEC = x.ima021,
+                        LOTNO = x.rvb38,
+                        LENGTH = x.rvbud07,
+                        WIDTH = x.rvbud01,
+                        INUM = x.rvbud08,
+                        PRO_DATE = x.rvbud13,
+                        QUA_DATE = x.rvbud14,
+                        SUPPNAME = x.pmc03,
+                        SUPPID = x.rva05,
+                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }).ToList();
+
+                    foreach (var entity in entities)
+                    {
+                        // 验证数据
+                        if (entity.LOT_QTY <= 0)
+                        {
+                            _logger.LogWarning("到货数量无效: {LotQty}", entity.LOT_QTY);
+                            throw new ArgumentException("到货数量必须大于0");
+                        }
+
+                        //判断重复
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ITEMID = '{entity.ITEMID}' AND LOTNO = '{entity.LOTNO}' ") > 0;
+                        if (isExist)
+                        {
+                            _logger.LogWarning($"收料通知单已存在: {entity.ID}");
+                            continue;
+                        }
+
+                        // 生成检验单号
+                        var inspectionId = GenerateInspectionId();
+                        _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
+
+                        // 保存到数据库
+                        _logger.LogDebug("正在保存收料通知单到数据库...");
+                        try
+                        {
+                            SaveToDatabase(entity, inspectionId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError("保存收料通知单到数据库异常:" + ex.ToString());
+                            throw;
+                        }
+                    }
+
+                    _logger.LogInformation($"成功同步{entities.Count}条QMS_RC_VIEW数据");
+                }
+                else
+                {
+                    _logger.LogInformation("没有需要同步的QMS_RC_VIEW数据");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "同步QMS_RC_VIEW数据失败");
+                throw;
+            }
+        }
+
+        private string GenerateInspectionId()
+        {
+            string INSPECT_CODE = "";//检验单号
+
+            const string sql = @"
+                DECLARE @INSPECT_CODE  	  NVARCHAR(200) 
+
+                --获得IQC检验单号
+                SELECT TOP 1 @INSPECT_CODE=CAST(CAST(dbo.getNumericValue(INSPECT_IQCCODE) AS DECIMAL)+1 AS CHAR)  FROM  INSPECT_IQC
+                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_IQCCODE,'IQC_',''),'') like REPLACE(CONVERT(VARCHAR(10),GETDATE(),120),'-','')+'%' 
+                ORDER BY INSPECT_IQCCODE DESC
+
+                IF(ISNULL(@INSPECT_CODE,'')='')
+                   SET @INSPECT_CODE ='IQC_'+REPLACE(CONVERT(VARCHAR(10),GETDATE(),120),'-','')+'001'
+                ELSE 
+                   SET @INSPECT_CODE ='IQC_'+@INSPECT_CODE
+
+                SELECT @INSPECT_CODE AS INSPECT_CODE
+                ";
+
+            // 执行 SQL 命令
+            var dataTable = Db.Ado.GetDataTable(sql);
+            if (dataTable.Rows.Count > 0)
+            {
+                INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString().Trim();
+            }
+            return INSPECT_CODE;
+        }
+
+        private void SaveToDatabase(erp_rc entity, string inspectionId)
+        {
+            string sql = @"
+                INSERT INTO INSPECT_IQC (
+                    INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
+                    INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
+                    LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
+                    APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
+                    PRO_DATE, LENGTH, WIDTH, INUM, KEEID,
+                    SUPPNAME, SUPPID, INSPECT_FPICREATEDATE
+                ) VALUES (
+                    @InspectIqcId, @InspectIqcCreateUser, 
+                    getdate(), @ItemName, @ErpArrivedId,
+                    @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
+                    @ApplyDate, @ItemSpecification, @QuaDate,
+                    @ProDate, @Length, @Width, @Inum, @KeeId,
+                    @SuppName, @SuppId, @InspectFpiCreateDate
+                )";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@InspectIqcId", inspectionId),
+                new SugarParameter("@InspectIqcCreateUser", "system"),
+                new SugarParameter("@ItemName", entity.ITEMNAME),
+                new SugarParameter("@ErpArrivedId", entity.ERP_ARRIVEDID),
+                new SugarParameter("@LotQty", entity.LOT_QTY),
+                new SugarParameter("@InspectIqcCode", inspectionId),
+                new SugarParameter("@ItemId", entity.ITEMID),
+                new SugarParameter("@LotNo", (entity.LOTNO==null?"":entity.LOTNO.ToString())),
+                new SugarParameter("@ApplyDate", entity.APPLY_DATE),
+                new SugarParameter("@ItemSpecification", entity.MODEL_SPEC),
+                new SugarParameter("@QuaDate", entity.QUA_DATE),
+                new SugarParameter("@ProDate", entity.PRO_DATE),
+                new SugarParameter("@Length", entity.LENGTH),
+                new SugarParameter("@Width", entity.WIDTH),
+                new SugarParameter("@Inum", entity.INUM),
+                new SugarParameter("@KeeId", entity.ID),
+                new SugarParameter("@SuppName", entity.SUPPNAME),
+                new SugarParameter("@SuppId", entity.SUPPID),
+                new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        #endregion
+
+        #region 同步报工数据
+        public async Task SyncWrDataAsync(string lastSyncTime)
+        {
+            try
+            {
+                _logger.LogInformation("开始同步QMS_WR_VIEW数据...");
+
+                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                    $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate  " +
+                    $"FROM qms_wr_view " +
+                    $"WHERE TO_DATE(shbdate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+
+                if (oracleData.Any())
+                {
+                    var entities = oracleData.Select(x => new erp_wr
+                    {
+                        MOID = x.shb05,
+                        LOT_QTY = x.sfb08,
+                        REPORT_QTY = x.shb111,
+                        ITEMID = x.shb10,
+                        ITEMNAME = x.ima02,
+                        CREATEDATE = x.shb02,
+                        INSPECT02CODE = x.shb09,
+                        INSPECT02NAME = x.eci06,
+                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }).ToList();
+
+                    await _sqlSugar.Insertable(entities).ExecuteCommandAsync();
+                    _logger.LogInformation($"成功同步{entities.Count}条QMS_WR_VIEW数据");
+                }
+                else
+                {
+                    _logger.LogInformation("没有需要同步的QMS_WR_VIEW数据");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "同步QMS_WR_VIEW数据失败");
+                throw;
+            }
+        }
+        #endregion
+
+        #region 同步物料数据
+        public async Task SyncItemDataAsync(string lastSyncTime)
+        {
+            try
+            {
+                _logger.LogInformation("开始同步QMS_ITEM_VIEW数据...");
+
+                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                    $"SELECT ima01, ima02, ima06, ima901 " +
+                    $"FROM qms_item_view " +
+                    $"WHERE TO_DATE(ima901, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+
+                if (oracleData.Any())
+                {
+                    var entities = oracleData.Select(x => new erp_item
+                    {
+                        ITEMID = x.ima01,
+                        ITEMNAME = x.ima02,
+                        ITEM_GROUPID = x.ima06,
+                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }).ToList();
+
+                    var response = new MaterialSyncResponse
+                    {
+                        TotalCount = entities.Count
+                    };
+
+                    foreach (var entity in entities)
+                    {
+                        try
+                        {
+                            SyncItemTable(entity);
+
+                            response.SuccessCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.Details.Add(new MaterialSyncDetail
+                            {
+                                ITEMID = entity.ITEMID,
+                                Error = ex.Message
+                            });
+                            response.FailedCount++;
+                        }
+                    }
+
+                    if (response.FailedCount == 0)
+                    {
+                        await Db.Ado.CommitTranAsync();
+                        response.Success = true;
+                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                    }
+                    else
+                    {
+                        await Db.Ado.RollbackTranAsync();
+                        response.Success = false;
+                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                    }
+
+                }
+                else
+                {
+                    _logger.LogInformation("没有需要同步的QMS_ITEM_VIEW数据");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "同步QMS_ITEM_VIEW数据失败");
+                throw;
+            }
+        }
+
+        private void SyncItemTable(erp_item entity)
+        {
+            string sql = @"
+                    MERGE INTO ITEM AS target
+                    USING (SELECT @ItemId AS ITEMID, @ItemName AS ITEMNAME, @ItemGroupId AS ITEMGROUPID, @InspectFpiCreateDate AS INSPECTFPICREATEDATE) AS source
+                    ON target.ITEMID = source.ITEMID
+                    WHEN MATCHED THEN
+                        UPDATE SET ITEMNAME = source.ITEMNAME,
+                                   ITEM_GROUPID = source.ITEMGROUPID,
+                                   INSPECT_FPICREATEDATE = source.INSPECTFPICREATEDATE,
+                                   ITEMCREATEDATE = getdate()
+                    WHEN NOT MATCHED THEN
+                        INSERT (ITEMID, ITEMNAME, ITEM_GROUPID, INSPECT_FPICREATEDATE, ITEMCREATEUSER, ITEMCREATEDATE)
+                        VALUES (source.ITEMID, source.ITEMNAME, source.ITEMGROUPID, source.INSPECTFPICREATEDATE, 'system', getdate());";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@ItemId", entity.ITEMID),
+                new SugarParameter("@ItemName", entity.ITEMNAME),
+                new SugarParameter("@ItemGroupId", entity.ITEM_GROUPID),
+                new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
+            };
+
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        #endregion
+
+        #region 同步供应商数据
+        public async Task SyncVendDataAsync(string lastSyncTime)
+        {
+            try
+            {
+                _logger.LogInformation("开始同步QMS_VEND_VIEW数据...");
+
+                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                    $"SELECT pmc03, pmc01, pmccrat " +
+                    $"FROM qms_vend_view " +
+                    $"WHERE TO_DATE(pmccrat, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+
+                if (oracleData.Any())
+                {
+                    var entities = oracleData.Select(x => new erp_vend
+                    {
+                        SUPPNAME = x.pmc03,
+                        SUPPID = x.pmc01,
+                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }).ToList();
+
+
+                    var response = new SuppSyncResponse
+                    {
+                        TotalCount = entities.Count
+                    };
+
+                    foreach (var entity in entities)
+                    {
+                        try
+                        {
+                            SyncSuppTable(entity);
+
+                            response.SuccessCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.Details.Add(new SuppSyncDetail
+                            {
+                                SUPPID = entity.SUPPID,
+                                Error = ex.Message
+                            });
+                            response.FailedCount++;
+                        }
+                    }
+
+                    if (response.FailedCount == 0)
+                    {
+                        await Db.Ado.CommitTranAsync();
+                        response.Success = true;
+                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                    }
+                    else
+                    {
+                        await Db.Ado.RollbackTranAsync();
+                        response.Success = false;
+                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("没有需要同步的QMS_VEND_VIEW数据");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "同步QMS_VEND_VIEW数据失败");
+                throw;
+            }
+        }
+
+        private void SyncSuppTable(erp_vend item)
+        {
+            string sql = @"
+                MERGE INTO SUPP AS target
+                USING (SELECT @SuppId AS SUPPID, @SuppName AS SUPPNAME, @InspectFpiCreateDate AS INSPECTFPICREATEDATE) AS source
+                ON target.SUPPID = source.SUPPID
+                WHEN MATCHED THEN
+                    UPDATE SET SUPPNAME = source.SUPPNAME,
+                                INSPECT_FPICREATEDATE = source.INSPECTFPICREATEDATE,
+                                SUPPCREATEDATE = getdate()
+                WHEN NOT MATCHED THEN
+                    INSERT (SUPPID, SUPPNAME, INSPECT_FPICREATEDATE, SUPPCREATEUSER, SUPPCREATEDATE)
+                    VALUES (source.SUPPID, source.SUPPNAME, source.INSPECTFPICREATEDATE, 'system', getdate());";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@SuppId", item.SUPPID),
+                new SugarParameter("@SuppName", item.SUPPNAME),
+                new SugarParameter("@InspectFpiCreateDate", item.INSPECT_FPICREATEDATE)
+            };
+
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        #endregion
+
+        #region 同步客户数据
+        public async Task SyncCustDataAsync(string lastSyncTime)
+        {
+            try
+            {
+                _logger.LogInformation("开始同步QMS_CUST_VIEW数据...");
+
+                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                    $"SELECT ooc01, ooc02, occdate " +
+                    $"FROM qms_cust_view " +
+                    $"WHERE TO_DATE(occdate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+
+                if (oracleData.Any())
+                {
+                    var entities = oracleData.Select(x => new erp_cust
+                    {
+                        CUSTOMCODE = x.ooc01,
+                        CUSTOMNAME = x.ooc02,
+                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }).ToList();
+
+                    var response = new CustomerSyncResponse
+                    {
+                        TotalCount = entities.Count
+                    };
+
+                    foreach (var entity in entities)
+                    {
+                        try
+                        {
+                            SyncCustomerTable(entity);
+
+                            response.SuccessCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.Details.Add(new CustomerSyncDetail
+                            {
+                                CUSTOMCODE = entity.CUSTOMCODE,
+                                Error = ex.Message
+                            });
+                            response.FailedCount++;
+                        }
+                    }
+
+                    if (response.FailedCount == 0)
+                    {
+                        await Db.Ado.CommitTranAsync();
+                        response.Success = true;
+                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                    }
+                    else
+                    {
+                        await Db.Ado.RollbackTranAsync();
+                        response.Success = false;
+                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("没有需要同步的QMS_CUST_VIEW数据");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "同步QMS_CUST_VIEW数据失败");
+                throw;
+            }
+        }
+
+        private void SyncCustomerTable(erp_cust item)
+        {
+            string sql = @"
+                MERGE INTO CUSTOM AS target
+                USING (SELECT @CustomCode AS CUSTOMCODE, @CustomName AS CUSTOMNAME, @InspectFpiCreateDate AS INSPECTFPICREATEDATE) AS source
+                ON target.CUSTOMCODE = source.CUSTOMCODE
+                WHEN MATCHED THEN
+                    UPDATE SET CUSTOMNAME = source.CUSTOMNAME,
+                                INSPECT_FPICREATEDATE = source.INSPECTFPICREATEDATE,
+                                CUSTOMCREATEDATE = getdate()
+                WHEN NOT MATCHED THEN
+                    INSERT (CUSTOMCODE, CUSTOMNAME, INSPECT_FPICREATEDATE, CUSTOMCREATEUSER, CUSTOMCREATEDATE)
+                    VALUES (source.CUSTOMCODE, source.CUSTOMNAME, source.INSPECTFPICREATEDATE, 'system', getdate());";
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@CustomCode", item.CUSTOMCODE),
+                new SugarParameter("@CustomName", item.CUSTOMNAME),
+                new SugarParameter("@InspectFpiCreateDate", item.INSPECT_FPICREATEDATE)
+            };
+
+            Db.Ado.ExecuteCommand(sql, parameters);
+        }
+        #endregion
+
+        #region 获取上次同步时间
+        public string GetLastSyncTime(string tableName, string timeFieldName)
+        {
+            try
+            {
+                var sql = $"SELECT CONVERT(VARCHAR(20), MAX({timeFieldName}), 120) AS LastTimeStr FROM {tableName}";
+                var result = _sqlSugar.Ado.SqlQuerySingle<dynamic>(sql);
+                if (result != null && result.LastTimeStr != null)
+                {
+                    return result.LastTimeStr.ToString("yyyy-MM-dd HH:mm:ss");
+                }
+
+                return "1900-01-01 00:00:00";// 默认最小时间
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"获取表{tableName}的最后同步时间失败");
+                return "1900-01-01 00:00:00";// 默认最小时间
+            }
+
         }
         #endregion
 

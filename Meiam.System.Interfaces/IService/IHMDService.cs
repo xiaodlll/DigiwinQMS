@@ -22,5 +22,36 @@ namespace Meiam.System.Interfaces
     public interface IHMDService : IBaseService<INSPECT_TENSILE_D>
     {
         Task<ApiResponse> ProcessHMDInspectDataAsync(HMDInputDto input);
+
+        /// <summary>
+        /// 同步收货数据
+        /// </summary>
+        Task SyncRcDataAsync(string lastSyncTime);
+
+        /// <summary>
+        /// 同步报工数据
+        /// </summary>
+        Task SyncWrDataAsync(string lastSyncTime);
+
+        /// <summary>
+        /// 同步物料数据
+        /// </summary>
+        Task SyncItemDataAsync(string lastSyncTime);
+
+        /// <summary>
+        /// 同步供应商数据
+        /// </summary>
+        Task SyncVendDataAsync(string lastSyncTime);
+
+        /// <summary>
+        /// 同步客户数据
+        /// </summary>
+        Task SyncCustDataAsync(string lastSyncTime);
+
+        /// <summary>
+        /// 获取上次同步时间
+        /// </summary>
+        string GetLastSyncTime(string tableName, string timeFieldName);
+
     }
 }
