@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SqlSugar;
 using System;
@@ -166,6 +167,56 @@ namespace Meiam.System.Hostd
             #region 同步服务注册
             Console.WriteLine("Registering sync services...");
             services.AddScoped<IHMDService, HMDService>();
+            #endregion
+
+            #region SqlSugarHMD 配置
+            Console.WriteLine("Configuring Oracle SqlSugar...");
+            services.AddSingleton<ISqlSugarClient>(provider =>
+            {
+                var config = new ConnectionConfig()
+                {
+                    ConfigId = "OracleDB",
+                    ConnectionString = Configuration.GetConnectionString("OracleConnection"),
+                    DbType = DbType.Oracle,
+                    IsAutoCloseConnection = true,
+                    InitKeyType = InitKeyType.Attribute,
+                    ConfigureExternalServices = new ConfigureExternalServices
+                    {
+                        EntityService = (property, column) =>
+                        {
+                            if (!column.IsIgnore && !string.IsNullOrEmpty(column.DbColumnName))
+                            {
+                                column.DbColumnName = column.DbColumnName.ToUpper(); // Oracle 列名大写
+                            }
+                        }
+                    },
+                    MoreSettings = new ConnMoreSettings
+                    {
+                        IsAutoRemoveDataCache = true
+                        //OracleConnectionStringPull = true // 解决连接池问题
+                    }
+                };
+
+                return new SqlSugarScope(config, db =>
+                {
+                    // 设置Oracle日期格式
+                    db.Ado.ExecuteCommand("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
+                    db.Ado.ExecuteCommand("ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS'");
+
+                    // AOP配置
+                    db.Aop.OnLogExecuting = (sql, pars) =>
+                    {
+                        var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
+                        logger.LogDebug($"Oracle SQL: {UtilMethods.GetSqlString(DbType.Oracle, sql, pars)}");
+                    };
+
+                    db.Aop.OnError = ex =>
+                    {
+                        var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
+                        logger.LogError(ex, "Oracle数据库错误");
+                    };
+                });
+            });
             #endregion
 
         }

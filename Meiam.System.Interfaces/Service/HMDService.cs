@@ -36,12 +36,12 @@ namespace Meiam.System.Interfaces
 
         private readonly ILogger<HMDService> _logger;
         private readonly string _connectionString;
-        private readonly SqlSugarScope _sqlSugar;
+        private readonly ISqlSugarClient _oracleDb;
 
-        public HMDService(SqlSugarScope sqlSugar, IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork)
+        public HMDService(ISqlSugarClient sqlSugar, IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork)
         {
             _logger = logger;
-            _sqlSugar = sqlSugar;
+            _oracleDb = sqlSugar;
         }
 
 
@@ -101,7 +101,7 @@ namespace Meiam.System.Interfaces
                 _logger.LogInformation("开始同步QMS_RC_VIEW数据...");
 
                 // 从Oracle视图查询增量数据
-                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
                     $"FROM qms_rc_view " +
                     $"WHERE TO_DATE(rvadate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
@@ -126,18 +126,11 @@ namespace Meiam.System.Interfaces
                         QUA_DATE = x.rvbud14,
                         SUPPNAME = x.pmc03,
                         SUPPID = x.rva05,
-                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    }).ToList();
+                        INSPECT_FPICREATEDATE = x.rvadate
+                    });
 
                     foreach (var entity in entities)
                     {
-                        // 验证数据
-                        if (entity.LOT_QTY <= 0)
-                        {
-                            _logger.LogWarning("到货数量无效: {LotQty}", entity.LOT_QTY);
-                            throw new ArgumentException("到货数量必须大于0");
-                        }
-
                         //判断重复
                         bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ITEMID = '{entity.ITEMID}' AND LOTNO = '{entity.LOTNO}' ") > 0;
                         if (isExist)
@@ -163,7 +156,7 @@ namespace Meiam.System.Interfaces
                         }
                     }
 
-                    _logger.LogInformation($"成功同步{entities.Count}条QMS_RC_VIEW数据");
+                    _logger.LogInformation($"成功同步{entities.Count()}条QMS_RC_VIEW数据");
                 }
                 else
                 {
@@ -264,7 +257,7 @@ namespace Meiam.System.Interfaces
             {
                 _logger.LogInformation("开始同步QMS_WR_VIEW数据...");
 
-                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate  " +
                     $"FROM qms_wr_view " +
                     $"WHERE TO_DATE(shbdate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
@@ -281,18 +274,11 @@ namespace Meiam.System.Interfaces
                         CREATEDATE = x.shb02,
                         INSPECT02CODE = x.shb09,
                         INSPECT02NAME = x.eci06,
-                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    }).ToList();
+                        INSPECT_FPICREATEDATE = x.shbdate
+                    });
 
                     foreach (var entity in entities)
                     {
-                        // 验证数据
-                        if (entity.LOT_QTY <= 0)
-                        {
-                            _logger.LogWarning("工单数量无效: {LotQty}", entity.LOT_QTY);
-                            throw new ArgumentException("工单数量必须大于0");
-                        }
-
                         //判断重复
                         bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_SI WHERE MOID = '{entity.MOID}' AND ITEMID = '{entity.ITEMID}' AND CREATEDATE = '{entity.CREATEDATE}' ") > 0;
                         if (isExist)
@@ -313,7 +299,7 @@ namespace Meiam.System.Interfaces
                             throw;
                         }
                     }
-                    _logger.LogInformation($"成功同步{entities.Count}条QMS_WR_VIEW数据");
+                    _logger.LogInformation($"成功同步{entities.Count()}条QMS_WR_VIEW数据");
                 }
                 else
                 {
@@ -368,7 +354,7 @@ namespace Meiam.System.Interfaces
             {
                 _logger.LogInformation("开始同步QMS_ITEM_VIEW数据...");
 
-                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT ima01, ima02, ima06, ima901 " +
                     $"FROM qms_item_view " +
                     $"WHERE TO_DATE(ima901, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
@@ -380,12 +366,12 @@ namespace Meiam.System.Interfaces
                         ITEMID = x.ima01,
                         ITEMNAME = x.ima02,
                         ITEM_GROUPID = x.ima06,
-                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    }).ToList();
+                        INSPECT_FPICREATEDATE = x.ima901
+                    });
 
                     var response = new MaterialSyncResponse
                     {
-                        TotalCount = entities.Count
+                        TotalCount = entities.Count()
                     };
 
                     foreach (var entity in entities)
@@ -469,7 +455,7 @@ namespace Meiam.System.Interfaces
             {
                 _logger.LogInformation("开始同步QMS_VEND_VIEW数据...");
 
-                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT pmc03, pmc01, pmccrat " +
                     $"FROM qms_vend_view " +
                     $"WHERE TO_DATE(pmccrat, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
@@ -480,13 +466,13 @@ namespace Meiam.System.Interfaces
                     {
                         SUPPNAME = x.pmc03,
                         SUPPID = x.pmc01,
-                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    }).ToList();
+                        INSPECT_FPICREATEDATE = x.pmccrat
+                    });
 
 
                     var response = new SuppSyncResponse
                     {
-                        TotalCount = entities.Count
+                        TotalCount = entities.Count()
                     };
 
                     foreach (var entity in entities)
@@ -567,7 +553,7 @@ namespace Meiam.System.Interfaces
             {
                 _logger.LogInformation("开始同步QMS_CUST_VIEW数据...");
 
-                var oracleData = await _sqlSugar.Ado.SqlQueryAsync<dynamic>(
+                var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT ooc01, ooc02, occdate " +
                     $"FROM qms_cust_view " +
                     $"WHERE TO_DATE(occdate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
@@ -578,12 +564,12 @@ namespace Meiam.System.Interfaces
                     {
                         CUSTOMCODE = x.ooc01,
                         CUSTOMNAME = x.ooc02,
-                        INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    }).ToList();
+                        INSPECT_FPICREATEDATE = x.occdate
+                    });
 
                     var response = new CustomerSyncResponse
                     {
-                        TotalCount = entities.Count
+                        TotalCount = entities.Count()
                     };
 
                     foreach (var entity in entities)
