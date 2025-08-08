@@ -111,7 +111,7 @@ namespace Meiam.System.Interfaces
                     // 转换为目标实体
                     var entities = oracleData.Select(x => new erp_rc
                     {
-                        ID = x.rvb02,
+                        KEEID = x.rvb02,
                         ERP_ARRIVEDID = x.rva01,
                         ITEMID = x.rvb05,
                         ITEMNAME = x.rvb051,
@@ -142,7 +142,7 @@ namespace Meiam.System.Interfaces
                         bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ITEMID = '{entity.ITEMID}' AND LOTNO = '{entity.LOTNO}' ") > 0;
                         if (isExist)
                         {
-                            _logger.LogWarning($"收料通知单已存在: {entity.ID}");
+                            _logger.LogWarning($"收料通知单已存在: {entity.KEEID}");
                             continue;
                         }
 
@@ -154,7 +154,7 @@ namespace Meiam.System.Interfaces
                         _logger.LogDebug("正在保存收料通知单到数据库...");
                         try
                         {
-                            SaveToDatabase(entity, inspectionId);
+                            SaveRcDataToDatabase(entity, inspectionId);
                         }
                         catch (Exception ex)
                         {
@@ -207,18 +207,18 @@ namespace Meiam.System.Interfaces
             return INSPECT_CODE;
         }
 
-        private void SaveToDatabase(erp_rc entity, string inspectionId)
+        private void SaveRcDataToDatabase(erp_rc entity, string inspectionId)
         {
             string sql = @"
                 INSERT INTO INSPECT_IQC (
-                    INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
+                    TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
                     INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
                     PRO_DATE, LENGTH, WIDTH, INUM, KEEID,
                     SUPPNAME, SUPPID, INSPECT_FPICREATEDATE
                 ) VALUES (
-                    @InspectIqcId, @InspectIqcCreateUser, 
+                    @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
                     @ApplyDate, @ItemSpecification, @QuaDate,
@@ -229,6 +229,7 @@ namespace Meiam.System.Interfaces
             // 定义参数
             var parameters = new SugarParameter[]
             {
+                new SugarParameter("@TenId", "001"),
                 new SugarParameter("@InspectIqcId", inspectionId),
                 new SugarParameter("@InspectIqcCreateUser", "system"),
                 new SugarParameter("@ItemName", entity.ITEMNAME),
@@ -244,7 +245,7 @@ namespace Meiam.System.Interfaces
                 new SugarParameter("@Length", entity.LENGTH),
                 new SugarParameter("@Width", entity.WIDTH),
                 new SugarParameter("@Inum", entity.INUM),
-                new SugarParameter("@KeeId", entity.ID),
+                new SugarParameter("@KeeId", entity.KEEID),
                 new SugarParameter("@SuppName", entity.SUPPNAME),
                 new SugarParameter("@SuppId", entity.SUPPID),
                 new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
@@ -282,7 +283,35 @@ namespace Meiam.System.Interfaces
                         INSPECT_FPICREATEDATE = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                     }).ToList();
 
-                    await _sqlSugar.Insertable(entities).ExecuteCommandAsync();
+                    foreach (var entity in entities)
+                    {
+                        // 验证数据
+                        if (entity.LOT_QTY <= 0)
+                        {
+                            _logger.LogWarning("工单数量无效: {LotQty}", entity.LOT_QTY);
+                            throw new ArgumentException("工单数量必须大于0");
+                        }
+
+                        //判断重复
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_SI WHERE MOID = '{entity.MOID}' AND ITEMID = '{entity.ITEMID}' AND CREATEDATE = '{entity.CREATEDATE}' ") > 0;
+                        if (isExist)
+                        {
+                            _logger.LogWarning($"报工单已存在: {entity.MOID}");
+                            continue;
+                        }
+
+                        // 保存到数据库
+                        _logger.LogDebug("正在保存报工单到数据库...");
+                        try
+                        {
+                            SaveWrDataToDatabase(entity);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError("保存报工单到数据库异常:" + ex.ToString());
+                            throw;
+                        }
+                    }
                     _logger.LogInformation($"成功同步{entities.Count}条QMS_WR_VIEW数据");
                 }
                 else
@@ -296,6 +325,37 @@ namespace Meiam.System.Interfaces
                 _logger.LogError(ex, "同步QMS_WR_VIEW数据失败");
                 throw;
             }
+        }
+
+        private void SaveWrDataToDatabase(erp_wr entity)
+        {
+            string sql = @"
+                INSERT INTO INSPECT_SI (
+                    MOID, LOT_QTY, REPORT_QTY, 
+                    ITEMID, ITEMNAME, CREATEDATE, 
+                    INSPECT02CODE, INSPECT02NAME, INSPECT_FPICREATEDATE
+                ) VALUES (
+                    @MoId, @LotQty, @ReportQty, 
+                    @ItemId, @ItemName, @CreateDate,
+                    @Inspect02Code, @Inspect02Name, @InspectFpiCreateDate
+                )";
+
+            // 定义参数
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@MoId", entity.MOID),
+                new SugarParameter("@LotQty", entity.LOT_QTY),
+                new SugarParameter("@ReportQty", entity.REPORT_QTY),
+                new SugarParameter("@ItemId", entity.ITEMID),
+                new SugarParameter("@ItemName", entity.ITEMNAME),
+                new SugarParameter("@CreateDate", entity.CREATEDATE),
+                new SugarParameter("@Inspect02Code", entity.INSPECT02CODE),
+                new SugarParameter("@Inspect02Name", entity.INSPECT02NAME),
+                new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
+            };
+
+            // 执行 SQL 命令
+            Db.Ado.ExecuteCommand(sql, parameters);
         }
         #endregion
 

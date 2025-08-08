@@ -285,7 +285,7 @@ namespace Meiam.System.Model
 
     public class erp_rc
     {
-        public string ID { get; set; }
+        public string KEEID { get; set; }
         public string ERP_ARRIVEDID { get; set; }
         public string ITEMID { get; set; }
         public string ITEMNAME { get; set; }
