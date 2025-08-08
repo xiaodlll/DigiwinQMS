@@ -131,10 +131,10 @@ namespace Meiam.System.Interfaces
         }
 
         private void SaveMainInspection(LotNoticeRequest request, string inspectionId) {
-            string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString();
+            string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString().Trim();
 
             if (string.IsNullOrEmpty(SuppID)) {
-                SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString();
+                SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString().Trim();
                 if (string.IsNullOrEmpty(SuppID)) {
                     SuppID = "1001";
                 }
@@ -302,11 +302,11 @@ VALUES (
                 INSERT INTO INSPECT_FPI (
                     TENID, INSPECT_FPIID, INSPECT_FPICREATEUSER, 
                     INSPECT_FPICREATEDATE, MOID, INSPECT_FPICODE, 
-                    ITEMNAME, ITEMID, MESFIRSTINSPECTID, ORGID
+                    ITEMNAME, ITEMID, ITEM04, MESFIRSTINSPECTID, ORGID
                 ) VALUES (
                     @TenId, @InspectFpiId, @InspectFpiCreateUser, 
                     @InspectFpiCreateDate, @MoId, @InspectFpiCode,
-                    @ItemName, @ItemId, @MesFirstInspectId, @OrgId
+                    @ItemName, @ItemId, @ITEM04, @MesFirstInspectId, @OrgId
                 )";
 
             // 定义参数
@@ -320,6 +320,7 @@ VALUES (
                 new SugarParameter("@InspectFpiCode", inspectionFpiId),
                 new SugarParameter("@ItemName", request.ITEMNAME),
                 new SugarParameter("@ItemId", request.ITEMID),
+                new SugarParameter("@ITEM04", request.MODEL_SPEC),
                 new SugarParameter("@MesFirstInspectId", request.ID),
                 new SugarParameter("@OrgId", request.ORGID)
             };
@@ -521,21 +522,22 @@ VALUES (
         {
             string sql = @"
                     MERGE INTO ITEM AS target
-                    USING (SELECT @ItemId AS ITEMID, @ItemName AS ITEMNAME, @ORGID AS ORGID) AS source
+                    USING (SELECT @ItemId AS ITEMID, @ItemName AS ITEMNAME, @ITEM04 AS ITEM04, @ORGID AS ORGID) AS source
                     ON target.ITEMID = source.ITEMID
                     WHEN MATCHED THEN
                         UPDATE SET ITEMNAME = source.ITEMNAME,
                                    ORGID = source.ORGID,
                                    ITEMCREATEDATE = getdate()
                     WHEN NOT MATCHED THEN
-                        INSERT (ITEMID, ITEMCODE, ITEMNAME, ORGID, ITEMCREATEUSER, ITEMCREATEDATE)
-                        VALUES (source.ITEMID, source.ITEMID, source.ITEMNAME, source.ORGID, 'system', getdate());";
+                        INSERT (ITEMID, ITEMCODE, ITEMNAME, ITEM04, ORGID, ITEMCREATEUSER, ITEMCREATEDATE)
+                        VALUES (source.ITEMID, source.ITEMID, source.ITEMNAME, source.ITEM04, source.ORGID, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@ItemId", item.ITEMID),
                 new SugarParameter("@ItemName", item.ITEMNAME),
-                new SugarParameter("@ORGID", item.ORGID)
+                new SugarParameter("@ORGID", item.ORGID),
+                new SugarParameter("@ITEM04", item.MODEL_SPEC)
             };
 
             Db.Ado.ExecuteCommand(sql, parameters);

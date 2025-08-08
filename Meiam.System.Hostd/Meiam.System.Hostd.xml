@@ -53,6 +53,42 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.UploadInpectDev1Data(Meiam.System.Model.Dto.InspectDev1Entity)">
+            <summary>
+            恒铭达拉力机数据上传
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.GetInspectInfoByDocCodeAsync(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+            <summary>
+            获取检验项目信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.GetProgressDataByDocCode(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+            <summary>
+            获取检验项目
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.GetInspectSpecData(Meiam.System.Model.Dto.INSPECT_SYSM002_REQBYID)">
+            <summary>
+            获取拉力机规格
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.GetInspectInfoByConditionAsync(Meiam.System.Model.Dto.INSPECT_CONDITION)">
+            <summary>
+            获取检验项目信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.UploadInpectProcessData(System.Collections.Generic.List{Meiam.System.Model.Dto.INSPECT_PROGRESSDto})">
+            <summary>
+            恒铭达二次元数据上传
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.Bisuness.IQCController">
             <summary>
             IQC

@@ -27,10 +27,18 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "收料通知单号(ERP_ARRIVEDID)是必填字段")]
         public string ERP_ARRIVEDID { get; set; }
 
-        [Required(ErrorMessage = "品号(ITEMID)是必填字段")]
-        public string ITEMID { get; set; }
+        private string _itemId;
+        [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
+        public string ITEMID {
+            get => _itemId;
+            set => _itemId = value?.Trim();
+        }
 
-        public string ITEMNAME { get; set; }
+        private string _itemName;
+        public string ITEMNAME {
+            get => _itemName;
+            set => _itemName = value?.Trim();
+        }
 
         [Required(ErrorMessage = "组织内码(ORGID)是必填字段")]
         public string ORGID { get; set; }
@@ -105,9 +113,17 @@ namespace Meiam.System.Model
         [Required(ErrorMessage = "内码（ID）是必填字段")]
         public string ID { get; set; }
 
+        private string _itemId;
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
-        public string ITEMID { get; set; }
+        public string ITEMID {
+            get => _itemId;
+            set => _itemId = value?.Trim();
+        }
+
         public string ITEMNAME { get; set; }
+
+        // 规格型号
+        public string MODEL_SPEC { get; set; }
 
         [Required(ErrorMessage = "组织内码ID（ORGID）是必填字段")]
         public string ORGID { get; set; }
@@ -123,7 +139,7 @@ namespace Meiam.System.Model
     /// </summary>
     public class QmsLotNoticeResultRequest
     {
-
+    
     }
     /// <summary>
     /// 收料检验结果回传ERP
@@ -182,7 +198,7 @@ namespace Meiam.System.Model
         /// <summary>
         /// 合格数
         /// </summary>
-        public int? OKQty { get; set; }
+        public int? OKQty{ get; set; }
 
         /// <summary>
         /// 不合格数
@@ -195,8 +211,12 @@ namespace Meiam.System.Model
     /// </summary>
     public class LotCheckResultRequest
     {
+        private string _itemId;
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
-        public string ITEMID { get; set; }
+        public string ITEMID {
+            get => _itemId;
+            set => _itemId = value?.Trim();
+        }
 
         [Required(ErrorMessage = "检验日期（CHECKDATE）是必填字段")]
         [RegularExpression(@"^\d{4}-\d{2}-\d{2}$", ErrorMessage = "检验日期的格式必须是YYYY-MM-DD")]
@@ -216,13 +236,21 @@ namespace Meiam.System.Model
     /// </summary>
     public class MaterialSyncItem
     {
+        private string _itemId;
         [Required(ErrorMessage = "品号（ITEMID）是必填字段")]
-        public string ITEMID { get; set; }
+        public string ITEMID {
+            get => _itemId;
+            set => _itemId = value?.Trim();
+        }
 
         public string ITEMNAME { get; set; }
 
         [Required(ErrorMessage = "组织内码ID（ORGID）是必填字段")]
         public string ORGID { get; set; }
+
+        // 规格型号
+        public string MODEL_SPEC { get; set; }
+
     }
 
     public class MaterialSyncResponse : ApiResponse
@@ -268,23 +296,20 @@ namespace Meiam.System.Model
     /// <summary>
     /// ERP供应商同步
     /// </summary>
-    public class SuppSyncResponse : ApiResponse
-    {
+    public class SuppSyncResponse : ApiResponse {
         public int TotalCount { get; set; }
         public int SuccessCount { get; set; }
         public int FailedCount { get; set; }
         public List<SuppSyncDetail> Details { get; set; } = new();
     }
 
-    public class SuppSyncDetail
-    {
+    public class SuppSyncDetail {
         public string SUPPID { get; set; }
         public string Error { get; set; }
     }
 
 
-    public class erp_rc
-    {
+    public class erp_rc {
         public string KEEID { get; set; }
         public string ERP_ARRIVEDID { get; set; }
         public string ITEMID { get; set; }
@@ -303,8 +328,7 @@ namespace Meiam.System.Model
         public string INSPECT_FPICREATEDATE { get; set; }
     }
 
-    public class erp_wr
-    {
+    public class erp_wr {
         public string MOID { get; set; }
         public decimal LOT_QTY { get; set; }
         public decimal REPORT_QTY { get; set; }
@@ -316,23 +340,20 @@ namespace Meiam.System.Model
         public string INSPECT_FPICREATEDATE { get; set; }
     }
 
-    public class erp_item
-    {
+    public class erp_item {
         public string ITEMID { get; set; }
         public string ITEMNAME { get; set; }
         public string ITEM_GROUPID { get; set; }
         public string INSPECT_FPICREATEDATE { get; set; }
     }
 
-    public class erp_vend
-    {
+    public class erp_vend {
         public string SUPPNAME { get; set; }
         public string SUPPID { get; set; }
         public string INSPECT_FPICREATEDATE { get; set; }
     }
 
-    public class erp_cust
-    {
+    public class erp_cust {
         public string CUSTOMCODE { get; set; }
         public string CUSTOMNAME { get; set; }
         public string INSPECT_FPICREATEDATE { get; set; }

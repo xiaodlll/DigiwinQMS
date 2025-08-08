@@ -21,7 +21,13 @@ namespace Meiam.System.Interfaces
     /// </summary>
     public interface IHMDService : IBaseService<INSPECT_TENSILE_D>
     {
+        Task<ApiResponse> GetInspectSpecDataAsync(INSPECT_SYSM002_REQBYID input);
+        Task<ApiResponse> GetInspectInfoByDocCodeAsync(INSPECT_REQCODE input);
+        Task<ApiResponse> GetProgressDataByDocCodeAsync(INSPECT_REQCODE input);
+        Task<ApiResponse> ProcessHMDInpectDev1DataAsync(InspectDev1Entity input);
         Task<ApiResponse> ProcessHMDInspectDataAsync(HMDInputDto input);
+        Task<ApiResponse> GetInspectInfoByConditionAsync(INSPECT_CONDITION input);
+        Task<ApiResponse> ProcessHMDInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input);
 
         /// <summary>
         /// 同步收货数据
