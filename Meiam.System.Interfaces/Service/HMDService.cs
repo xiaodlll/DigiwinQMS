@@ -657,14 +657,16 @@ namespace Meiam.System.Interfaces
         {
             try
             {
-                var sql = $"SELECT CONVERT(VARCHAR(20), MAX({timeFieldName}), 120) AS LastTimeStr FROM {tableName}";
-                var result = _sqlSugar.Ado.SqlQuerySingle<dynamic>(sql);
-                if (result != null && result.LastTimeStr != null)
+                string sql = $"SELECT CONVERT(VARCHAR(20), MAX({timeFieldName}), 120) AS LastTimeStr FROM {tableName}";
+                //string sql = $"SELECT CONVERT(VARCHAR(20), MAX(INSPECT_IQCCREATEDATE), 120) AS LastTimeStr FROM {tableName}";
+
+                string result = Db.Ado.GetString(sql);
+                if (string.IsNullOrEmpty(result))
                 {
-                    return result.LastTimeStr.ToString("yyyy-MM-dd HH:mm:ss");
+                    return "1900-01-01 00:00:00"; // 默认最小时间
                 }
 
-                return "1900-01-01 00:00:00";// 默认最小时间
+                return result;
             }
             catch (Exception ex)
             {
