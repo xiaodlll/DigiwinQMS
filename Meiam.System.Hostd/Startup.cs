@@ -99,6 +99,11 @@ namespace Meiam.System.Hostd
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
+                // 配置 Newtonsoft.Json 作为序列化器
+                .UseSerializerSettings(new JsonSerializerSettings {
+                    TypeNameHandling = TypeNameHandling.All, // 关键：保留类型信息
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                })
                 .UseSqlServerStorage(Configuration["ConnectionStrings:HangfireConnection"], new SqlServerStorageOptions
                 {
                     CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
@@ -108,10 +113,11 @@ namespace Meiam.System.Hostd
                     DisableGlobalLocks = true
                 }));
 
-            services.AddHangfireServer(options =>
-            {
+            services.AddHangfireServer(options => {
                 options.ServerName = "HMD_Sync_Server";
-                options.Queues = new[] { "sync" };
+                options.WorkerCount = 50; // 增加并发线程数
+                options.Queues = new[] { "default", "sync" }; // 监听的队列
+                options.WorkerCount = 10; // 并发工作线程数
             });
             #endregion
 
@@ -235,7 +241,8 @@ namespace Meiam.System.Hostd
             builder.RegisterAssemblyTypes(assemblysServices)
                 .InstancePerDependency()//瞬时单例
                .AsImplementedInterfaces()////自动以其实现的所有接口类型暴露（包括IDisposable接口）
-               .EnableInterfaceInterceptors(); //引用Autofac.Extras.DynamicProxy;
+               //.EnableInterfaceInterceptors(); //引用Autofac.Extras.DynamicProxy;
+             .InstancePerLifetimeScope();
         }
         #endregion
 
@@ -244,30 +251,30 @@ namespace Meiam.System.Hostd
         {
             try
             {
-                // 收货单同步 - 每30分钟执行一次
+                // 收货单同步
                 recurringJobManager.AddOrUpdate("RC_Sync",
                     () => syncService.SyncRcDataAsync(syncService.GetLastSyncTime("INSPECT_IQC", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:RC"] ?? "1 * * * *");
+                    Configuration["SyncConfig:RC"] ?? "* * * * *");
 
-                // 报工单同步 - 每小时执行一次
+                // 报工单同步
                 recurringJobManager.AddOrUpdate("WR_Sync",
                     () => syncService.SyncWrDataAsync(syncService.GetLastSyncTime("INSPECT_SI", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:WR"] ?? "1 * * * *");
+                    Configuration["SyncConfig:WR"] ?? "* * * * *");
 
-                // 物料同步 - 每天凌晨2点执行
+                // 物料同步
                 recurringJobManager.AddOrUpdate("ITEM_Sync",
                     () => syncService.SyncItemDataAsync(syncService.GetLastSyncTime("ITEM", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:ITEM"] ?? "1 * * * *");
+                    Configuration["SyncConfig:ITEM"] ?? "* * * * *");
 
-                // 供应商同步 - 每天凌晨3点执行
+                // 供应商同步
                 recurringJobManager.AddOrUpdate("VEND_Sync",
                     () => syncService.SyncVendDataAsync(syncService.GetLastSyncTime("SUPP", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:VEND"] ?? "1 * * * *");
+                    Configuration["SyncConfig:VEND"] ?? "* * * * *");
 
-                // 客户同步 - 每天凌晨4点执行
+                // 客户同步
                 recurringJobManager.AddOrUpdate("CUST_Sync",
                     () => syncService.SyncCustDataAsync(syncService.GetLastSyncTime("CUSTOM", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:CUST"] ?? "1 * * * *");
+                    Configuration["SyncConfig:CUST"] ?? "* * * * *");
 
                 Console.WriteLine("Sync jobs initialized successfully!");
             }
