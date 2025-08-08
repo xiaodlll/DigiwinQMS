@@ -259,6 +259,7 @@ namespace Meiam.System.Interfaces
         #region 同步报工数据
         public async Task SyncWrDataAsync(string lastSyncTime)
         {
+            _logger.LogInformation("开始处理报工单");
             try
             {
                 _logger.LogInformation("开始同步QMS_WR_VIEW数据...");
@@ -362,6 +363,7 @@ namespace Meiam.System.Interfaces
         #region 同步物料数据
         public async Task SyncItemDataAsync(string lastSyncTime)
         {
+            _logger.LogInformation("开始处理物料数据");
             try
             {
                 _logger.LogInformation("开始同步QMS_ITEM_VIEW数据...");
@@ -462,6 +464,7 @@ namespace Meiam.System.Interfaces
         #region 同步供应商数据
         public async Task SyncVendDataAsync(string lastSyncTime)
         {
+            _logger.LogInformation("开始处理供应商数据");
             try
             {
                 _logger.LogInformation("开始同步QMS_VEND_VIEW数据...");
@@ -559,6 +562,7 @@ namespace Meiam.System.Interfaces
         #region 同步客户数据
         public async Task SyncCustDataAsync(string lastSyncTime)
         {
+            _logger.LogInformation("开始处理客户数据");
             try
             {
                 _logger.LogInformation("开始同步QMS_CUST_VIEW数据...");
@@ -658,6 +662,7 @@ namespace Meiam.System.Interfaces
             try
             {
                 string sql = $"SELECT CONVERT(VARCHAR(20), MAX({timeFieldName}), 120) AS LastTimeStr FROM {tableName}";
+
                 //string sql = $"SELECT CONVERT(VARCHAR(20), MAX(INSPECT_IQCCREATEDATE), 120) AS LastTimeStr FROM {tableName}";
 
                 string result = Db.Ado.GetString(sql);
