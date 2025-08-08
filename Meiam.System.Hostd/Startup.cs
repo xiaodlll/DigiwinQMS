@@ -169,56 +169,6 @@ namespace Meiam.System.Hostd
             services.AddScoped<IHMDService, HMDService>();
             #endregion
 
-            #region SqlSugarHMD 配置
-            Console.WriteLine("Configuring Oracle SqlSugar...");
-            services.AddSingleton<ISqlSugarClient>(provider =>
-            {
-                var config = new ConnectionConfig()
-                {
-                    ConfigId = "OracleDB",
-                    ConnectionString = Configuration.GetConnectionString("OracleConnection"),
-                    DbType = DbType.Oracle,
-                    IsAutoCloseConnection = true,
-                    InitKeyType = InitKeyType.Attribute,
-                    ConfigureExternalServices = new ConfigureExternalServices
-                    {
-                        EntityService = (property, column) =>
-                        {
-                            if (!column.IsIgnore && !string.IsNullOrEmpty(column.DbColumnName))
-                            {
-                                column.DbColumnName = column.DbColumnName.ToUpper(); // Oracle 列名大写
-                            }
-                        }
-                    },
-                    MoreSettings = new ConnMoreSettings
-                    {
-                        IsAutoRemoveDataCache = true
-                        //OracleConnectionStringPull = true // 解决连接池问题
-                    }
-                };
-
-                return new SqlSugarScope(config, db =>
-                {
-                    // 设置Oracle日期格式
-                    db.Ado.ExecuteCommand("ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
-                    db.Ado.ExecuteCommand("ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS'");
-
-                    // AOP配置
-                    db.Aop.OnLogExecuting = (sql, pars) =>
-                    {
-                        var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
-                        logger.LogDebug($"Oracle SQL: {UtilMethods.GetSqlString(DbType.Oracle, sql, pars)}");
-                    };
-
-                    db.Aop.OnError = ex =>
-                    {
-                        var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
-                        logger.LogError(ex, "Oracle数据库错误");
-                    };
-                });
-            });
-            #endregion
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -297,27 +247,27 @@ namespace Meiam.System.Hostd
                 // 收货单同步 - 每30分钟执行一次
                 recurringJobManager.AddOrUpdate("RC_Sync",
                     () => syncService.SyncRcDataAsync(syncService.GetLastSyncTime("INSPECT_IQC", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:RC:Cron"] ?? "*/30 * * * *");
+                    Configuration["SyncConfig:RC"] ?? "1 * * * *");
 
                 // 报工单同步 - 每小时执行一次
                 recurringJobManager.AddOrUpdate("WR_Sync",
                     () => syncService.SyncWrDataAsync(syncService.GetLastSyncTime("INSPECT_SI", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:WR:Cron"] ?? "0 * * * *");
+                    Configuration["SyncConfig:WR"] ?? "1 * * * *");
 
                 // 物料同步 - 每天凌晨2点执行
                 recurringJobManager.AddOrUpdate("ITEM_Sync",
                     () => syncService.SyncItemDataAsync(syncService.GetLastSyncTime("ITEM", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:ITEM:Cron"] ?? "0 2 * * *");
+                    Configuration["SyncConfig:ITEM"] ?? "1 * * * *");
 
                 // 供应商同步 - 每天凌晨3点执行
                 recurringJobManager.AddOrUpdate("VEND_Sync",
                     () => syncService.SyncVendDataAsync(syncService.GetLastSyncTime("SUPP", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:VEND:Cron"] ?? "0 3 * * *");
+                    Configuration["SyncConfig:VEND"] ?? "1 * * * *");
 
                 // 客户同步 - 每天凌晨4点执行
                 recurringJobManager.AddOrUpdate("CUST_Sync",
                     () => syncService.SyncCustDataAsync(syncService.GetLastSyncTime("CUSTOM", "INSPECT_FPICREATEDATE")),
-                    Configuration["SyncConfig:CUST:Cron"] ?? "0 4 * * *");
+                    Configuration["SyncConfig:CUST"] ?? "1 * * * *");
 
                 Console.WriteLine("Sync jobs initialized successfully!");
             }

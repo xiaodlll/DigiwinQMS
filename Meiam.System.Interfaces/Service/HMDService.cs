@@ -27,6 +27,7 @@ using Aspose.Pdf.Operators;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Numerics;
 using System.Text;
+using Meiam.System.Core;
 
 namespace Meiam.System.Interfaces {
     /// <summary>
@@ -39,55 +40,15 @@ namespace Meiam.System.Interfaces {
 
         private readonly ILogger<HMDService> _logger;
         private readonly string _connectionString;
-        private readonly ISqlSugarClient _oracleDb;
+        private readonly IOracleSqlSugarClient _oracleDb;
 
-        public HMDService(ISqlSugarClient sqlSugar, IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork) {
+        public HMDService(IOracleSqlSugarClient oracleSugar, IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork) {
             _logger = logger;
-            _oracleDb = sqlSugar;
+            _oracleDb = oracleSugar;
         }
 
 
         #region ProcessHMDData
-        public async Task<ApiResponse> ProcessHMDInspectDataAsync(HMDInputDto input) {
-            _logger.LogInformation("开始同步恒铭达检测数据");
-
-            try {
-                //foreach (var request in requests) {
-                //    // 验证数据
-                //    ValidateRequest(request);
-
-                //    //判断重复 工单+生产机台号+生产日期+检测类型
-                //    bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_FPI WHERE MESFirstInspectID = '{request.ID}' AND MOID = '{request.MOID}' AND OrgID = '{request.ORGID}'") > 0;
-                //    if (isExist) {
-                //        _logger.LogWarning($"首检单据已存在: {request.ID}");
-                //        continue;
-                //    }
-
-                //    // 生成FPI检验单号
-                //    var inspectionFpiId = GenerateInspectionFpiId();
-                //    _logger.LogInformation("生成检验单号: {InspectionFpiId}", inspectionFpiId);
-
-                //    // 业务处理
-                //    _logger.LogDebug("正在处理首检单据...");
-                //    ProcessFirstArticleInspection(request, inspectionFpiId);
-
-                //    _logger.LogInformation("工单首检数据同步成功，工单号: {MOID}", request.MOID);
-                //}
-                await Task.Delay(10);
-                _logger.LogInformation("恒铭达检测数据同步完成!");
-                return new ApiResponse {
-                    Success = true,
-                    Message = "恒铭达检测数据同步成功",
-                };
-            }
-            catch (Exception ex) {
-                return new ApiResponse {
-                    Success = false,
-                    Message = $"恒铭达检测数据同步失败：{ex.Message}"
-                };
-            }
-        }
-
         public async Task<ApiResponse> GetInspectSpecDataAsync(INSPECT_SYSM002_REQBYID input) {
             try {
                 var parameters = new SugarParameter[] {
@@ -309,6 +270,7 @@ namespace Meiam.System.Interfaces {
                         if(detail.BATCHID == "NOSELECT") {//客户端未勾选
                             continue;
                         }
+                        bool containsInspectDate = DateTime.TryParse(detail.INSPECT_DATE, out DateTime inspectDate);
                         var detailParams = new SugarParameter[]
                         {
                             new SugarParameter("@INSPECT_TENSILEID", detail.INSPECT_TENSILEID),
@@ -316,7 +278,7 @@ namespace Meiam.System.Interfaces {
                             new SugarParameter("@TESTLOT", detail.TESTLOT),
                             new SugarParameter("@TESTTYPE", detail.TESTTYPE),
                             new SugarParameter("@INSPECTTYPE1", detail.INSPECTTYPE1),
-                            new SugarParameter("@INSPECT_DATE", INSPECT_DATE),
+                            new SugarParameter("@INSPECT_DATE",(containsInspectDate ? detail.INSPECT_DATE : INSPECT_DATE)),
                             new SugarParameter("@PEOPLE02", detail.PEOPLE02),
                             new SugarParameter("@APPEOPLE02", detail.APPEOPLE02),
                             new SugarParameter("@X_AXIS", detail.X_AXIS),

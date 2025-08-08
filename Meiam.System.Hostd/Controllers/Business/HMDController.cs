@@ -54,29 +54,6 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
         #region 恒铭达测量数据上传
         /// <summary>
-        /// 恒铭达测量数据上传
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost("ReceiveInspectData")]
-        public async Task<IActionResult> ReceiveInspectData([FromBody] HMDInputDto input) {
-            if (!ModelState.IsValid) {
-                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
-
-                return BadRequest(new ApiResponse {
-                    Success = false,
-                    Message = $"参数验证失败，原因：{ModelState}"
-                });
-            }
-
-            var result = await _hmdService.ProcessHMDInspectDataAsync(input);
-
-            if (result.Success) {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
-
-        /// <summary>
         /// 恒铭达拉力机数据上传
         /// </summary>
         /// <returns></returns>

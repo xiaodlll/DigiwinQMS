@@ -47,12 +47,6 @@
             项目接口
             </summary>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.ReceiveInspectData(Meiam.System.Model.Dto.HMDInputDto)">
-            <summary>
-            恒铭达测量数据上传
-            </summary>
-            <returns></returns>
-        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.UploadInpectDev1Data(Meiam.System.Model.Dto.InspectDev1Entity)">
             <summary>
             恒铭达拉力机数据上传

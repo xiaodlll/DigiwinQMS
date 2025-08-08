@@ -25,7 +25,6 @@ namespace Meiam.System.Interfaces
         Task<ApiResponse> GetInspectInfoByDocCodeAsync(INSPECT_REQCODE input);
         Task<ApiResponse> GetProgressDataByDocCodeAsync(INSPECT_REQCODE input);
         Task<ApiResponse> ProcessHMDInpectDev1DataAsync(InspectDev1Entity input);
-        Task<ApiResponse> ProcessHMDInspectDataAsync(HMDInputDto input);
         Task<ApiResponse> GetInspectInfoByConditionAsync(INSPECT_CONDITION input);
         Task<ApiResponse> ProcessHMDInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input);
 
