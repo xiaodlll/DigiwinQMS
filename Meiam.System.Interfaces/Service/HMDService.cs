@@ -28,6 +28,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using System.Numerics;
 using System.Text;
 using Meiam.System.Core;
+using Oracle.ManagedDataAccess.Client;
 
 namespace Meiam.System.Interfaces {
     /// <summary>
@@ -79,7 +80,7 @@ namespace Meiam.System.Interfaces {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
                 List<INSPECT_PROGRESS_BYCODE> data = await Db.Ado.SqlQueryAsync<INSPECT_PROGRESS_BYCODE>(
-                    "select INSPECT_PROGRESSNAME, INSPECT_PROGRESSID from INSPECT_PROGRESS where DOC_CODE = @DOC_CODE",
+                    "select INSPECT_PROGRESSNAME, INSPECT_PROGRESSID from INSPECT_PROGRESS where DOC_CODE = @DOC_CODE and INSPECT_DEV='INSPECT_DEV_002'",
                     parameters
                 );
 
@@ -472,157 +473,205 @@ namespace Meiam.System.Interfaces {
         /// <param name="input">检验进度实体数组</param>
         /// <returns>是否保存成功</returns>
         private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input) {
-            // 构建 SQL 插入语句（假设表名与实体对应为 INSPECT_PROGRESS）
-            // 字段名需与数据库表字段一致，此处使用实体属性名作为字段名
+            if (input == null || input.Count == 0)
+                return;
+
+            // 每个实体需要的基础参数数量：18个基础字段 + 64个A字段 = 82个
+            // 但通过复用相同值的参数，实际数量会减少
+            int parametersPerItem = 82;
+            int maxBatchSize = 2100 / parametersPerItem; // 仍保持分批处理基础逻辑
+
+            for (int i = 0; i < input.Count; i += maxBatchSize) {
+                var batchItems = input.Skip(i).Take(maxBatchSize).ToList();
+                if (batchItems.Count == 0)
+                    continue;
+
+                var (sql, parameters) = BuildBatchSqlWithReusedParameters(batchItems);
+                await Db.Ado.ExecuteCommandAsync(sql, parameters.ToArray());
+            }
+        }
+
+        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems) {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("INSERT INTO INSPECT_PROGRESS (");
             sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID, VER, OID, COC_ATTR, ");
             sqlBuilder.Append("INSPECT_PROGRESSNAME, INSPECT_DEV, COUNTTYPE, INSPECT_PLANID, ");
             sqlBuilder.Append("INSPECT_CNT, STD_VALUE, MAX_VALUE, MIN_VALUE, UP_VALUE, DOWN_VALUE, ");
-            // 拼接 A1-A64 样本字段
+
+            // 拼接A1-A64样本字段
             for (int i = 1; i <= 64; i++) {
                 sqlBuilder.Append($"A{i}, ");
             }
+
             sqlBuilder.Append("INSPECT_PROGRESSCREATEUSER, INSPECT_PROGRESSCREATEDATE, TENID");
             sqlBuilder.Append(") VALUES ");
 
-            // 构建参数集合（使用 SugarParameter 确保兼容性）
             var parameters = new List<SugarParameter>();
-            var paramIndex = 0; // 参数索引，避免重复
+            var parameterCache = new Dictionary<string, string>(); // 缓存值与参数名的映射
+            int paramIndex = 0;
 
-            // 循环添加每条数据的参数化值
-            foreach (var item in input) {
-                paramIndex++;
+            foreach (var item in batchItems) {
                 sqlBuilder.Append("(");
-                // 主键ID（建议使用GUID避免重复）
-                sqlBuilder.Append($"@INSPECT_PROGRESSID_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_PROGRESSID_{paramIndex}",
+
+                // 处理主键ID（通常唯一，难以复用）
+                paramIndex++;
+                var progressIdParamName = $"@INSPECT_PROGRESSID_{paramIndex}";
+                sqlBuilder.Append($"{progressIdParamName}, ");
+                parameters.Add(new SugarParameter(progressIdParamName,
                     string.IsNullOrEmpty(item.INSPECT_PROGRESSID) ? Guid.NewGuid().ToString() : item.INSPECT_PROGRESSID));
 
-                // 检验单号
-                sqlBuilder.Append($"@DOC_CODE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@DOC_CODE_{paramIndex}", item.DOC_CODE));
+                // 处理可复用的字段 - 使用值作为键缓存参数名
+                sqlBuilder.Append(AddReusableParameter(
+                    "DOC_CODE", item.DOC_CODE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 品号
-                sqlBuilder.Append($"@ITEMID_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@ITEMID_{paramIndex}", item.ITEMID));
+                sqlBuilder.Append(AddReusableParameter(
+                    "ITEMID", item.ITEMID, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 版本
-                sqlBuilder.Append($"@VER_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@VER_{paramIndex}", item.VER));
+                sqlBuilder.Append(AddReusableParameter(
+                    "VER", item.VER, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 顺序号
-                sqlBuilder.Append($"@OID_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@OID_{paramIndex}", item.OID));
+                sqlBuilder.Append(AddReusableParameter(
+                    "OID", item.OID, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 属性（默认COC_ATTR_001）
-                sqlBuilder.Append($"@COC_ATTR_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@COC_ATTR_{paramIndex}", item.COC_ATTR));
+                sqlBuilder.Append(AddReusableParameter(
+                    "COC_ATTR", item.COC_ATTR, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 检验项目
-                sqlBuilder.Append($"@INSPECT_PROGRESSNAME_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_PROGRESSNAME_{paramIndex}", item.INSPECT_PROGRESSNAME));
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_PROGRESSNAME", item.INSPECT_PROGRESSNAME, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 检验仪器（默认INSPECT_DEV_001）
-                sqlBuilder.Append($"@INSPECT_DEV_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_DEV_{paramIndex}", item.INSPECT_DEV));
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_DEV", item.INSPECT_DEV, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 分析方法（默认COUNTTYPE_002）
-                sqlBuilder.Append($"@COUNTTYPE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@COUNTTYPE_{paramIndex}", item.COUNTTYPE));
+                sqlBuilder.Append(AddReusableParameter(
+                    "COUNTTYPE", item.COUNTTYPE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 检验标准
-                sqlBuilder.Append($"@INSPECT_PLANID_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_PLANID_{paramIndex}", item.INSPECT_PLANID));
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_PLANID", item.INSPECT_PLANID, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 应检数量
-                sqlBuilder.Append($"@INSPECT_CNT_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_CNT_{paramIndex}", item.INSPECT_CNT));
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_CNT", item.INSPECT_CNT, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 标准值
-                sqlBuilder.Append($"@STD_VALUE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@STD_VALUE_{paramIndex}", item.STD_VALUE));
+                sqlBuilder.Append(AddReusableParameter(
+                    "STD_VALUE", item.STD_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 上公差
-                sqlBuilder.Append($"@MAX_VALUE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@MAX_VALUE_{paramIndex}", item.MAX_VALUE));
+                sqlBuilder.Append(AddReusableParameter(
+                    "MAX_VALUE", item.MAX_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 下公差
-                sqlBuilder.Append($"@MIN_VALUE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@MIN_VALUE_{paramIndex}", item.MIN_VALUE));
+                sqlBuilder.Append(AddReusableParameter(
+                    "MIN_VALUE", item.MIN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 上限值
-                sqlBuilder.Append($"@UP_VALUE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@UP_VALUE_{paramIndex}", item.UP_VALUE));
+                sqlBuilder.Append(AddReusableParameter(
+                    "UP_VALUE", item.UP_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 下限值
-                sqlBuilder.Append($"@DOWN_VALUE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@DOWN_VALUE_{paramIndex}", item.DOWN_VALUE));
+                sqlBuilder.Append(AddReusableParameter(
+                    "DOWN_VALUE", item.DOWN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
-                // 样本A1-A64
-                for (int i = 1; i <= 64; i++) {
-                    var propName = $"A{i}";
+                // 处理A1-A64样本字段
+                for (int j = 1; j <= 64; j++) {
+                    var propName = $"A{j}";
                     var propValue = item.GetType().GetProperty(propName)?.GetValue(item);
-                    sqlBuilder.Append($"@A{i}_{paramIndex}, ");
-                    parameters.Add(new SugarParameter($"@A{i}_{paramIndex}", propValue));
+                    var paramKey = $"{propName}_{propValue}";
+
+                    sqlBuilder.Append(AddReusableParameter(
+                        propName, propValue, ref paramIndex, parameters, parameterCache) + (j < 64 ? ", " : ""));
                 }
 
-                // 用户名
-                sqlBuilder.Append($"@INSPECT_PROGRESSCREATEUSER_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_PROGRESSCREATEUSER_{paramIndex}", item.INSPECT_PROGRESSCREATEUSER));
+                // 处理创建用户和日期
+                sqlBuilder.Append(", " + AddReusableParameter(
+                    "INSPECT_PROGRESSCREATEUSER", item.INSPECT_PROGRESSCREATEUSER, ref paramIndex, parameters, parameterCache));
 
-                // 当前日期（建议存DateTime，此处按实体字符串处理）
-                sqlBuilder.Append($"@INSPECT_PROGRESSCREATEDATE_{paramIndex}, ");
-                parameters.Add(new SugarParameter($"@INSPECT_PROGRESSCREATEDATE_{paramIndex}", item.INSPECT_PROGRESSDATE));
+                sqlBuilder.Append(", " + AddReusableParameter(
+                    "INSPECT_PROGRESSCREATEDATE", item.INSPECT_PROGRESSDATE, ref paramIndex, parameters, parameterCache));
 
-                // TENID（默认001）
-                sqlBuilder.Append($"@TENID_{paramIndex}");
-                parameters.Add(new SugarParameter($"@TENID_{paramIndex}", item.TENID));
+                sqlBuilder.Append(", " + AddReusableParameter(
+                    "TENID", item.TENID, ref paramIndex, parameters, parameterCache));
 
                 sqlBuilder.Append("),");
             }
 
             // 移除最后一个逗号
-            if (sqlBuilder.ToString().EndsWith(",")) {
+            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',') {
                 sqlBuilder.Length--;
             }
 
-            // 执行批量插入
-            await Db.Ado.ExecuteCommandAsync(sqlBuilder.ToString(), parameters.ToArray());
+            return (sqlBuilder.ToString(), parameters);
         }
+
+        // 复用参数的核心方法：相同值使用同一个参数
+        private string AddReusableParameter(string fieldName, object value, ref int paramIndex,
+            List<SugarParameter> parameters, Dictionary<string, string> parameterCache) {
+            // 创建唯一键：字段名+值（处理null情况）
+            var cacheKey = $"{fieldName}_{(value ?? "NULL").ToString()}";
+
+            // 如果已有相同值的参数，直接返回已存在的参数名
+            if (parameterCache.TryGetValue(cacheKey, out var existingParamName)) {
+                return existingParamName;
+            }
+
+            // 否则创建新参数
+            paramIndex++;
+            var newParamName = $"@{fieldName}_{paramIndex}";
+            parameters.Add(new SugarParameter(newParamName, value ?? DBNull.Value));
+            parameterCache[cacheKey] = newParamName;
+
+            return newParamName;
+        }
+
         #endregion
 
         #region 同步收货数据
         public async Task SyncRcDataAsync(string lastSyncTime) {
             _logger.LogInformation("开始处理收料通知单");
             try {
-                _logger.LogInformation("开始同步QMS_RC_VIEW数据...");
+                // 最多取近一周数据，处理lastSyncTime赋值逻辑
+                DateTime defaultStartTime = DateTime.Now.AddDays(-7); // 一周前的当前时间
+                DateTime syncStartTime;
+
+                // 尝试解析传入的lastSyncTime
+                if (DateTime.TryParse(lastSyncTime, out DateTime parsedTime)) {
+                    // 如果解析成功，判断是否超出一周范围
+                    if (parsedTime < defaultStartTime) {
+                        // 若超出一周，则强制设为一周前
+                        syncStartTime = defaultStartTime;
+                        _logger.LogWarning("传入的同步时间超出一周范围，自动调整为一周前: {Time}", syncStartTime);
+                    }
+                    else {
+                        // 未超出范围则使用解析后的时间
+                        syncStartTime = parsedTime;
+                    }
+                }
+                else {
+                    // 解析失败（如首次同步或格式错误），使用默认一周前时间
+                    syncStartTime = defaultStartTime;
+                    _logger.LogWarning("同步时间格式无效或未提供，使用默认时间: {Time}", syncStartTime);
+                }
+                _logger.LogInformation($"开始同步QMS_RC_VIEW数据...开始时间:{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}");
 
                 // 从Oracle视图查询增量数据
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
                     $"FROM qms_rc_view " +
-                    $"WHERE TO_DATE(rvadate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE rvadate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any()) {
                     // 转换为目标实体
                     var entities = oracleData.Select(x => new erp_rc {
-                        KEEID = x.rvb02,
-                        ERP_ARRIVEDID = x.rva01,
-                        ITEMID = x.rvb05,
-                        ITEMNAME = x.rvb051,
-                        LOT_QTY = x.rvb07,
-                        APPLY_DATE = x.rva06,
-                        MODEL_SPEC = x.ima021,
-                        LOTNO = x.rvb38,
-                        LENGTH = x.rvbud07,
-                        WIDTH = x.rvbud01,
-                        INUM = x.rvbud08,
-                        PRO_DATE = x.rvbud13,
-                        QUA_DATE = x.rvbud14,
-                        SUPPNAME = x.pmc03,
-                        SUPPID = x.rva05,
-                        INSPECT_FPICREATEDATE = x.rvadate
+                        KEEID = x.RVB02 != null && !Convert.IsDBNull(x.RVB02) ? x.RVB02.ToString() : null,
+                        ERP_ARRIVEDID = x.RVA01,
+                        ITEMID = x.RVB05,
+                        ITEMNAME = x.RVB051,
+                        LOT_QTY = x.RVB07 == null || Convert.IsDBNull(x.RVB07) ? 0 : decimal.Parse(x.RVB07.ToString()),
+                        APPLY_DATE = x.RVA06 != null && !Convert.IsDBNull(x.RVA06) ? x.RVA06.ToString() : null,
+                        MODEL_SPEC = x.IMA021,
+                        LOTNO = x.RVB38,
+                        LENGTH = x.RVBUD07 == null || Convert.IsDBNull(x.RVBUD07) ? 0 : decimal.Parse(x.RVBUD07.ToString()),
+                        WIDTH = x.RVBUD01 == null || Convert.IsDBNull(x.RVBUD01) ? 0 : decimal.Parse(x.RVBUD01.ToString()),
+                        INUM = x.RVBUD08 == null || Convert.IsDBNull(x.RVBUD08) ? 0 : decimal.Parse(x.RVBUD08.ToString()),
+                        PRO_DATE = x.RVBUD13 != null && !Convert.IsDBNull(x.RVBUD13) ? x.RVBUD13.ToString() : null,
+                        QUA_DATE = x.RVBUD14 != null && !Convert.IsDBNull(x.RVBUD14) ? x.RVBUD14.ToString() : null,
+                        SUPPNAME = x.PMC03,
+                        SUPPID = x.RVA05,
+                        TS = x.RVADATE != null && !Convert.IsDBNull(x.RVADATE) ? x.RVADATE.ToString() : null
                     });
 
                     foreach (var entity in entities) {
@@ -696,21 +745,21 @@ namespace Meiam.System.Interfaces {
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
                     PRO_DATE, LENGTH, WIDTH, INUM, KEEID,
-                    SUPPNAME, SUPPID, INSPECT_FPICREATEDATE
+                    SUPPID, TS
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
                     @ApplyDate, @ItemSpecification, @QuaDate,
                     @ProDate, @Length, @Width, @Inum, @KeeId,
-                    @SuppName, @SuppId, @InspectFpiCreateDate
+                    @SuppId, @TS
                 )";
 
             // 定义参数
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@TenId", "001"),
-                new SugarParameter("@InspectIqcId", inspectionId),
+                new SugarParameter("@InspectIqcId", Guid.NewGuid().ToString()),
                 new SugarParameter("@InspectIqcCreateUser", "system"),
                 new SugarParameter("@ItemName", entity.ITEMNAME),
                 new SugarParameter("@ErpArrivedId", entity.ERP_ARRIVEDID),
@@ -726,9 +775,8 @@ namespace Meiam.System.Interfaces {
                 new SugarParameter("@Width", entity.WIDTH),
                 new SugarParameter("@Inum", entity.INUM),
                 new SugarParameter("@KeeId", entity.KEEID),
-                new SugarParameter("@SuppName", entity.SUPPNAME),
                 new SugarParameter("@SuppId", entity.SUPPID),
-                new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
+                new SugarParameter("@TS", entity.TS)
             };
 
             // 执行 SQL 命令
@@ -740,29 +788,52 @@ namespace Meiam.System.Interfaces {
         public async Task SyncWrDataAsync(string lastSyncTime) {
             _logger.LogInformation("开始处理报工单");
             try {
-                _logger.LogInformation("开始同步QMS_WR_VIEW数据...");
+                // 最多取近一周数据，处理lastSyncTime赋值逻辑
+                DateTime defaultStartTime = DateTime.Now.AddDays(-7); // 一周前的当前时间
+                DateTime syncStartTime;
+
+                // 尝试解析传入的lastSyncTime
+                if (DateTime.TryParse(lastSyncTime, out DateTime parsedTime)) {
+                    // 如果解析成功，判断是否超出一周范围
+                    if (parsedTime < defaultStartTime) {
+                        // 若超出一周，则强制设为一周前
+                        syncStartTime = defaultStartTime;
+                        _logger.LogWarning("传入的同步时间超出一周范围，自动调整为一周前: {Time}", syncStartTime);
+                    }
+                    else {
+                        // 未超出范围则使用解析后的时间
+                        syncStartTime = parsedTime;
+                    }
+                }
+                else {
+                    // 解析失败（如首次同步或格式错误），使用默认一周前时间
+                    syncStartTime = defaultStartTime;
+                    _logger.LogWarning("同步时间格式无效或未提供，使用默认时间: {Time}", syncStartTime);
+                }
+                _logger.LogInformation($"开始同步QMS_WR_VIEW数据...开始时间:{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate  " +
                     $"FROM qms_wr_view " +
-                    $"WHERE TO_DATE(shbdate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any()) {
                     var entities = oracleData.Select(x => new erp_wr {
-                        MOID = x.shb05,
-                        LOT_QTY = x.sfb08,
-                        REPORT_QTY = x.shb111,
-                        ITEMID = x.shb10,
-                        ITEMNAME = x.ima02,
-                        CREATEDATE = x.shb02,
-                        INSPECT02CODE = x.shb09,
-                        INSPECT02NAME = x.eci06,
-                        INSPECT_FPICREATEDATE = x.shbdate
+                        INSPECT_SIID = Guid.NewGuid().ToString(),
+                        MOID = x.SHB05,
+                        LOT_QTY = decimal.Parse(x.SFB08.ToString()),
+                        REPORT_QTY = decimal.Parse(x.SHB111.ToString()),
+                        ITEMID = x.SHB10,
+                        ITEMNAME = x.IMA02,
+                        INSPECT_SICREATEDATE = x.SHB02.ToString(),
+                        INSPECT02CODE = x.SHB09,
+                        INSPECT02NAME = x.ECI06,
+                        TS = x.SHBDATE.ToString()
                     });
 
                     foreach (var entity in entities) {
                         //判断重复
-                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_SI WHERE MOID = '{entity.MOID}' AND ITEMID = '{entity.ITEMID}' AND CREATEDATE = '{entity.CREATEDATE}' ") > 0;
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_SI WHERE MOID = '{entity.MOID}' AND ITEMID = '{entity.ITEMID}' AND INSPECT_SICREATEDATE = '{entity.INSPECT_SICREATEDATE}' ") > 0;
                         if (isExist) {
                             _logger.LogWarning($"报工单已存在: {entity.MOID}");
                             continue;
@@ -794,27 +865,28 @@ namespace Meiam.System.Interfaces {
         private void SaveWrDataToDatabase(erp_wr entity) {
             string sql = @"
                 INSERT INTO INSPECT_SI (
-                    MOID, LOT_QTY, REPORT_QTY, 
-                    ITEMID, ITEMNAME, CREATEDATE, 
-                    INSPECT02CODE, INSPECT02NAME, INSPECT_FPICREATEDATE
+                    INSPECT_SIID, MOID, LOT_QTY, REPORT_QTY, 
+                    ITEMID, ITEMNAME, INSPECT_SICREATEDATE, 
+                    INSPECT02CODE, INSPECT02NAME, TS
                 ) VALUES (
-                    @MoId, @LotQty, @ReportQty, 
-                    @ItemId, @ItemName, @CreateDate,
-                    @Inspect02Code, @Inspect02Name, @InspectFpiCreateDate
+                    @INSPECT_SIID, @MoId, @LotQty, @ReportQty, 
+                    @ItemId, @ItemName, @INSPECT_SICREATEDATE,
+                    @Inspect02Code, @Inspect02Name, @TS
                 )";
 
             // 定义参数
             var parameters = new SugarParameter[]
             {
+                new SugarParameter("@INSPECT_SIID", entity.INSPECT_SIID),
                 new SugarParameter("@MoId", entity.MOID),
                 new SugarParameter("@LotQty", entity.LOT_QTY),
                 new SugarParameter("@ReportQty", entity.REPORT_QTY),
                 new SugarParameter("@ItemId", entity.ITEMID),
                 new SugarParameter("@ItemName", entity.ITEMNAME),
-                new SugarParameter("@CreateDate", entity.CREATEDATE),
+                new SugarParameter("@INSPECT_SICREATEDATE", entity.INSPECT_SICREATEDATE),
                 new SugarParameter("@Inspect02Code", entity.INSPECT02CODE),
                 new SugarParameter("@Inspect02Name", entity.INSPECT02NAME),
-                new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
+                new SugarParameter("@TS", entity.TS)
             };
 
             // 执行 SQL 命令
@@ -826,19 +898,20 @@ namespace Meiam.System.Interfaces {
         public async Task SyncItemDataAsync(string lastSyncTime) {
             _logger.LogInformation("开始处理物料数据");
             try {
-                _logger.LogInformation("开始同步QMS_ITEM_VIEW数据...");
+                _logger.LogInformation($"开始同步QMS_ITEM_VIEW数据...开始时间:{lastSyncTime}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT ima01, ima02, ima06, ima901 " +
+                    $"SELECT ima01, tc_ima02, ima06, ima901 " +
                     $"FROM qms_item_view " +
-                    $"WHERE TO_DATE(ima901, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE ima901 >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any()) {
                     var entities = oracleData.Select(x => new erp_item {
-                        ITEMID = x.ima01,
-                        ITEMNAME = x.ima02,
-                        ITEM_GROUPID = x.ima06,
-                        INSPECT_FPICREATEDATE = x.ima901
+                        ITEMID = x.IMA01,
+                        ITEMCODE = x.IMA01,
+                        ITEMNAME = x.TC_IMA02,
+                        ITEM_GROUPID = x.IMA06,
+                        INSPECT_ITEMCREATEDATE = x.IMA901.ToString()
                     });
 
                     var response = new MaterialSyncResponse {
@@ -846,30 +919,14 @@ namespace Meiam.System.Interfaces {
                     };
 
                     foreach (var entity in entities) {
-                        try {
-                            SyncItemTable(entity);
 
-                            response.SuccessCount++;
-                        }
-                        catch (Exception ex) {
-                            response.Details.Add(new MaterialSyncDetail {
-                                ITEMID = entity.ITEMID,
-                                Error = ex.Message
-                            });
-                            response.FailedCount++;
-                        }
+                        SyncItemTable(entity);
+
+                        response.SuccessCount++;
                     }
 
-                    if (response.FailedCount == 0) {
-                        await Db.Ado.CommitTranAsync();
-                        response.Success = true;
-                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
-                    }
-                    else {
-                        await Db.Ado.RollbackTranAsync();
-                        response.Success = false;
-                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
-                    }
+                    _logger.LogInformation($"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条");
+
 
                 }
                 else {
@@ -886,23 +943,24 @@ namespace Meiam.System.Interfaces {
         private void SyncItemTable(erp_item entity) {
             string sql = @"
                     MERGE INTO ITEM AS target
-                    USING (SELECT @ItemId AS ITEMID, @ItemName AS ITEMNAME, @ItemGroupId AS ITEMGROUPID, @InspectFpiCreateDate AS INSPECTFPICREATEDATE) AS source
+                    USING (SELECT @ItemId AS ITEMID, @ITEMCODE AS ITEMCODE,@ItemName AS ITEMNAME, @ItemGroupId AS ITEMGROUPID, @INSPECT_ITEMCREATEDATE AS INSPECT_ITEMCREATEDATE) AS source
                     ON target.ITEMID = source.ITEMID
                     WHEN MATCHED THEN
-                        UPDATE SET ITEMNAME = source.ITEMNAME,
+                        UPDATE SET ITEMCODE = source.ITEMCODE,ITEMNAME = source.ITEMNAME,
                                    ITEM_GROUPID = source.ITEMGROUPID,
-                                   INSPECT_FPICREATEDATE = source.INSPECTFPICREATEDATE,
+                                   INSPECT_ITEMCREATEDATE = source.INSPECT_ITEMCREATEDATE,
                                    ITEMCREATEDATE = getdate()
                     WHEN NOT MATCHED THEN
-                        INSERT (ITEMID, ITEMNAME, ITEM_GROUPID, INSPECT_FPICREATEDATE, ITEMCREATEUSER, ITEMCREATEDATE)
-                        VALUES (source.ITEMID, source.ITEMNAME, source.ITEMGROUPID, source.INSPECTFPICREATEDATE, 'system', getdate());";
+                        INSERT (ITEMID, ITEMCODE,ITEMNAME, ITEM_GROUPID, INSPECT_ITEMCREATEDATE, ITEMCREATEUSER, ITEMCREATEDATE)
+                        VALUES (source.ITEMID, source.ITEMCODE,source.ITEMNAME, source.ITEMGROUPID, source.INSPECT_ITEMCREATEDATE, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@ItemId", entity.ITEMID),
+                new SugarParameter("@ITEMCODE", entity.ITEMID),
                 new SugarParameter("@ItemName", entity.ITEMNAME),
                 new SugarParameter("@ItemGroupId", entity.ITEM_GROUPID),
-                new SugarParameter("@InspectFpiCreateDate", entity.INSPECT_FPICREATEDATE)
+                new SugarParameter("@INSPECT_ITEMCREATEDATE", entity.INSPECT_ITEMCREATEDATE)
             };
 
             Db.Ado.ExecuteCommand(sql, parameters);
@@ -913,18 +971,19 @@ namespace Meiam.System.Interfaces {
         public async Task SyncVendDataAsync(string lastSyncTime) {
             _logger.LogInformation("开始处理供应商数据");
             try {
-                _logger.LogInformation("开始同步QMS_VEND_VIEW数据...");
+                _logger.LogInformation($"开始同步QMS_VEND_VIEW数据...开始时间:{lastSyncTime}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT pmc03, pmc01, pmccrat " +
                     $"FROM qms_vend_view " +
-                    $"WHERE TO_DATE(pmccrat, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE pmccrat >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any()) {
                     var entities = oracleData.Select(x => new erp_vend {
-                        SUPPNAME = x.pmc03,
-                        SUPPID = x.pmc01,
-                        INSPECT_FPICREATEDATE = x.pmccrat
+                        SUPPNAME = x.PMC03,
+                        SUPPID = x.PMC01,
+                        SUPPCODE = x.PMC01,
+                        INSPECT_SUPPCREATEDATE = x.PMCCRAT.ToString()
                     });
 
 
@@ -933,31 +992,15 @@ namespace Meiam.System.Interfaces {
                     };
 
                     foreach (var entity in entities) {
-                        try {
-                            SyncSuppTable(entity);
 
-                            response.SuccessCount++;
-                        }
-                        catch (Exception ex) {
-                            response.Details.Add(new SuppSyncDetail {
-                                SUPPID = entity.SUPPID,
-                                Error = ex.Message
-                            });
-                            response.FailedCount++;
-                        }
+                        SyncSuppTable(entity);
+
+                        response.SuccessCount++;
                     }
 
-                    if (response.FailedCount == 0) {
-                        await Db.Ado.CommitTranAsync();
-                        response.Success = true;
-                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
-                    }
-                    else {
-                        await Db.Ado.RollbackTranAsync();
-                        response.Success = false;
-                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
-                    }
+                    _logger.LogInformation($"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条");
                 }
+
                 else {
                     _logger.LogInformation("没有需要同步的QMS_VEND_VIEW数据");
                 }
@@ -972,21 +1015,22 @@ namespace Meiam.System.Interfaces {
         private void SyncSuppTable(erp_vend item) {
             string sql = @"
                 MERGE INTO SUPP AS target
-                USING (SELECT @SuppId AS SUPPID, @SuppName AS SUPPNAME, @InspectFpiCreateDate AS INSPECTFPICREATEDATE) AS source
+                USING (SELECT @SuppCode AS SUPPCODE,@SuppId AS SUPPID, @SuppName AS SUPPNAME, @INSPECT_SUPPCREATEDATE AS INSPECT_SUPPCREATEDATE) AS source
                 ON target.SUPPID = source.SUPPID
                 WHEN MATCHED THEN
-                    UPDATE SET SUPPNAME = source.SUPPNAME,
-                                INSPECT_FPICREATEDATE = source.INSPECTFPICREATEDATE,
+                    UPDATE SET SUPPCODE = source.SUPPCODE,SUPPNAME = source.SUPPNAME,
+                                INSPECT_SUPPCREATEDATE = source.INSPECT_SUPPCREATEDATE,
                                 SUPPCREATEDATE = getdate()
                 WHEN NOT MATCHED THEN
-                    INSERT (SUPPID, SUPPNAME, INSPECT_FPICREATEDATE, SUPPCREATEUSER, SUPPCREATEDATE)
-                    VALUES (source.SUPPID, source.SUPPNAME, source.INSPECTFPICREATEDATE, 'system', getdate());";
+                    INSERT (SUPPID, SUPPCODE, SUPPNAME, INSPECT_SUPPCREATEDATE, SUPPCREATEUSER, SUPPCREATEDATE)
+                    VALUES (source.SUPPID, source.SUPPCODE,source.SUPPNAME, source.INSPECT_SUPPCREATEDATE, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@SuppId", item.SUPPID),
+                new SugarParameter("@SuppCode", item.SUPPCODE),
                 new SugarParameter("@SuppName", item.SUPPNAME),
-                new SugarParameter("@InspectFpiCreateDate", item.INSPECT_FPICREATEDATE)
+                new SugarParameter("@INSPECT_SUPPCREATEDATE", item.INSPECT_SUPPCREATEDATE)
             };
 
             Db.Ado.ExecuteCommand(sql, parameters);
@@ -997,18 +1041,17 @@ namespace Meiam.System.Interfaces {
         public async Task SyncCustDataAsync(string lastSyncTime) {
             _logger.LogInformation("开始处理客户数据");
             try {
-                _logger.LogInformation("开始同步QMS_CUST_VIEW数据...");
+                _logger.LogInformation($"开始同步QMS_CUST_VIEW数据...开始时间:{lastSyncTime}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT ooc01, ooc02, occdate " +
-                    $"FROM qms_cust_view " +
-                    $"WHERE TO_DATE(occdate, 'YYYY-MM-DD HH24:MI:SS') > TO_DATE('{lastSyncTime:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
-
+                    "SELECT * FROM qms_cust_view " +
+                    $"WHERE OCCDATE >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')"
+                );
                 if (oracleData.Any()) {
                     var entities = oracleData.Select(x => new erp_cust {
-                        CUSTOMCODE = x.ooc01,
-                        CUSTOMNAME = x.ooc02,
-                        INSPECT_FPICREATEDATE = x.occdate
+                        CUSTOMCODE = x.OCC01,
+                        CUSTOMNAME = x.OCC02,
+                        INSPECT_CUSTOMCREATEDATE = x.OCCDATE.ToString()
                     });
 
                     var response = new CustomerSyncResponse {
@@ -1016,30 +1059,13 @@ namespace Meiam.System.Interfaces {
                     };
 
                     foreach (var entity in entities) {
-                        try {
-                            SyncCustomerTable(entity);
 
-                            response.SuccessCount++;
-                        }
-                        catch (Exception ex) {
-                            response.Details.Add(new CustomerSyncDetail {
-                                CUSTOMCODE = entity.CUSTOMCODE,
-                                Error = ex.Message
-                            });
-                            response.FailedCount++;
-                        }
+                        SyncCustomerTable(entity);
+
+                        response.SuccessCount++;
                     }
 
-                    if (response.FailedCount == 0) {
-                        await Db.Ado.CommitTranAsync();
-                        response.Success = true;
-                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
-                    }
-                    else {
-                        await Db.Ado.RollbackTranAsync();
-                        response.Success = false;
-                        response.Message = $"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条";
-                    }
+                    _logger.LogInformation($"共{response.TotalCount}条数据，同步成功{response.SuccessCount}条，失败{response.FailedCount}条");
                 }
                 else {
                     _logger.LogInformation("没有需要同步的QMS_CUST_VIEW数据");
@@ -1055,21 +1081,22 @@ namespace Meiam.System.Interfaces {
         private void SyncCustomerTable(erp_cust item) {
             string sql = @"
                 MERGE INTO CUSTOM AS target
-                USING (SELECT @CustomCode AS CUSTOMCODE, @CustomName AS CUSTOMNAME, @InspectFpiCreateDate AS INSPECTFPICREATEDATE) AS source
+                USING (SELECT @CustomID AS CustomID, @CustomCode AS CUSTOMCODE, @CustomName AS CUSTOMNAME, @INSPECT_CUSTOMCREATEDATE AS INSPECT_CUSTOMCREATEDATE) AS source
                 ON target.CUSTOMCODE = source.CUSTOMCODE
                 WHEN MATCHED THEN
                     UPDATE SET CUSTOMNAME = source.CUSTOMNAME,
-                                INSPECT_FPICREATEDATE = source.INSPECTFPICREATEDATE,
+                                INSPECT_CUSTOMCREATEDATE = source.INSPECT_CUSTOMCREATEDATE,
                                 CUSTOMCREATEDATE = getdate()
                 WHEN NOT MATCHED THEN
-                    INSERT (CUSTOMCODE, CUSTOMNAME, INSPECT_FPICREATEDATE, CUSTOMCREATEUSER, CUSTOMCREATEDATE)
-                    VALUES (source.CUSTOMCODE, source.CUSTOMNAME, source.INSPECTFPICREATEDATE, 'system', getdate());";
+                    INSERT (CustomID, CUSTOMCODE, CUSTOMNAME, INSPECT_CUSTOMCREATEDATE, CUSTOMCREATEUSER, CUSTOMCREATEDATE)
+                    VALUES (source.CustomID,source.CUSTOMCODE, source.CUSTOMNAME, source.INSPECT_CUSTOMCREATEDATE, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
+                new SugarParameter("@CustomID", Guid.NewGuid().ToString()),
                 new SugarParameter("@CustomCode", item.CUSTOMCODE),
                 new SugarParameter("@CustomName", item.CUSTOMNAME),
-                new SugarParameter("@InspectFpiCreateDate", item.INSPECT_FPICREATEDATE)
+                new SugarParameter("@INSPECT_CUSTOMCREATEDATE", item.INSPECT_CUSTOMCREATEDATE)
             };
 
             Db.Ado.ExecuteCommand(sql, parameters);
@@ -1085,14 +1112,14 @@ namespace Meiam.System.Interfaces {
 
                 string result = Db.Ado.GetString(sql);
                 if (string.IsNullOrEmpty(result)) {
-                    return "1900-01-01 00:00:00"; // 默认最小时间
+                    return "2000-01-01 00:00:00"; // 默认最小时间
                 }
 
                 return result;
             }
             catch (Exception ex) {
                 _logger.LogError(ex, $"获取表{tableName}的最后同步时间失败");
-                return "1900-01-01 00:00:00";// 默认最小时间
+                return "2000-01-01 00:00:00";// 默认最小时间
             }
 
         }

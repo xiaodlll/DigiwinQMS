@@ -253,27 +253,27 @@ namespace Meiam.System.Hostd
             {
                 // 收货单同步
                 recurringJobManager.AddOrUpdate("RC_Sync",
-                    () => syncService.SyncRcDataAsync(syncService.GetLastSyncTime("INSPECT_IQC", "INSPECT_FPICREATEDATE")),
+                    () => syncService.SyncRcDataAsync(syncService.GetLastSyncTime("INSPECT_IQC", "TS")),
                     Configuration["SyncConfig:RC"] ?? "* * * * *");
 
                 // 报工单同步
                 recurringJobManager.AddOrUpdate("WR_Sync",
-                    () => syncService.SyncWrDataAsync(syncService.GetLastSyncTime("INSPECT_SI", "INSPECT_FPICREATEDATE")),
+                    () => syncService.SyncWrDataAsync(syncService.GetLastSyncTime("INSPECT_SI", "TS")),
                     Configuration["SyncConfig:WR"] ?? "* * * * *");
 
                 // 物料同步
                 recurringJobManager.AddOrUpdate("ITEM_Sync",
-                    () => syncService.SyncItemDataAsync(syncService.GetLastSyncTime("ITEM", "INSPECT_FPICREATEDATE")),
+                    () => syncService.SyncItemDataAsync(syncService.GetLastSyncTime("ITEM", "INSPECT_ITEMCREATEDATE")),
                     Configuration["SyncConfig:ITEM"] ?? "* * * * *");
 
                 // 供应商同步
                 recurringJobManager.AddOrUpdate("VEND_Sync",
-                    () => syncService.SyncVendDataAsync(syncService.GetLastSyncTime("SUPP", "INSPECT_FPICREATEDATE")),
+                    () => syncService.SyncVendDataAsync(syncService.GetLastSyncTime("SUPP", "INSPECT_SUPPCREATEDATE")),
                     Configuration["SyncConfig:VEND"] ?? "* * * * *");
 
                 // 客户同步
                 recurringJobManager.AddOrUpdate("CUST_Sync",
-                    () => syncService.SyncCustDataAsync(syncService.GetLastSyncTime("CUSTOM", "INSPECT_FPICREATEDATE")),
+                    () => syncService.SyncCustDataAsync(syncService.GetLastSyncTime("CUSTOM", "INSPECT_CUSTOMCREATEDATE")),
                     Configuration["SyncConfig:CUST"] ?? "* * * * *");
 
                 Console.WriteLine("Sync jobs initialized successfully!");

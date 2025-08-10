@@ -325,37 +325,41 @@ namespace Meiam.System.Model
         public string QUA_DATE { get; set; }
         public string SUPPNAME { get; set; }
         public string SUPPID { get; set; }
-        public string INSPECT_FPICREATEDATE { get; set; }
+        public string TS { get; set; }
+
     }
 
     public class erp_wr {
+        public string INSPECT_SIID { get; set; }
         public string MOID { get; set; }
         public decimal LOT_QTY { get; set; }
         public decimal REPORT_QTY { get; set; }
         public string ITEMID { get; set; }
         public string ITEMNAME { get; set; }
-        public string CREATEDATE { get; set; }
+        public string INSPECT_SICREATEDATE { get; set; }
         public string INSPECT02CODE { get; set; }
         public string INSPECT02NAME { get; set; }
-        public string INSPECT_FPICREATEDATE { get; set; }
+        public string TS { get; set; }
     }
 
     public class erp_item {
         public string ITEMID { get; set; }
+        public string ITEMCODE { get; set; }
         public string ITEMNAME { get; set; }
         public string ITEM_GROUPID { get; set; }
-        public string INSPECT_FPICREATEDATE { get; set; }
+        public string INSPECT_ITEMCREATEDATE { get; set; }
     }
 
     public class erp_vend {
         public string SUPPNAME { get; set; }
         public string SUPPID { get; set; }
-        public string INSPECT_FPICREATEDATE { get; set; }
+        public string SUPPCODE { get; set; }
+        public string INSPECT_SUPPCREATEDATE { get; set; }
     }
 
     public class erp_cust {
         public string CUSTOMCODE { get; set; }
         public string CUSTOMNAME { get; set; }
-        public string INSPECT_FPICREATEDATE { get; set; }
+        public string INSPECT_CUSTOMCREATEDATE { get; set; }
     }
 }
