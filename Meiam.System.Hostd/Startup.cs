@@ -253,27 +253,27 @@ namespace Meiam.System.Hostd
             {
                 // 收货单同步
                 recurringJobManager.AddOrUpdate("RC_Sync",
-                    () => syncService.SyncRcDataAsync(syncService.GetLastSyncTime("INSPECT_IQC", "TS")),
+                    () => syncService.SyncRcDataAsync(),
                     Configuration["SyncConfig:RC"] ?? "* * * * *");
 
                 // 报工单同步
                 recurringJobManager.AddOrUpdate("WR_Sync",
-                    () => syncService.SyncWrDataAsync(syncService.GetLastSyncTime("INSPECT_SI", "TS")),
+                    () => syncService.SyncWrDataAsync(),
                     Configuration["SyncConfig:WR"] ?? "* * * * *");
 
                 // 物料同步
                 recurringJobManager.AddOrUpdate("ITEM_Sync",
-                    () => syncService.SyncItemDataAsync(syncService.GetLastSyncTime("ITEM", "INSPECT_ITEMCREATEDATE")),
+                    () => syncService.SyncItemDataAsync(),
                     Configuration["SyncConfig:ITEM"] ?? "* * * * *");
 
                 // 供应商同步
                 recurringJobManager.AddOrUpdate("VEND_Sync",
-                    () => syncService.SyncVendDataAsync(syncService.GetLastSyncTime("SUPP", "INSPECT_SUPPCREATEDATE")),
+                    () => syncService.SyncVendDataAsync(),
                     Configuration["SyncConfig:VEND"] ?? "* * * * *");
 
                 // 客户同步
                 recurringJobManager.AddOrUpdate("CUST_Sync",
-                    () => syncService.SyncCustDataAsync(syncService.GetLastSyncTime("CUSTOM", "INSPECT_CUSTOMCREATEDATE")),
+                    () => syncService.SyncCustDataAsync(),
                     Configuration["SyncConfig:CUST"] ?? "* * * * *");
 
                 Console.WriteLine("Sync jobs initialized successfully!");

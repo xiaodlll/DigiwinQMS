@@ -31,27 +31,27 @@ namespace Meiam.System.Interfaces
         /// <summary>
         /// 同步收货数据
         /// </summary>
-        Task SyncRcDataAsync(string lastSyncTime);
+        Task SyncRcDataAsync();
 
         /// <summary>
         /// 同步报工数据
         /// </summary>
-        Task SyncWrDataAsync(string lastSyncTime);
+        Task SyncWrDataAsync();
 
         /// <summary>
         /// 同步物料数据
         /// </summary>
-        Task SyncItemDataAsync(string lastSyncTime);
+        Task SyncItemDataAsync();
 
         /// <summary>
         /// 同步供应商数据
         /// </summary>
-        Task SyncVendDataAsync(string lastSyncTime);
+        Task SyncVendDataAsync();
 
         /// <summary>
         /// 同步客户数据
         /// </summary>
-        Task SyncCustDataAsync(string lastSyncTime);
+        Task SyncCustDataAsync();
 
         /// <summary>
         /// 获取上次同步时间
