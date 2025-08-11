@@ -989,13 +989,13 @@ namespace Meiam.System.Interfaces
 
                 --获得SI检验单号
                 SELECT TOP 1 @INSPECT_CODE=CAST(CAST(dbo.getNumericValue(INSPECT_SICODE) AS DECIMAL)+1 AS CHAR)  FROM  INSPECT_SI
-                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_SICODE,'SI_',''),'') like REPLACE(CONVERT(VARCHAR(10),TRY_CONVERT(DATETIME, @effectiveDate),120),'-','')+'%' 
+                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_SICODE,'FQC_',''),'') like REPLACE(CONVERT(VARCHAR(10),TRY_CONVERT(DATETIME, @effectiveDate),120),'-','')+'%' 
                 ORDER BY INSPECT_SICODE DESC
 
                 IF(ISNULL(@INSPECT_CODE,'')='')
-                   SET @INSPECT_CODE ='SI_'+REPLACE(CONVERT(VARCHAR(10),TRY_CONVERT(DATETIME, @effectiveDate),120),'-','')+'001'
+                   SET @INSPECT_CODE ='FQC_'+REPLACE(CONVERT(VARCHAR(10),TRY_CONVERT(DATETIME, @effectiveDate),120),'-','')+'001'
                 ELSE 
-                   SET @INSPECT_CODE ='SI_'+@INSPECT_CODE
+                   SET @INSPECT_CODE ='FQC_'+@INSPECT_CODE
 
                 SELECT @INSPECT_CODE AS INSPECT_CODE
                 ";

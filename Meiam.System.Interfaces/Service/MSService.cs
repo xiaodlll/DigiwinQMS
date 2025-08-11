@@ -263,13 +263,13 @@ VALUES (
 
                 --获得FPI检验单号
                 SELECT TOP 1 @INSPECT_CODE=CAST(CAST(dbo.getNumericValue(INSPECT_FPICODE) AS DECIMAL)+1 AS CHAR)  FROM  INSPECT_FPI
-                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_FPICODE,'FPI_',''),'') like REPLACE(CONVERT(VARCHAR(10),GETDATE(),120),'-','')+'%' 
+                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_FPICODE,'FAI_',''),'') like REPLACE(CONVERT(VARCHAR(10),GETDATE(),120),'-','')+'%' 
                 ORDER BY INSPECT_FPICODE DESC
 
                 IF(ISNULL(@INSPECT_CODE,'')='')
-                   SET @INSPECT_CODE ='FPI_'+REPLACE(CONVERT(VARCHAR(10),GETDATE(),120),'-','')+'001'
+                   SET @INSPECT_CODE ='FAI_'+REPLACE(CONVERT(VARCHAR(10),GETDATE(),120),'-','')+'001'
                 ELSE 
-                   SET @INSPECT_CODE ='FPI_'+@INSPECT_CODE
+                   SET @INSPECT_CODE ='FAI_'+@INSPECT_CODE
 
                 SELECT @INSPECT_CODE AS INSPECT_CODE
                 ";
