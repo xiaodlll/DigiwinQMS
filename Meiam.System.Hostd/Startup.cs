@@ -4,6 +4,7 @@ using Hangfire;
 using Hangfire.Dashboard;
 using Hangfire.SqlServer;
 using MapsterMapper;
+using Meiam.System.Common;
 using Meiam.System.Core;
 using Meiam.System.Extensions;
 using Meiam.System.Hostd.Extensions;
@@ -204,7 +205,10 @@ namespace Meiam.System.Hostd
 
             #region 初始化同步任务
             Console.WriteLine("Initializing sync jobs...");
-            InitializeSyncJobs(recurringJobManager, syncService);
+            string CustomID = AppSettings.Configuration["AppSettings:CustomID"];
+            if (CustomID == "HMD") {
+                InitializeSyncHMDJobs(recurringJobManager, syncService);
+            }
             #endregion
 
             #region 服务注入
@@ -247,7 +251,7 @@ namespace Meiam.System.Hostd
         #endregion
 
         #region 同步任务初始化
-        private void InitializeSyncJobs(IRecurringJobManager recurringJobManager, IHMDService syncService)
+        private void InitializeSyncHMDJobs(IRecurringJobManager recurringJobManager, IHMDService syncService)
         {
             try
             {

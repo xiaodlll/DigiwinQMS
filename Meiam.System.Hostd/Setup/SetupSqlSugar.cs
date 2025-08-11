@@ -1,4 +1,5 @@
-﻿using Meiam.System.Common;
+﻿using Hangfire;
+using Meiam.System.Common;
 using Meiam.System.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,46 +35,49 @@ namespace Meiam.System.Hostd.Setup
             });
 
             #region SqlSugarHMD 配置
-            services.AddSingleton<IOracleSqlSugarClient>(provider =>
-            {
-                var config = new ConnectionConfig() {
-                    ConfigId = "OracleDB",
-                    ConnectionString = AppSettings.Configuration["ConnectionStrings:OracleConnection"],
-                    DbType = DbType.Oracle,
-                    IsAutoCloseConnection = true,
-                    InitKeyType = InitKeyType.Attribute,
-                    ConfigureExternalServices = new ConfigureExternalServices {
-                        EntityService = (property, column) =>
-                        {
-                            if (!column.IsIgnore && !string.IsNullOrEmpty(column.DbColumnName)) {
-                                column.DbColumnName = column.DbColumnName.ToUpper(); // 列名转大写
-                            }
-                        }
-                    },
-                    MoreSettings = new ConnMoreSettings {
-                        IsAutoRemoveDataCache = true
-                        //OracleConnectionStringPull = true // 启用连接池优化
-                    }
-                };
-
-                var oracleDb = new OracleSqlSugarClient(config, db =>
+            string CustomID = AppSettings.Configuration["AppSettings:CustomID"];
+            if (CustomID == "HMD") {
+                services.AddSingleton<IOracleSqlSugarClient>(provider =>
                 {
-                    // AOP日志配置
-                    db.Aop.OnLogExecuting = (sql, pars) =>
-                    {
-                        var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
-                        logger.LogDebug($"Oracle SQL: {UtilMethods.GetSqlString(DbType.Oracle, sql, pars)}");
+                    var config = new ConnectionConfig() {
+                        ConfigId = "OracleDB",
+                        ConnectionString = AppSettings.Configuration["ConnectionStrings:OracleConnection"],
+                        DbType = DbType.Oracle,
+                        IsAutoCloseConnection = true,
+                        InitKeyType = InitKeyType.Attribute,
+                        ConfigureExternalServices = new ConfigureExternalServices {
+                            EntityService = (property, column) =>
+                            {
+                                if (!column.IsIgnore && !string.IsNullOrEmpty(column.DbColumnName)) {
+                                    column.DbColumnName = column.DbColumnName.ToUpper(); // 列名转大写
+                                }
+                            }
+                        },
+                        MoreSettings = new ConnMoreSettings {
+                            IsAutoRemoveDataCache = true
+                            //OracleConnectionStringPull = true // 启用连接池优化
+                        }
                     };
 
-                    db.Aop.OnError = ex =>
+                    var oracleDb = new OracleSqlSugarClient(config, db =>
                     {
-                        var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
-                        logger.LogError(ex, "Oracle数据库错误");
-                    };
+                        // AOP日志配置
+                        db.Aop.OnLogExecuting = (sql, pars) =>
+                        {
+                            var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
+                            logger.LogDebug($"Oracle SQL: {UtilMethods.GetSqlString(DbType.Oracle, sql, pars)}");
+                        };
+
+                        db.Aop.OnError = ex =>
+                        {
+                            var logger = provider.GetRequiredService<ILogger<SqlSugarScope>>();
+                            logger.LogError(ex, "Oracle数据库错误");
+                        };
+                    });
+
+                    return oracleDb;
                 });
-
-                return oracleDb;
-            });
+            }
             #endregion
         }
     }
