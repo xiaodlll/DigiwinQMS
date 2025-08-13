@@ -919,48 +919,45 @@ namespace Meiam.System.Interfaces
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate  " +
                     $"FROM qms_wr_view " +
-                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any())
                 {
-                    var entities = oracleData.Select(x => new erp_wr
-                    {
-                        MOID = x.SHB05,
-                        LOT_QTY = decimal.Parse(x.SFB08.ToString()),
-                        REPORT_QTY = decimal.Parse(x.SHB111.ToString()),
-                        ITEMID = x.SHB10,
-                        ITEMNAME = x.IMA02,
-                        INSPECT_SICREATEDATE = x.SHB02.ToString(),
-                        INSPECT02CODE = x.SHB09,
-                        INSPECT02NAME = x.ECI06,
-                        TS = x.SHBDATE.ToString()
-                    });
+                    // 按ITEMID+INSPECT_SICREATEDATE分组并求和
+                    var groupedData = oracleData
+                        .GroupBy(x => new
+                        {
+                            ITEMID = x.SHB10,
+                            INSPECT_SICREATEDATE = x.SHB02.ToString("yyyy-MM-dd") // 确保日期格式一致
+                        })
+                        .Select(g => new erp_wr
+                        {
+                            MOID = g.First().SHB05, // 取第一个MOID（可根据需求调整）
+                            LOT_QTY = g.Sum(x => decimal.Parse(x.SFB08.ToString())),
+                            REPORT_QTY = g.Sum(x => decimal.Parse(x.SHB111.ToString())),
+                            ITEMID = g.Key.ITEMID,
+                            ITEMNAME = g.First().IMA02, // 取第一个ITEMNAME
+                            INSPECT_SICREATEDATE = g.Key.INSPECT_SICREATEDATE,
+                            INSPECT02CODE = g.First().SHB09, // 取第一个INSPECT02CODE
+                            INSPECT02NAME = g.First().ECI06, // 取第一个INSPECT02NAME
+                            TS = g.First().SHBDATE?.ToString("yyyy-MM-dd HH:mm:ss")  // 取第一个SHBDATE
+                        });
 
                     int insertCount = 0;
                     int updateCount = 0;
 
-                    foreach (var entity in entities)
+                    foreach (var entity in groupedData)
                     {
-                        // 提取日期部分（yyyy-MM-dd）
-                        DateTime inspectDate;
-                        if (!DateTime.TryParse(entity.INSPECT_SICREATEDATE, out inspectDate))
-                        {
-                            inspectDate = DateTime.Now.Date;
-                        }
-                        string datePart = inspectDate.ToString("yyyy-MM-dd");
-
                         //判断重复（品号+日期）
                         var existingRecord = Db.Ado.SqlQuery<dynamic>(
                             $@"SELECT INSPECT_SIID, LOT_QTY, REPORT_QTY FROM INSPECT_SI 
                                WHERE ITEMID = '{entity.ITEMID}' 
-                               AND CONVERT(VARCHAR(10), TRY_CONVERT(DATETIME, INSPECT_SICREATEDATE), 120) = '{datePart}'").FirstOrDefault();
+                               AND CONVERT(VARCHAR(10), INSPECT_SICREATEDATE, 120) = '{entity.INSPECT_SICREATEDATE}'")
+                            .FirstOrDefault();
 
                         if (existingRecord != null)
                         {
-                            // 如果记录已存在，则更新数量（累加）
-                            decimal newLotQty = decimal.Parse(existingRecord.LOT_QTY.ToString()) + entity.LOT_QTY;
-                            decimal newReportQty = decimal.Parse(existingRecord.REPORT_QTY.ToString()) + entity.REPORT_QTY;
-
+                            // 如果记录已存在，则更新数量
                             string updateSql = @"
                                 UPDATE INSPECT_SI SET 
                                     LOT_QTY = @NewLotQty,
@@ -969,12 +966,12 @@ namespace Meiam.System.Interfaces
 
                             Db.Ado.ExecuteCommand(updateSql, new
                             {
-                                NewLotQty = newLotQty,
-                                NewReportQty = newReportQty,
+                                NewLotQty = entity.LOT_QTY,
+                                NewReportQty = entity.REPORT_QTY,
                                 InspectSiId = existingRecord.INSPECT_SIID.ToString()
                             });
 
-                            _logger.LogInformation($"更新报工单: {entity.MOID}, 品号: {entity.ITEMID}, 日期: {datePart}");
+                            _logger.LogInformation($"更新记录: 品号={entity.ITEMID}, 日期={entity.INSPECT_SICREATEDATE}");
                             updateCount++;
                         }
                         else
