@@ -919,7 +919,8 @@ namespace Meiam.System.Interfaces
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate  " +
                     $"FROM qms_wr_view " +
-                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
+                    $"ORDER BY shbdate,shb02");
 
                 if (oracleData.Any())
                 {
@@ -928,19 +929,27 @@ namespace Meiam.System.Interfaces
                         .GroupBy(x => new
                         {
                             ITEMID = x.SHB10,
-                            INSPECT_SICREATEDATE = x.SHB02.ToString("yyyy-MM-dd") // 确保日期格式一致
+                            INSPECT_SICREATEDATE = DateTime.Parse(x.SHB02).ToString("yyyy-MM-dd") // 确保日期格式一致
                         })
                         .Select(g => new erp_wr
                         {
                             MOID = g.First().SHB05, // 取第一个MOID（可根据需求调整）
-                            LOT_QTY = g.Sum(x => decimal.Parse(x.SFB08.ToString())),
-                            REPORT_QTY = g.Sum(x => decimal.Parse(x.SHB111.ToString())),
+                            LOT_QTY = g.Sum(x =>
+                            {
+                                decimal value;
+                                return decimal.TryParse(x.SFB08.ToString(), out value) ? value : 0m;
+                            }),
+                            REPORT_QTY = g.Sum(x =>
+                            {
+                                decimal value;
+                                return decimal.TryParse(x.SHB111.ToString(), out value) ? value : 0m;
+                            }),
                             ITEMID = g.Key.ITEMID,
                             ITEMNAME = g.First().IMA02, // 取第一个ITEMNAME
                             INSPECT_SICREATEDATE = g.Key.INSPECT_SICREATEDATE,
                             INSPECT02CODE = g.First().SHB09, // 取第一个INSPECT02CODE
                             INSPECT02NAME = g.First().ECI06, // 取第一个INSPECT02NAME
-                            TS = g.First().SHBDATE?.ToString("yyyy-MM-dd HH:mm:ss")  // 取第一个SHBDATE
+                            TS = g.First().SHBDATE?.ToString()  // 取第一个SHBDATE
                         });
 
                     int insertCount = 0;
