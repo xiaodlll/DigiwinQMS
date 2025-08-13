@@ -936,33 +936,69 @@ namespace Meiam.System.Interfaces
                         TS = x.SHBDATE.ToString()
                     });
 
+                    int insertCount = 0;
+                    int updateCount = 0;
+
                     foreach (var entity in entities)
                     {
-                        //判断重复
-                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_SI WHERE MOID = '{entity.MOID}' AND ITEMID = '{entity.ITEMID}' AND INSPECT_SICREATEDATE = '{entity.INSPECT_SICREATEDATE}' ") > 0;
-                        if (isExist)
+                        // 提取日期部分（yyyy-MM-dd）
+                        DateTime inspectDate;
+                        if (!DateTime.TryParse(entity.INSPECT_SICREATEDATE, out inspectDate))
                         {
-                            _logger.LogWarning($"报工单已存在: {entity.MOID}");
-                            continue;
+                            inspectDate = DateTime.Now.Date;
                         }
+                        string datePart = inspectDate.ToString("yyyy-MM-dd");
 
-                        // 生成检验单号
-                        var inspectionSiId = GenerateInspectionSiId(entity.TS);
-                        _logger.LogInformation("生成检验单号: {InspectionSiId}", inspectionSiId);
+                        //判断重复（品号+日期）
+                        var existingRecord = Db.Ado.SqlQuery<dynamic>(
+                            $@"SELECT INSPECT_SIID, LOT_QTY, REPORT_QTY FROM INSPECT_SI 
+                               WHERE ITEMID = '{entity.ITEMID}' 
+                               AND CONVERT(VARCHAR(10), TRY_CONVERT(DATETIME, INSPECT_SICREATEDATE), 120) = '{datePart}'").FirstOrDefault();
 
-                        // 保存到数据库
-                        _logger.LogDebug("正在保存报工单到数据库...");
-                        try
+                        if (existingRecord != null)
                         {
-                            SaveWrDataToDatabase(entity, inspectionSiId);
+                            // 如果记录已存在，则更新数量（累加）
+                            decimal newLotQty = decimal.Parse(existingRecord.LOT_QTY.ToString()) + entity.LOT_QTY;
+                            decimal newReportQty = decimal.Parse(existingRecord.REPORT_QTY.ToString()) + entity.REPORT_QTY;
+
+                            string updateSql = @"
+                                UPDATE INSPECT_SI SET 
+                                    LOT_QTY = @NewLotQty,
+                                    REPORT_QTY = @NewReportQty
+                                WHERE INSPECT_SIID = @InspectSiId";
+
+                            Db.Ado.ExecuteCommand(updateSql, new
+                            {
+                                NewLotQty = newLotQty,
+                                NewReportQty = newReportQty,
+                                InspectSiId = existingRecord.INSPECT_SIID.ToString()
+                            });
+
+                            _logger.LogInformation($"更新报工单: {entity.MOID}, 品号: {entity.ITEMID}, 日期: {datePart}");
+                            updateCount++;
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            _logger.LogError("保存报工单到数据库异常:" + ex.ToString());
-                            throw;
+
+                            // 生成检验单号
+                            var inspectionSiId = GenerateInspectionSiId(entity.TS);
+                            _logger.LogInformation("生成检验单号: {InspectionSiId}", inspectionSiId);
+
+                            // 保存到数据库
+                            _logger.LogDebug("正在保存报工单到数据库...");
+                            try
+                            {
+                                SaveWrDataToDatabase(entity, inspectionSiId);
+                                insertCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError("保存报工单到数据库异常:" + ex.ToString());
+                                throw;
+                            }
                         }
                     }
-                    _logger.LogInformation($"成功同步{entities.Count()}条QMS_WR_VIEW数据");
+                    _logger.LogInformation($"同步完成: 新增{insertCount}条, 更新{updateCount}条QMS_WR_VIEW数据");
                 }
                 else
                 {
