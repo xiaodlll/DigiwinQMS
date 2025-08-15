@@ -83,6 +83,12 @@ namespace Meiam.System.Model
         // 供应商名称
         public string SUPPNAME { get; set; }
 
+        // 供应商批次号
+        public string SUPPLOTNO { get; set; }
+
+        // 收料单位
+        public string UNIT { get; set; }
+
         /// <summary>
         /// 金蝶单据类型
         /// </summary>

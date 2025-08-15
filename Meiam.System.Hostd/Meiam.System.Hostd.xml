@@ -217,6 +217,34 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="T:Meiam.System.Hostd.Controllers.Business.YNKController">
+            <summary>
+            YNK
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Business.YNKController._logger">
+            <summary>
+            日志管理接口
+            </summary>
+        </member>
+        <member name="F:Meiam.System.Hostd.Controllers.Business.YNKController._ynkService">
+            <summary>
+            项目Bom接口
+            </summary>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNotice(System.Collections.Generic.List{Meiam.System.Model.LotNoticeRequest})">
+            <summary>
+            ERP收料通知单(YNK)
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeSync">
+            <summary>
+            收料检验结果回传ERP(YNK)
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
