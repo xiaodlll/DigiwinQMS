@@ -23,6 +23,7 @@ namespace Meiam.System.Model
 
         [Required(ErrorMessage = "分录内码(ENTRYID)是必填字段")]
         public string ENTRYID { get; set; }
+        public string ENTRYIDS { get; set; }
 
         [Required(ErrorMessage = "收料通知单号(ERP_ARRIVEDID)是必填字段")]
         public string ERP_ARRIVEDID { get; set; }

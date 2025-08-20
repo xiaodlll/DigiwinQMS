@@ -41,40 +41,56 @@ namespace Meiam.System.Interfaces
         #region ERP收料通知单
         public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequest> requests)
         {
-            _logger.LogInformation("开始处理收料通知单");
+            _logger.LogInformation("开始处理收料通知单，共 {Count} 条", requests.Count);
             try
             {
-                foreach (var request in requests)
-                {
-                    // 验证数据
-                    if (request.LOT_QTY <= 0)
-                    {
-                        _logger.LogWarning("到货数量无效: {LotQty}", request.LOT_QTY);
-                        throw new ArgumentException("到货数量必须大于0");
-                    }
+                // 按批号分组合并ENTRYID
+                var groupedRequests = GroupAndMergeRequests(requests);
 
-                    //判断重复
-                    bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ENTRYID = '{request.ENTRYID}' AND KEEID = '{request.ID}' AND OrgID = '{request.ORGID}'") > 0;
-                    if(isExist)
+                _logger.LogInformation("批号分组后共 {GroupCount} 组数据", groupedRequests.Count);
+
+                foreach (var request in groupedRequests)
+                {
+                    try
                     {
-                        _logger.LogWarning($"收料通知单已存在: {request.ID}");
+                        // 验证数据
+                        if (request.LOT_QTY <= 0)
+                        {
+                            _logger.LogWarning("到货数量无效: {LotQty}", request.LOT_QTY);
+                            throw new ArgumentException("到货数量必须大于0");
+                        }
+
+                        //判断重复
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ENTRYID = '{request.ENTRYID}' AND KEEID = '{request.ID}' AND OrgID = '{request.ORGID}'") > 0;
+                        if (isExist)
+                        {
+                            _logger.LogWarning($"收料通知单已存在: {request.ID}");
+                            continue;
+                        }
+
+                        // 生成检验单号
+                        var inspectionId = GenerateInspectionId();
+                        _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
+
+                        // 保存到数据库
+                        _logger.LogDebug("正在保存收料通知单到数据库...");
+                        try
+                        {
+                            SaveToDatabase(request, inspectionId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError("保存收料通知单到数据库异常:" + ex.ToString());
+                            throw;
+                        }
+                        await Task.Delay(10); // 模拟异步操作
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("处理单条收料通知单失败: {ErrorMessage}", ex.Message);
+                        // 继续处理下一条，不中断整个批次
                         continue;
                     }
-
-                    // 生成检验单号
-                    var inspectionId = GenerateInspectionId();
-                    _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
-
-                    // 保存到数据库
-                    _logger.LogDebug("正在保存收料通知单到数据库...");
-                    try {
-                        SaveToDatabase(request, inspectionId);
-                    }
-                    catch (Exception ex) {
-                        _logger.LogError("保存收料通知单到数据库异常:" + ex.ToString());
-                        throw;
-                    }
-                    await Task.Delay(10); // 模拟异步操作
                 }
 
                 _logger.LogInformation("收料通知单处理成功");
@@ -87,12 +103,63 @@ namespace Meiam.System.Interfaces
             }
             catch (Exception ex)
             {
+                _logger.LogError("处理收料通知单批次失败: {ErrorMessage}", ex.Message);
                 return new ApiResponse
                 {
                     Success = false,
                     Message = $"收料通知单接收失败，原因：{ex.Message}"
                 };
             }
+        }
+
+        /// <summary>
+        /// 按批号分组并合并ENTRYID
+        /// </summary>
+        private List<LotNoticeRequest> GroupAndMergeRequests(List<LotNoticeRequest> requests)
+        {
+            var grouped = requests
+                .GroupBy(r => GetBatchKey(r))
+                .Select(g => new LotNoticeRequest
+                {
+                    ID = g.First().ID,
+                    ENTRYID = g.First().ENTRYID, // 保留第一个ENTRYID
+                    ENTRYIDS = string.Join(",", g.Select(x => x.ENTRYID).Distinct()), // 合并所有ENTRYID
+                    ERP_ARRIVEDID = g.First().ERP_ARRIVEDID,
+                    ITEMID = g.First().ITEMID,
+                    ITEMNAME = g.First().ITEMNAME,
+                    LOT_QTY = g.Sum(x => x.LOT_QTY), // 数量求和
+                    LOTNO = g.First().LOTNO, // 取第一个批号
+                    APPLY_DATE = g.First().APPLY_DATE,
+                    MODEL_SPEC = g.First().MODEL_SPEC,
+                    QUA_DATE = g.First().QUA_DATE,
+                    PRO_DATE = g.First().PRO_DATE,
+                    SUPPNAME = g.First().SUPPNAME,
+                    LENGTH = g.First().LENGTH,
+                    WIDTH = g.First().WIDTH,
+                    INUM = g.Sum(x => x.INUM ?? 0), // 卷数求和
+                    ORGID = g.First().ORGID,
+                    SEQ = g.First().SEQ,
+                    BUSINESSTYPE = g.First().BUSINESSTYPE
+                })
+                .ToList();
+
+            return grouped;
+        }
+
+        /// <summary>
+        /// 生成批号分组键
+        /// </summary>
+        private string GetBatchKey(LotNoticeRequest request)
+        {
+            // 获取批号最后一个"-"之前的部分
+            string batchPrefix = request.LOTNO;
+            if (!string.IsNullOrEmpty(request.LOTNO) && request.LOTNO.Contains("-"))
+            {
+                batchPrefix = request.LOTNO.Substring(0, request.LOTNO.LastIndexOf("-"));
+            }
+
+            // 组合键: ERP单号+物料ID+批号前缀
+            return $"{request.ERP_ARRIVEDID}_{request.ITEMID}_{batchPrefix}";
         }
 
         private string GenerateInspectionId()
@@ -130,20 +197,25 @@ namespace Meiam.System.Interfaces
             SaveMainInspection(request, inspectionId);
         }
 
-        private void SaveMainInspection(LotNoticeRequest request, string inspectionId) {
+        private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
+        {
             string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString().Trim();
 
-            if (string.IsNullOrEmpty(SuppID)) {
+            if (string.IsNullOrEmpty(SuppID))
+            {
                 SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString().Trim();
-                if (string.IsNullOrEmpty(SuppID)) {
+                if (string.IsNullOrEmpty(SuppID))
+                {
                     SuppID = "1001";
                 }
-                Db.Ado.ExecuteCommand($@"INSERT INTO SUPP (
-    TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
-    SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME)
-VALUES (
-    '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-    '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{SuppID}', '{request.SUPPNAME}')");
+                Db.Ado.ExecuteCommand($@"
+                    INSERT INTO SUPP (
+                        TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
+                        SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME
+                    )VALUES (
+                        '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
+                        '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{SuppID}', '{request.SUPPNAME}')"
+                    );
             }
 
             string sql = @"
@@ -154,7 +226,7 @@ VALUES (
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
                     PRO_DATE, LENGTH, WIDTH, SUPPID,
                     INUM, ENTRYID, ORGID, SEQ, BUSINESSTYPE,
-                    KEEID
+                    KEEID, ENTRYIDS
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
@@ -162,7 +234,7 @@ VALUES (
                     @ApplyDate, @ItemSpecification, @QuaDate,
                     @ProDate, @Length, @Width, @SuppID,
                     @Inum, @EntryId, @OrgId, @Seq, @BusinessType,
-                    @KeeId
+                    @KeeId, @EntryIds
                 )";
 
             // 定义参数
@@ -189,7 +261,8 @@ VALUES (
                 new SugarParameter("@OrgId", request.ORGID),
                 new SugarParameter("@Seq", request.SEQ),
                 new SugarParameter("@BusinessType", request.BUSINESSTYPE),
-                new SugarParameter("@KeeId", request.ID)
+                new SugarParameter("@KeeId", request.ID),
+                new SugarParameter("@EntryIds", request.ENTRYIDS)
             };
 
             // 执行 SQL 命令
@@ -691,20 +764,21 @@ VALUES (
         #endregion
 
         #region 回写ERP MES方法
-        public List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest(){
+        public List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest()
+        {
             var sql = @"SELECT TOP 100 
-    ERP_ARRIVEDID AS BillNo, 
-    INSPECT_IQCCODE AS InspectBillNo,
-    KEEID AS ID,
-    ENTRYID AS EntryID,
-    CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN 1 ELSE 0 END AS Result,
-    ORGID,
-    ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS OKQty,       -- 不可转换时返回0
-    ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS NGQty     -- 不可转换时返回0
-FROM INSPECT_IQC
-WHERE (ISSY <> '1' OR ISSY IS NULL) 
-    AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
-ORDER BY INSPECT_IQCCREATEDATE DESC;";
+                            KEEID AS ID,
+                            ISNULL(ENTRYIDS, ENTRYID) AS FEntryIDs, -- 优先使用ENTRYIDS，如果没有则使用ENTRYID
+                            ERP_ARRIVEDID AS BillNo, 
+                            INSPECT_IQCCODE AS InspectBillNo,
+                            ORGID AS OrgID,
+                            CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN 1 ELSE 0 END AS Result,
+                            ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS OKQty,       -- 不可转换时返回0
+                            ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS NGQty     -- 不可转换时返回0
+                        FROM INSPECT_IQC
+                        WHERE (ISSY <> '1' OR ISSY IS NULL) 
+                            AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+                        ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequest>(sql);
             return list;
@@ -714,12 +788,15 @@ ORDER BY INSPECT_IQCCREATEDATE DESC;";
             var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' and ENTRYID='{1}' and OrgID='{2}' ", request.ID, request.EntryID, request.OrgID);
             Db.Ado.ExecuteCommand(sql);
         }
-        public List<WorkOrderResultRequest> GetQmsWorkOrderResultRequest(){
+
+
+        public List<WorkOrderResultRequest> GetQmsWorkOrderResultRequest()
+        {
             var sql = @"select top 100 MOID as BillNo,MESFirstInspectID,OrgID,OQC_STATE,
-(case when OQC_STATE in ('OQC_STATE_005','OQC_STATE_006','OQC_STATE_007','OQC_STATE_008') then 1 else 0 end) as Result 
-from INSPECT_FPI
-where (ISSY<>'1' or ISSY IS NULL) AND 
-OQC_STATE in ('OQC_STATE_005','OQC_STATE_006','OQC_STATE_007','OQC_STATE_008') order by INSPECT_FPICREATEDATE desc";
+                        (case when OQC_STATE in ('OQC_STATE_005','OQC_STATE_006','OQC_STATE_007','OQC_STATE_008') then 1 else 0 end) as Result 
+                        from INSPECT_FPI
+                        where (ISSY<>'1' or ISSY IS NULL) AND 
+                        OQC_STATE in ('OQC_STATE_005','OQC_STATE_006','OQC_STATE_007','OQC_STATE_008') order by INSPECT_FPICREATEDATE desc";
 
             var list = Db.Ado.SqlQuery<WorkOrderResultRequest>(sql);
             return list;
