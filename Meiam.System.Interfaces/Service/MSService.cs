@@ -68,21 +68,24 @@ namespace Meiam.System.Interfaces
                             continue;
                         }
 
-                        // 生成检验单号
-                        var inspectionId = GenerateInspectionId();
-                        _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
+                        // 检查是否已存在相同批号的记录
+                        string batchKey = GetBatchKey(request);
+                        bool istBatchExist = CheckBatchExists(batchKey);
+                        if (istBatchExist)
+                        {
+                            _logger.LogInformation("批号已存在，执行更新操作: {BatchKey}", batchKey);
+                            // 更新现有记录（合并ENTRYID和数量）
+                            UpdateExistingRecord(request, batchKey);
+                        }
+                        else
+                        {
+                            _logger.LogInformation("批号不存在，执行插入操作: {BatchKey}", batchKey);
+                            // 生成检验单号并插入新记录
+                            var inspectionId = GenerateInspectionId();
+                            _logger.LogInformation("生成检验单号: {InspectionId}", inspectionId);
+                            InsertNewRecord(request, inspectionId);
+                        }
 
-                        // 保存到数据库
-                        _logger.LogDebug("正在保存收料通知单到数据库...");
-                        try
-                        {
-                            SaveToDatabase(request, inspectionId);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError("保存收料通知单到数据库异常:" + ex.ToString());
-                            throw;
-                        }
                         await Task.Delay(10); // 模拟异步操作
                     }
                     catch (Exception ex)
@@ -162,6 +165,36 @@ namespace Meiam.System.Interfaces
             return $"{request.ERP_ARRIVEDID}_{request.ITEMID}_{batchPrefix}";
         }
 
+        /// <summary>
+        /// 检查批号是否已存在
+        /// </summary>
+        private bool CheckBatchExists(string batchKey)
+        {
+            var parts = batchKey.Split('_');
+            if (parts.Length < 3) return false;
+
+            string erpArrivedId = parts[0];
+            string itemId = parts[1];
+            string lotPrefix = parts[2];
+
+            string sql = @"
+                SELECT COUNT(*) 
+                FROM INSPECT_IQC 
+                WHERE ERP_ARRIVEDID = @ErpArrivedId 
+                  AND ITEMID = @ItemId 
+                  AND LOTNO LIKE @LotPrefix + '%'";
+
+            return Db.Ado.GetInt(sql, new
+            {
+                ErpArrivedId = erpArrivedId,
+                ItemId = itemId,
+                LotPrefix = lotPrefix
+            }) > 0;
+        }
+
+        /// <summary>
+        /// 生成检验单号
+        /// </summary>
         private string GenerateInspectionId()
         {
             string INSPECT_CODE = "";//检验单号
@@ -191,32 +224,65 @@ namespace Meiam.System.Interfaces
             return INSPECT_CODE;
         }
 
-        public void SaveToDatabase(LotNoticeRequest request, string inspectionId)
+        /// <summary>
+        /// 更新现有记录
+        /// </summary>
+        private void UpdateExistingRecord(LotNoticeRequest request, string batchKey)
         {
-            // 保存数据
-            SaveMainInspection(request, inspectionId);
+            string suppID = GetOrCreateSupplierId(request.SUPPNAME);
+
+            string sql = @"
+                UPDATE INSPECT_IQC 
+                SET 
+                    ENTRYIDS = CASE 
+                        WHEN ENTRYIDS IS NULL THEN @EntryIds
+                        WHEN CHARINDEX(@EntryIds, ENTRYIDS) = 0 THEN ENTRYIDS + ',' + @EntryIds
+                        ELSE ENTRYIDS
+                    END,
+                    LOT_QTY = LOT_QTY + @LotQty,
+                    INUM = ISNULL(INUM, 0) + @Inum,
+                    ITEMNAME = @ItemName,
+                    ITEM_SPECIFICATION = @ModelSpec,
+                    SUPPID = @SuppID,
+                    APPLY_DATE = @ApplyDate,
+                    QUA_DATE = @QuaDate,
+                    PRO_DATE = @ProDate,
+                    LENGTH = @Length,
+                    WIDTH = @Width
+                WHERE ERP_ARRIVEDID = @ErpArrivedId 
+                  AND ITEMID = @ItemId 
+                  AND LOTNO LIKE @LotPrefix + '%'";
+
+            var parts = batchKey.Split('_');
+            string lotPrefix = parts.Length >= 3 ? parts[2] : "";
+
+            var parameters = new SugarParameter[]
+            {
+                new SugarParameter("@EntryIds", request.ENTRYIDS),
+                new SugarParameter("@LotQty", request.LOT_QTY),
+                new SugarParameter("@Inum", request.INUM ?? 0),
+                new SugarParameter("@ItemName", request.ITEMNAME),
+                new SugarParameter("@ModelSpec", request.MODEL_SPEC),
+                new SugarParameter("@SuppID", suppID),
+                new SugarParameter("@ApplyDate", request.APPLY_DATE),
+                new SugarParameter("@QuaDate", request.QUA_DATE),
+                new SugarParameter("@ProDate", request.PRO_DATE),
+                new SugarParameter("@Length", request.LENGTH),
+                new SugarParameter("@Width", request.WIDTH),
+                new SugarParameter("@ErpArrivedId", request.ERP_ARRIVEDID),
+                new SugarParameter("@ItemId", request.ITEMID),
+                new SugarParameter("@LotPrefix", lotPrefix)
+            };
+
+            Db.Ado.ExecuteCommand(sql, parameters);
         }
 
-        private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
+        /// <summary>
+        /// 插入新记录
+        /// </summary>
+        public void InsertNewRecord(LotNoticeRequest request, string inspectionId)
         {
-            string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString().Trim();
-
-            if (string.IsNullOrEmpty(SuppID))
-            {
-                SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString().Trim();
-                if (string.IsNullOrEmpty(SuppID))
-                {
-                    SuppID = "1001";
-                }
-                Db.Ado.ExecuteCommand($@"
-                    INSERT INTO SUPP (
-                        TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
-                        SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME
-                    )VALUES (
-                        '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-                        '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{SuppID}', '{request.SUPPNAME}')"
-                    );
-            }
+            string SuppID = GetOrCreateSupplierId(request.SUPPNAME);
 
             string sql = @"
                 INSERT INTO INSPECT_IQC (
@@ -267,6 +333,32 @@ namespace Meiam.System.Interfaces
 
             // 执行 SQL 命令
             Db.Ado.ExecuteCommand(sql, parameters);
+        }
+
+        /// <summary>
+        /// 获取或创建供应商ID
+        /// </summary>
+        private string GetOrCreateSupplierId(string suppName)
+        {
+            string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{suppName}'")?.ToString().Trim();
+
+            if (string.IsNullOrEmpty(SuppID))
+            {
+                SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString().Trim();
+                if (string.IsNullOrEmpty(SuppID))
+                {
+                    SuppID = "1001";
+                }
+                Db.Ado.ExecuteCommand($@"
+                    INSERT INTO SUPP (
+                        TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
+                        SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME
+                    )VALUES (
+                        '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
+                        '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{SuppID}', '{suppName}')"
+                    );
+            }
+            return SuppID;
         }
         #endregion
 
