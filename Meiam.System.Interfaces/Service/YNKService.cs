@@ -209,12 +209,17 @@ namespace Meiam.System.Interfaces.Service
                             ITEMNAME AS ITEMNAME,
                             LOTNO AS LOTNO,
                             KEEID AS KEEID,
-                            CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN 1 ELSE 0 END AS OQC_STATE,
+                            CASE 
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN '合格'
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
+                                ELSE '不合格'
+                            END AS OQC_STATE,
                             ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS FQC_CNT,       -- 不可转换时返回0
                             ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS FQC_NOT_CNT     -- 不可转换时返回0
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
-                            AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+                            AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010')
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequest>(sql);

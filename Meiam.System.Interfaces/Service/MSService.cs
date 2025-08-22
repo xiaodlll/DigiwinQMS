@@ -691,6 +691,7 @@ namespace Meiam.System.Interfaces
                     ON target.ITEMID = source.ITEMID
                     WHEN MATCHED THEN
                         UPDATE SET ITEMNAME = source.ITEMNAME,
+                                   ITEM04 = source.ITEM04,
                                    ORGID = source.ORGID,
                                    ITEMCREATEDATE = getdate()
                     WHEN NOT MATCHED THEN
