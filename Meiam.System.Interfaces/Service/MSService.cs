@@ -42,6 +42,11 @@ namespace Meiam.System.Interfaces
         public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequest> requests)
         {
             _logger.LogInformation("开始处理收料通知单，共 {Count} 条", requests.Count);
+
+            int successCount = 0;
+            int failCount = 0;
+            var errorMessages = new List<string>();
+
             try
             {
                 // 按批号分组合并ENTRYID
@@ -65,6 +70,8 @@ namespace Meiam.System.Interfaces
                         if (isExist)
                         {
                             _logger.LogWarning($"收料通知单已存在: {request.ID}");
+                            errorMessages.Add($"收料通知单已存在: {request.ID}");
+                            failCount++;
                             continue;
                         }
 
@@ -86,23 +93,49 @@ namespace Meiam.System.Interfaces
                             InsertNewRecord(request, inspectionId);
                         }
 
+                        successCount++;
                         await Task.Delay(10); // 模拟异步操作
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError("处理单条收料通知单失败: {ErrorMessage}", ex.Message);
+                        errorMessages.Add($"处理单条收料通知单失败: {ex.Message}");
+                        failCount++;
                         // 继续处理下一条，不中断整个批次
-                        continue;
                     }
                 }
 
-                _logger.LogInformation("收料通知单处理成功");
-
-                return new ApiResponse
+                // 根据处理结果返回不同的响应
+                if (successCount > 0 && failCount == 0)
                 {
-                    Success = true,
-                    Message = "收料通知单接收成功",
-                };
+                    _logger.LogInformation("收料通知单全部处理成功，共 {SuccessCount} 条", successCount);
+                    return new ApiResponse
+                    {
+                        Success = true,
+                        Message = $"收料通知单接收成功，共处理 {successCount} 条数据"
+                    };
+                }
+                else if (successCount > 0 && failCount > 0)
+                {
+                    _logger.LogWarning("收料通知单部分处理成功，成功 {SuccessCount} 条，失败 {FailCount} 条", successCount, failCount);
+                    return new ApiResponse
+                    {
+                        Success = true, 
+                        Message = $"收料通知单部分处理成功，成功 {successCount} 条，失败 {failCount} 条",
+                        Data = errorMessages 
+                    };
+                }
+                else
+                {
+                    _logger.LogError("收料通知单全部处理失败，共 {FailCount} 条", failCount);
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"收料通知单接收失败，所有 {failCount} 条数据处理失败",
+                        Data = errorMessages 
+                    };
+                }
+
             }
             catch (Exception ex)
             {
