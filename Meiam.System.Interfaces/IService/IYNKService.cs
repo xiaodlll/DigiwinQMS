@@ -1,4 +1,5 @@
 ﻿using Meiam.System.Model;
+using Meiam.System.Model.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,5 +20,9 @@ namespace Meiam.System.Interfaces.IService
         //收料检验结果回传ERP
         List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest();
         void CallBackQmsLotNoticeResult(LotNoticeResultRequest request);
+        Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input);
+        Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input);
+        Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input);
+        Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input);
     }
 }

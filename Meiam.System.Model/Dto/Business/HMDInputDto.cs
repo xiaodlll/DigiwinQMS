@@ -42,6 +42,9 @@ namespace Meiam.System.Model.Dto {
         [Display(Name = "实际样本数")]
         public string SAMPLE_CNT { get; set; }
 
+        [Display(Name = "设备编码")]
+        public string INSPECT02CODE { get; set; }
+
         [Display(Name = "批次标识")]
         public string BATCHID { get; set; }
 
@@ -210,6 +213,12 @@ namespace Meiam.System.Model.Dto {
         /// </summary>
         [Display(Name = "品号")]
         public string ITEMID { get; set; }
+
+        /// <summary>
+        /// 设备编码
+        /// </summary>
+        [Display(Name = "设备编码")]
+        public string INSPECT02CODE { get; set; }
 
         /// <summary>
         /// 版本

@@ -245,6 +245,30 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetAOIInspectInfoByDocCode(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+            <summary>
+            获取检验项目信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetAOIProgressDataByDocCode(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+            <summary>
+            获取检验项目
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.UploadAOIData(System.Collections.Generic.List{Meiam.System.Model.Dto.InspectAoi})">
+            <summary>
+            AOI数据上传
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.UploadAOIImageData(System.Collections.Generic.List{Meiam.System.Model.Dto.InspectImageAoi})">
+            <summary>
+            AOI图片数据上传
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口

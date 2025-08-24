@@ -211,14 +211,14 @@ namespace Meiam.System.Interfaces
                     // 主表不存在，插入新主表数据
                     var mainSql = @"INSERT INTO INSPECT_DEV1 (
                         INSPECT_DEV1ID, INSPECT_CODE, INSPECT_PROGRESSID, ISBUILD, INSPECT_SPEC,
-                        ITEMID, ITEMNAME, INSPECTTYPE1, LOTID, LOT_QTY, SAMPLE_CNT, BATCHID,
+                        ITEMID, INSPECT02CODE, ITEMNAME, INSPECTTYPE1, LOTID, LOT_QTY, SAMPLE_CNT, BATCHID,
                         DEFORMATION_START, DEFORMATION_END, DEFORMATION_START2, DEFORMATION_END2,
                         DEFORMATION_START3, DEFORMATION_END3, DEFORMATION_START4, DEFORMATION_END4,
                         DEFORMATION_START5, DEFORMATION_END5, PEOPLE02, APPEOPLE02, TENID,
                         INSPECT_DEV1CREATEUSER, INSPECT_DEV1CREATEDATE
                     ) VALUES (
                         @INSPECT_DEV1ID, @INSPECT_CODE, @INSPECT_PROGRESSID, @ISBUILD, @INSPECT_SPEC,
-                        @ITEMID, @ITEMNAME, @INSPECTTYPE1, @LOTID, @LOT_QTY, @SAMPLE_CNT, @BATCHID,
+                        @ITEMID, @INSPECT02CODE, @ITEMNAME, @INSPECTTYPE1, @LOTID, @LOT_QTY, @SAMPLE_CNT, @BATCHID,
                         @DEFORMATION_START, @DEFORMATION_END, @DEFORMATION_START2, @DEFORMATION_END2,
                         @DEFORMATION_START3, @DEFORMATION_END3, @DEFORMATION_START4, @DEFORMATION_END4,
                         @DEFORMATION_START5, @DEFORMATION_END5, @PEOPLE02, @APPEOPLE02, @TENID,
@@ -233,6 +233,7 @@ namespace Meiam.System.Interfaces
                         new SugarParameter("@ISBUILD", input.ISBUILD),
                         new SugarParameter("@INSPECT_SPEC", input.INSPECT_SPEC),
                         new SugarParameter("@ITEMID", input.ITEMID),
+                        new SugarParameter("@INSPECT02CODE", input.INSPECT02CODE),
                         new SugarParameter("@ITEMNAME", input.ITEMNAME),
                         new SugarParameter("@INSPECTTYPE1", input.INSPECTTYPE1),
                         new SugarParameter("@LOTID", input.LOTID),
@@ -558,7 +559,7 @@ namespace Meiam.System.Interfaces
         {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("INSERT INTO INSPECT_PROGRESS (");
-            sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID, VER, OID, COC_ATTR, ");
+            sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID,INSPECT02CODE, VER, OID, COC_ATTR, ");
             sqlBuilder.Append("INSPECT_PROGRESSNAME, INSPECT_DEV, COUNTTYPE, INSPECT_PLANID, ");
             sqlBuilder.Append("INSPECT_CNT, STD_VALUE, MAX_VALUE, MIN_VALUE, UP_VALUE, DOWN_VALUE, ");
 
@@ -592,6 +593,9 @@ namespace Meiam.System.Interfaces
 
                 sqlBuilder.Append(AddReusableParameter(
                     "ITEMID", item.ITEMID, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                   "INSPECT02CODE", item.INSPECT02CODE, ref paramIndex, parameters, parameterCache) + ", ");
 
                 sqlBuilder.Append(AddReusableParameter(
                     "VER", item.VER, ref paramIndex, parameters, parameterCache) + ", ");
@@ -729,9 +733,9 @@ namespace Meiam.System.Interfaces
 
                 // 从Oracle视图查询增量数据
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
+                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) AS rvadate " +
                     $"FROM qms_rc_view " +
-                    $"WHERE rvadate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any())
                 {
@@ -753,7 +757,7 @@ namespace Meiam.System.Interfaces
                         QUA_DATE = x.RVBUD14 != null && !Convert.IsDBNull(x.RVBUD14) ? x.RVBUD14.ToString() : null,
                         SUPPNAME = x.PMC03,
                         SUPPID = x.RVA05,
-                        TS = x.RVADATE != null && !Convert.IsDBNull(x.RVADATE) ? x.RVADATE.ToString() : null
+                        TS = ((DateTime)x.RVADATE).ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
                     foreach (var entity in entities)
@@ -917,10 +921,10 @@ namespace Meiam.System.Interfaces
                 _logger.LogInformation($"开始同步QMS_WR_VIEW数据...开始时间:{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate  " +
+                    $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate + (TO_DATE(shbud05, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) as shbdate " +
                     $"FROM qms_wr_view " +
-                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
-                    $"ORDER BY shbdate,shb02");
+                    $"WHERE shbdate + (TO_DATE(shbud05, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
+                    $"ORDER BY shbdate,shb05");
 
                 if (oracleData.Any())
                 {
@@ -949,7 +953,7 @@ namespace Meiam.System.Interfaces
                             INSPECT_SICREATEDATE = g.Key.INSPECT_SICREATEDATE,
                             INSPECT02CODE = g.First().SHB09, // 取第一个INSPECT02CODE
                             INSPECT02NAME = g.First().ECI06, // 取第一个INSPECT02NAME
-                            TS = g.First().SHBDATE?.ToString()  // 取第一个SHBDATE
+                            TS = ((DateTime)g.First().SHBDATE).ToString("yyyy-MM-dd HH:mm:ss")  // 取第一个SHBDATE
                         });
 
                     int insertCount = 0;
@@ -1099,7 +1103,7 @@ namespace Meiam.System.Interfaces
                 _logger.LogInformation($"开始同步QMS_ITEM_VIEW数据...开始时间:{lastSyncTime}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT ima01, tc_ima02, ima06, ima901 " +
+                    $"SELECT ima01, tc_ima02, imaud03, imaud04, ima06, ima901 " +
                     $"FROM qms_item_view " +
                     $"WHERE ima901 >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')");
 
@@ -1110,8 +1114,10 @@ namespace Meiam.System.Interfaces
                         ITEMID = x.IMA01,
                         ITEMCODE = x.IMA01,
                         ITEMNAME = x.TC_IMA02,
+                        ISSPEC = x.IMAUD03,
+                        MAINITEMID = x.IMAUD04,
                         ITEM_GROUPID = x.IMA06,
-                        INSPECT_ITEMCREATEDATE = x.IMA901.ToString()
+                        INSPECT_ITEMCREATEDATE = ((DateTime)x.IMA901).ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
                     var response = new MaterialSyncResponse
@@ -1148,22 +1154,25 @@ namespace Meiam.System.Interfaces
         {
             string sql = @"
                     MERGE INTO ITEM AS target
-                    USING (SELECT @ItemId AS ITEMID, @ITEMCODE AS ITEMCODE,@ItemName AS ITEMNAME, @ItemGroupId AS ITEMGROUPID, @INSPECT_ITEMCREATEDATE AS INSPECT_ITEMCREATEDATE) AS source
+                    USING (SELECT @ItemId AS ITEMID, @ITEMCODE AS ITEMCODE,@ItemName AS ITEMNAME, @ISSPEC AS ISSPEC,@MAINITEMID AS MAINITEMID,@ItemGroupId AS ITEMGROUPID, @INSPECT_ITEMCREATEDATE AS INSPECT_ITEMCREATEDATE) AS source
                     ON target.ITEMID = source.ITEMID
                     WHEN MATCHED THEN
                         UPDATE SET ITEMCODE = source.ITEMCODE,ITEMNAME = source.ITEMNAME,
+                                   ISSPEC = source.ISSPEC,MAINITEMID = source.MAINITEMID,
                                    ITEM_GROUPID = source.ITEMGROUPID,
                                    INSPECT_ITEMCREATEDATE = source.INSPECT_ITEMCREATEDATE,
                                    ITEMCREATEDATE = getdate()
                     WHEN NOT MATCHED THEN
-                        INSERT (ITEMID, ITEMCODE,ITEMNAME, ITEM_GROUPID, INSPECT_ITEMCREATEDATE, ITEMCREATEUSER, ITEMCREATEDATE)
-                        VALUES (source.ITEMID, source.ITEMCODE,source.ITEMNAME, source.ITEMGROUPID, source.INSPECT_ITEMCREATEDATE, 'system', getdate());";
+                        INSERT (ITEMID, ITEMCODE,ITEMNAME, ISSPEC,MAINITEMID,ITEM_GROUPID, INSPECT_ITEMCREATEDATE, ITEMCREATEUSER, ITEMCREATEDATE)
+                        VALUES (source.ITEMID, source.ITEMCODE,source.ITEMNAME,source.ISSPEC,source.MAINITEMID, source.ITEMGROUPID, source.INSPECT_ITEMCREATEDATE, 'system', getdate());";
             // 定义参数
             var parameters = new SugarParameter[]
             {
                 new SugarParameter("@ItemId", entity.ITEMID),
                 new SugarParameter("@ITEMCODE", entity.ITEMID),
                 new SugarParameter("@ItemName", entity.ITEMNAME),
+                new SugarParameter("@ISSPEC", entity.ISSPEC),
+                new SugarParameter("@MAINITEMID", entity.MAINITEMID),
                 new SugarParameter("@ItemGroupId", entity.ITEM_GROUPID),
                 new SugarParameter("@INSPECT_ITEMCREATEDATE", entity.INSPECT_ITEMCREATEDATE)
             };
@@ -1196,7 +1205,7 @@ namespace Meiam.System.Interfaces
                         SUPPNAME = x.PMC03,
                         SUPPID = x.PMC01,
                         SUPPCODE = x.PMC01,
-                        INSPECT_SUPPCREATEDATE = x.PMCCRAT.ToString()
+                        INSPECT_SUPPCREATEDATE = ((DateTime)x.PMCCRAT).ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
 
@@ -1269,7 +1278,7 @@ namespace Meiam.System.Interfaces
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     "SELECT * FROM qms_cust_view " +
-                    $"WHERE OCCDATE >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')"
+                    $"WHERE occdate >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')"
                 );
                 if (oracleData.Any())
                 {
@@ -1277,7 +1286,7 @@ namespace Meiam.System.Interfaces
                     {
                         CUSTOMCODE = x.OCC01,
                         CUSTOMNAME = x.OCC02,
-                        INSPECT_CUSTOMCREATEDATE = x.OCCDATE.ToString()
+                        INSPECT_CUSTOMCREATEDATE = ((DateTime)x.OCCDATE).ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
                     var response = new CustomerSyncResponse

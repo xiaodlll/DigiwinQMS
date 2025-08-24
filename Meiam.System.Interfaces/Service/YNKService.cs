@@ -1,9 +1,16 @@
-﻿using Meiam.System.Interfaces.IService;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Meiam.System.Common;
+using Meiam.System.Interfaces.IService;
 using Meiam.System.Model;
+using Meiam.System.Model.Dto;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -198,7 +205,6 @@ namespace Meiam.System.Interfaces.Service
         }
         #endregion
 
-
         #region 回写ERP MES方法
         public List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest()
         {
@@ -231,6 +237,226 @@ namespace Meiam.System.Interfaces.Service
             var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' ", request.ID);
             Db.Ado.ExecuteCommand(sql);
         }
+        #endregion
+
+        #region 工具API
+        public async Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input) {
+            try {
+                var parameters = new SugarParameter[] {
+                  new SugarParameter("@DOC_CODE", input.DOC_CODE) };
+
+                var data = await Db.Ado.SqlQueryAsync<INSPECT_INFO_BYCODE>(
+                    "select TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY from INSPECT_VIEW where INSPECT_CODE = @DOC_CODE",
+                    parameters
+                );
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = JsonConvert.SerializeObject(data.FirstOrDefault())
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input) {
+            try {
+                var parameters = new SugarParameter[] {
+                  new SugarParameter("@DOC_CODE", input.DOC_CODE) };
+
+                List<INSPECT_PROGRESS_BYCODE> data = await Db.Ado.SqlQueryAsync<INSPECT_PROGRESS_BYCODE>(
+                    "select INSPECT_PROGRESSNAME, INSPECT_PROGRESSID from INSPECT_PROGRESS where DOC_CODE = @DOC_CODE and INSPECT_DEV='INSPECT_DEV_010'",
+                    parameters
+                );
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = JsonConvert.SerializeObject(data)
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input) {
+            try {
+                foreach (var item in input) {
+                    // 1. 检查主表是否存在相同数据
+                    var checkSql = @"SELECT COUNT(1) FROM INSPECT_AOI 
+                                WHERE DOC_CODE = @DOC_CODE 
+                                  AND InspectionDate = @InspectionDate 
+                                  AND BeginTime = @BeginTime
+                                  AND ComponentName = @ComponentName
+                                  AND MainSN = @MainSN
+                                  AND PanelSN = @PanelSN
+                                  AND PanelID = @PanelID"
+                    ;
+
+                    var checkParams = new SugarParameter[]
+                    {
+                    new SugarParameter("@DOC_CODE", item.DOC_CODE),
+                    new SugarParameter("@InspectionDate", item.InspectionDate),
+                    new SugarParameter("@BeginTime", item.BeginTime),
+                    new SugarParameter("@ComponentName", item.ComponentName),
+                    new SugarParameter("@MainSN", item.MainSN),
+                    new SugarParameter("@PanelSN", item.PanelSN),
+                    new SugarParameter("@PanelID", item.PanelID)
+                    };
+
+                    // 执行查询，判断是否存在
+                    var exists = await Db.Ado.GetIntAsync(checkSql, checkParams) > 0;
+
+                    // 2数据处理
+                    if (!exists) {
+                        // 构建插入SQL语句
+                        var mainSql = @"INSERT INTO INSPECT_AOI 
+                            (DOC_CODE, INSPECT_PROGRESSID, INSPECT_AOIID, INSPECT_AOICREATEDATE, 
+                             INSPECT_AOICREATEUSER, TENID, MainSN, PanelSN, PanelID, ModelName, 
+                             Side, MachineName, CustomerName, Operator, Programer, InspectionDate, 
+                             BeginTime, EndTime, CycleTimeSec, InspectionBatch, ReportResult, 
+                             ConfirmedResult, TotalComponent, ReportFailComponent, ComfirmedFailComponent, 
+                             ComponentName, LibraryModel, PN, Package, Angle, NGReportResult, 
+                             ReportResultCode, NGConfirmedResult, ConfirmedResultCode)
+                            VALUES 
+                            (@DOC_CODE, @INSPECT_PROGRESSID, @INSPECT_AOIID, @INSPECT_AOICREATEDATE, 
+                             @INSPECT_AOICREATEUSER, @TENID, @MainSN, @PanelSN, @PanelID, @ModelName, 
+                             @Side, @MachineName, @CustomerName, @Operator, @Programer, @InspectionDate, 
+                             @BeginTime, @EndTime, @CycleTimeSec, @InspectionBatch, @ReportResult, 
+                             @ConfirmedResult, @TotalComponent, @ReportFailComponent, @ComfirmedFailComponent, 
+                             @ComponentName, @LibraryModel, @PN, @Package, @Angle, @NGReportResult, 
+                             @ReportResultCode, @NGConfirmedResult, @ConfirmedResultCode)";
+
+                        // 构建参数数组，与实体属性一一对应
+                        var mainParams = new SugarParameter[]
+                        {
+                    new SugarParameter("@DOC_CODE", item.DOC_CODE),
+                    new SugarParameter("@INSPECT_PROGRESSID", item.INSPECT_PROGRESSID),
+                    new SugarParameter("@INSPECT_AOIID", item.INSPECT_AOIID),
+                    new SugarParameter("@INSPECT_AOICREATEDATE", item.INSPECT_AOICREATEDATE),
+                    new SugarParameter("@INSPECT_AOICREATEUSER", item.INSPECT_AOICREATEUSER),
+                    new SugarParameter("@TENID", item.TENID),
+                    new SugarParameter("@MainSN", item.MainSN),
+                    new SugarParameter("@PanelSN", item.PanelSN),
+                    new SugarParameter("@PanelID", item.PanelID),
+                    new SugarParameter("@ModelName", item.ModelName),
+                    new SugarParameter("@Side", item.Side),
+                    new SugarParameter("@MachineName", item.MachineName),
+                    new SugarParameter("@CustomerName", item.CustomerName),
+                    new SugarParameter("@Operator", item.Operator),
+                    new SugarParameter("@Programer", item.Programer),
+                    new SugarParameter("@InspectionDate", item.InspectionDate),
+                    new SugarParameter("@BeginTime", item.BeginTime),
+                    new SugarParameter("@EndTime", item.EndTime),
+                    new SugarParameter("@CycleTimeSec", item.CycleTimeSec),
+                    new SugarParameter("@InspectionBatch", item.InspectionBatch),
+                    new SugarParameter("@ReportResult", item.ReportResult),
+                    new SugarParameter("@ConfirmedResult", item.ConfirmedResult),
+                    new SugarParameter("@TotalComponent", item.TotalComponent),
+                    new SugarParameter("@ReportFailComponent", item.ReportFailComponent),
+                    new SugarParameter("@ComfirmedFailComponent", item.ComfirmedFailComponent),
+                    new SugarParameter("@ComponentName", item.ComponentName),
+                    new SugarParameter("@LibraryModel", item.LibraryModel),
+                    new SugarParameter("@PN", item.PN),
+                    new SugarParameter("@Package", item.Package),
+                    new SugarParameter("@Angle", item.Angle),
+                    new SugarParameter("@NGReportResult", item.NGReportResult),
+                    new SugarParameter("@ReportResultCode", item.ReportResultCode),
+                    new SugarParameter("@NGConfirmedResult", item.NGConfirmedResult),
+                    new SugarParameter("@ConfirmedResultCode", item.ConfirmedResultCode)
+                        };
+
+                        // 执行插入操作
+                        await Db.Ado.ExecuteCommandAsync(mainSql, mainParams);
+                    }
+                }
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "Aoi数据保存成功"
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"Aoi数据保存失败：{ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input) {
+            try {
+                if (input.Count == 0) {
+                    return new ApiResponse {
+                        Success = false,
+                        Message = $"传入数据为空!"
+                    };
+                }
+                string baseDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @"AOI");
+                foreach (var item in input) {
+                    // 1. 验证必要数据
+                    if (string.IsNullOrEmpty(item.DOC_CODE)) {
+                        throw new ArgumentException("DOC_CODE不能为空，无法存储图片");
+                    }
+                    if (string.IsNullOrEmpty(item.ImageName)) {
+                        throw new ArgumentException("ImageName不能为空，无法确定文件名");
+                    }
+                    if (string.IsNullOrEmpty(item.ImageData)) {
+                        throw new ArgumentException($"DOC_CODE: {item.DOC_CODE} 的图片数据为空，无法存储");
+                    }
+
+                    // 2. 创建DOC_CODE对应的文件夹
+                    string docCodeDirPath = Path.Combine(baseDirPath, item.DOC_CODE);
+                    if (!Directory.Exists(docCodeDirPath)) {
+                        Directory.CreateDirectory(docCodeDirPath);
+                    }
+
+                    // 3. 处理文件名（存在时添加_1、_2等后缀）
+                    string fileExtension = Path.GetExtension(item.ImageName);
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(item.ImageName);
+                    string targetFilePath = Path.Combine(docCodeDirPath, item.ImageName);
+
+                    // 检查文件是否存在，存在则生成新文件名
+                    if (File.Exists(targetFilePath)) {
+                        int counter = 1;
+                        do {
+                            string newFileName = $"{fileNameWithoutExt}_{counter}{fileExtension}";
+                            targetFilePath = Path.Combine(docCodeDirPath, newFileName);
+                            counter++;
+                        } while (File.Exists(targetFilePath));
+                    }
+
+                    // 4. 将Base64字符串转换为图片并保存
+                    byte[] imageBytes = Convert.FromBase64String(item.ImageData);
+                    await File.WriteAllBytesAsync(targetFilePath, imageBytes);
+
+                    // 5. 更新实体中的ImageName为实际保存的文件名（如果有重命名）
+                    item.ImageName = Path.GetFileName(targetFilePath);
+                }
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "AOI图片保存成功",
+                    Data = JsonConvert.SerializeObject(input)
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"AOI图片数据保存失败：{ex.Message}"
+                };
+            }
+        }
+
         #endregion
     }
 }

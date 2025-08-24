@@ -2957,17 +2957,20 @@ ORDER BY
                                 string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
                                 string ANI = drZONE_D["ANI"].ToString();
                                 //string COLUMN = drZONE_D["COLUMN"].ToString();
+                                string F_FIX = drZONE_D["F_FIX"].ToString();
+                                string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = drZONE_D["CELLS"].ToString();
                                 try {
                                     if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                                         if (dtSource.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
                                             if (byName == "REPORT_URL") {
+                                                string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
                                                 excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
                                             }
                                             else {
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                                 excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                             }
                                         }
@@ -2976,7 +2979,7 @@ ORDER BY
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
                                             if (dtSource.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                                 excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                             }
                                         }
@@ -3026,12 +3029,14 @@ ORDER BY
                                 string COLUM001ID = drZONE_D["COLUM001ID"].ToString();
                                 string ANI = drZONE_D["ANI"].ToString();
                                 //string COLUMN = drZONE_D["COLUMN"].ToString();
+                                string F_FIX = drZONE_D["F_FIX"].ToString();
+                                string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
                                 try {
                                     if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                                         if (dtSource.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
+                                            string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                             excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                         }
                                     }
@@ -3039,7 +3044,7 @@ ORDER BY
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
                                             if (dtSource.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                                 excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                             }
                                         }
@@ -3097,6 +3102,8 @@ ORDER BY
                                 string ANI = drZONE_D["ANI"].ToString();
                                 string ISSQ = drZONE_D["ISSQ"].ToString();
                                 //string COLUMN = drZONE_D["COLUMN"].ToString();
+                                string F_FIX = drZONE_D["F_FIX"].ToString();
+                                string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
                                 try {
                                     if (ISSQ == "1") {
@@ -3105,12 +3112,13 @@ ORDER BY
                                     else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                                         if (dtSource.Columns.Contains(byName)) {
-                                            string textValue = drData[byName].ToString();
                                             if (byName == "REPORT_URL") {
+                                                string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
                                                 excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
                                             }
                                             else {
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                                 excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                             }
                                         }
@@ -3119,7 +3127,7 @@ ORDER BY
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
                                             if (dtSource.Columns.Contains(byName)) {
-                                                string textValue = drData[byName].ToString();
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                                 excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                             }
                                         }

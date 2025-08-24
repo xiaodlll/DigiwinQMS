@@ -353,6 +353,8 @@ namespace Meiam.System.Model
         public string ITEMID { get; set; }
         public string ITEMCODE { get; set; }
         public string ITEMNAME { get; set; }
+        public string ISSPEC { get; set; }
+        public string MAINITEMID { get; set; }
         public string ITEM_GROUPID { get; set; }
         public string INSPECT_ITEMCREATEDATE { get; set; }
     }
