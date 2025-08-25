@@ -9,6 +9,7 @@ using Meiam.System.Model.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -217,6 +218,28 @@ namespace Meiam.System.Hostd.Controllers.Business
             return BadRequest(result);
         }
 
+        /// <summary>
+        /// 二次元数据上传
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("UploadYNKInpectProcessData")]
+        public async Task<IActionResult> UploadYNKInpectProcessData([FromBody] List<INSPECT_PROGRESSDto> input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.ProcessYNKInpectProcessDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
         #endregion
     }
 }

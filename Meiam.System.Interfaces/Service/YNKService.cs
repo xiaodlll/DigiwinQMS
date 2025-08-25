@@ -457,6 +457,300 @@ namespace Meiam.System.Interfaces.Service
             }
         }
 
+        public async Task<ApiResponse> ProcessYNKInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input) {
+            try {
+                if (input.Count == 0) {
+                    return new ApiResponse {
+                        Success = false,
+                        Message = $"传入数据为空!"
+                    };
+                }
+                var firstEntity = input[0];
+                var parameters = new SugarParameter[] {
+                  new SugarParameter("@DOC_CODE", firstEntity.DOC_CODE) };
+
+                // 1. 查询历史数据（包含版本、检验项目和顺序号）
+                var dtOldData = Db.Ado.GetDataTable(
+                    @"select VER,INSPECT_PROGRESSNAME,OID,INSPECT_CNT,INSPECT_PLANID
+      from INSPECT_PROGRESS 
+      where DOC_CODE = @DOC_CODE and COC_ATTR='COC_ATTR_001'",
+                    parameters
+                );
+
+                var dtEnum = dtOldData.AsEnumerable();
+                string newVer = "01"; // 新版本号
+                int lastMaxVer = 0;   // 上一版本号（数字形式）
+
+                // 2. 处理版本号逻辑
+                if (dtOldData.Rows.Count > 0) {
+                    lastMaxVer = dtEnum
+                        .Select(row => {
+                            int.TryParse(row["VER"].ToString().TrimStart('0'), out int v);
+                            return v;
+                        })
+                        .Max();
+                    newVer = (lastMaxVer + 1).ToString("00");
+                }
+                if (newVer == "01") {
+                    int oIdIndex = 1;
+                    int INSPECT_CNT = 0;
+                    var entityType = firstEntity.GetType();
+                    // 遍历A1到A64的所有属性
+                    for (int i = 1; i <= 64; i++) {
+                        // 构造属性名（A1, A2, ..., A64）
+                        string propertyName = $"A{i}";
+                        // 获取属性信息
+                        var property = entityType.GetProperty(propertyName);
+                        if (property != null) {
+                            var value = property.GetValue(firstEntity);
+                            if (value != null) {
+                                if (value is string strValue) {
+                                    if (!string.IsNullOrEmpty(strValue.Trim())) {
+                                        INSPECT_CNT++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // 定义查询参数（避免 SQL 注入）
+                    var planParameters = new SugarParameter[] {
+                        new SugarParameter("@SPOT_CNT", INSPECT_CNT)};
+                    // 查询 INSPECT_PLAN 表，获取 SPOT_CNT 等于样本数量的 INSPECT_PLANID
+                    var planId = Db.Ado.GetString(
+                        @"select INSPECT_PLANID from INSPECT_PLAN where SPOT_CNT = @SPOT_CNT", // 条件：样本数量匹配
+                        planParameters
+                    );
+                    foreach (var item in input) {
+                        item.VER = newVer; // 设置新版本号
+                        item.OID = (oIdIndex++).ToString("00");
+                        item.INSPECT_CNT = INSPECT_CNT.ToString();
+                        item.INSPECT_PLANID = planId;
+                    }
+                }
+                else {//第二次上传
+                      // 非首次上传：处理OID逻辑
+                      // 2.1 提取历史数据中每个检验项目最近出现的OID（按版本倒序取最近）
+                    var lastestOidMap = dtEnum
+                        .GroupBy(row => row["INSPECT_PROGRESSNAME"].ToString(), StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => {
+                                // 按版本号降序排序，取第一个（最近版本）的OID
+                                var latestRow = group
+                                    .OrderByDescending(row => {
+                                        int.TryParse(row["VER"].ToString().TrimStart('0'), out int v);
+                                        return v;
+                                    })
+                                    .FirstOrDefault();
+
+                                // 转换OID为整数（默认0）
+                                if (latestRow != null && int.TryParse(latestRow["OID"].ToString(), out int oid)) {
+                                    return oid;
+                                }
+                                return 0;
+                            }
+                        );
+
+                    // 2.2 获取历史数据中最大的OID（用于新增项目累加）
+                    int maxHistoryOid = dtEnum
+                        .Select(row => {
+                            int.TryParse(row["OID"].ToString(), out int oid);
+                            return oid;
+                        })
+                        .DefaultIfEmpty(0)
+                        .Max();
+                    var firstVerRow = dtEnum
+                        .FirstOrDefault();  // 取第一条符合条件的记录
+
+                    // 2.3 遍历输入项分配OID
+                    int currentMaxOid = maxHistoryOid; // 当前最大OID（用于累加）
+                    foreach (var item in input) {
+                        item.VER = newVer;
+                        item.INSPECT_CNT = firstVerRow["INSPECT_CNT"].ToString();
+                        item.INSPECT_PLANID = firstVerRow["INSPECT_PLANID"].ToString();
+                        // 检查当前检验项目是否在历史记录中存在
+                        if (lastestOidMap.TryGetValue(item.INSPECT_PROGRESSNAME, out int existOid) && existOid > 0) {
+                            // 规则2：存在则使用最近版本的OID
+                            item.OID = existOid.ToString("00");
+                        }
+                        else {
+                            // 规则1：不存在则从最大OID累加
+                            currentMaxOid++;
+                            item.OID = currentMaxOid.ToString("00");
+                        }
+                    }
+                }
+
+                #region 保存数据
+                await SaveInspectProgressList(input);
+                #endregion
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据保存成功",
+                    Data = JsonConvert.SerializeObject(input)
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"二次元数据保存失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 批量保存检验进度数据
+        /// </summary>
+        /// <param name="input">检验进度实体数组</param>
+        /// <returns>是否保存成功</returns>
+        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input) {
+            if (input == null || input.Count == 0)
+                return;
+
+            // 每个实体需要的基础参数数量：18个基础字段 + 64个A字段 = 82个
+            // 但通过复用相同值的参数，实际数量会减少
+            int parametersPerItem = 82;
+            int maxBatchSize = 2100 / parametersPerItem; // 仍保持分批处理基础逻辑
+
+            for (int i = 0; i < input.Count; i += maxBatchSize) {
+                var batchItems = input.Skip(i).Take(maxBatchSize).ToList();
+                if (batchItems.Count == 0)
+                    continue;
+
+                var (sql, parameters) = BuildBatchSqlWithReusedParameters(batchItems);
+                await Db.Ado.ExecuteCommandAsync(sql, parameters.ToArray());
+            }
+        }
+
+        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems) {
+            var sqlBuilder = new StringBuilder();
+            sqlBuilder.Append("INSERT INTO INSPECT_PROGRESS (");
+            sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID,INSPECT02CODE, VER, OID, COC_ATTR, ");
+            sqlBuilder.Append("INSPECT_PROGRESSNAME, INSPECT_DEV, COUNTTYPE, INSPECT_PLANID, ");
+            sqlBuilder.Append("INSPECT_CNT, STD_VALUE, MAX_VALUE, MIN_VALUE, UP_VALUE, DOWN_VALUE, ");
+
+            // 拼接A1-A64样本字段
+            for (int i = 1; i <= 64; i++) {
+                sqlBuilder.Append($"A{i}, ");
+            }
+
+            sqlBuilder.Append("INSPECT_PROGRESSCREATEUSER, INSPECT_PROGRESSCREATEDATE, TENID");
+            sqlBuilder.Append(") VALUES ");
+
+            var parameters = new List<SugarParameter>();
+            var parameterCache = new Dictionary<string, string>(); // 缓存值与参数名的映射
+            int paramIndex = 0;
+
+            foreach (var item in batchItems) {
+                sqlBuilder.Append("(");
+
+                // 处理主键ID（通常唯一，难以复用）
+                paramIndex++;
+                var progressIdParamName = $"@INSPECT_PROGRESSID_{paramIndex}";
+                sqlBuilder.Append($"{progressIdParamName}, ");
+                parameters.Add(new SugarParameter(progressIdParamName,
+                    string.IsNullOrEmpty(item.INSPECT_PROGRESSID) ? Guid.NewGuid().ToString() : item.INSPECT_PROGRESSID));
+
+                // 处理可复用的字段 - 使用值作为键缓存参数名
+                sqlBuilder.Append(AddReusableParameter(
+                    "DOC_CODE", item.DOC_CODE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "ITEMID", item.ITEMID, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                   "INSPECT02CODE", item.INSPECT02CODE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "VER", item.VER, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "OID", item.OID, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "COC_ATTR", item.COC_ATTR, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_PROGRESSNAME", item.INSPECT_PROGRESSNAME, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_DEV", item.INSPECT_DEV, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "COUNTTYPE", item.COUNTTYPE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_PLANID", item.INSPECT_PLANID, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "INSPECT_CNT", item.INSPECT_CNT, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "STD_VALUE", item.STD_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "MAX_VALUE", item.MAX_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "MIN_VALUE", item.MIN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "UP_VALUE", item.UP_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                sqlBuilder.Append(AddReusableParameter(
+                    "DOWN_VALUE", item.DOWN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
+
+                // 处理A1-A64样本字段
+                for (int j = 1; j <= 64; j++) {
+                    var propName = $"A{j}";
+                    var propValue = item.GetType().GetProperty(propName)?.GetValue(item);
+                    var paramKey = $"{propName}_{propValue}";
+
+                    sqlBuilder.Append(AddReusableParameter(
+                        propName, propValue, ref paramIndex, parameters, parameterCache) + (j < 64 ? ", " : ""));
+                }
+
+                // 处理创建用户和日期
+                sqlBuilder.Append(", " + AddReusableParameter(
+                    "INSPECT_PROGRESSCREATEUSER", item.INSPECT_PROGRESSCREATEUSER, ref paramIndex, parameters, parameterCache));
+
+                sqlBuilder.Append(", " + AddReusableParameter(
+                    "INSPECT_PROGRESSCREATEDATE", item.INSPECT_PROGRESSDATE, ref paramIndex, parameters, parameterCache));
+
+                sqlBuilder.Append(", " + AddReusableParameter(
+                    "TENID", item.TENID, ref paramIndex, parameters, parameterCache));
+
+                sqlBuilder.Append("),");
+            }
+
+            // 移除最后一个逗号
+            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',') {
+                sqlBuilder.Length--;
+            }
+
+            return (sqlBuilder.ToString(), parameters);
+        }
+
+        // 复用参数的核心方法：相同值使用同一个参数
+        private string AddReusableParameter(string fieldName, object value, ref int paramIndex,
+            List<SugarParameter> parameters, Dictionary<string, string> parameterCache) {
+            // 创建唯一键：字段名+值（处理null情况）
+            var cacheKey = $"{fieldName}_{(value ?? "NULL").ToString()}";
+
+            // 如果已有相同值的参数，直接返回已存在的参数名
+            if (parameterCache.TryGetValue(cacheKey, out var existingParamName)) {
+                return existingParamName;
+            }
+
+            // 否则创建新参数
+            paramIndex++;
+            var newParamName = $"@{fieldName}_{paramIndex}";
+            parameters.Add(new SugarParameter(newParamName, value ?? DBNull.Value));
+            parameterCache[cacheKey] = newParamName;
+
+            return newParamName;
+        }
         #endregion
     }
 }

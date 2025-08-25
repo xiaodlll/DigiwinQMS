@@ -269,6 +269,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.UploadYNKInpectProcessData(System.Collections.Generic.List{Meiam.System.Model.Dto.INSPECT_PROGRESSDto})">
+            <summary>
+            二次元数据上传
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
