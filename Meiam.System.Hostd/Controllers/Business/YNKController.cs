@@ -47,7 +47,7 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("lotNoticeYNK")]
-        public async Task<IActionResult> PostLotNotice([FromBody] List<LotNoticeRequest> request)
+        public async Task<IActionResult> PostLotNotice([FromBody] List<LotNoticeRequestYNK> request)
         {
             if (!ModelState.IsValid)
             {

@@ -32,7 +32,7 @@ namespace Meiam.System.Interfaces.Service
         }
 
         #region ERP收料通知单
-        public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequest> requests)
+        public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequestYNK> requests)
         {
             _logger.LogInformation("开始处理收料通知单");
             try
@@ -47,10 +47,10 @@ namespace Meiam.System.Interfaces.Service
                     }
 
                     //判断重复
-                    bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{request.ID}'") > 0;
+                    bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{request.KEEID}'") > 0;
                     if (isExist)
                     {
-                        _logger.LogWarning($"收料通知单已存在: {request.ID}");
+                        _logger.LogWarning($"收料通知单已存在: {request.KEEID}");
                         continue;
                     }
 
@@ -119,13 +119,13 @@ namespace Meiam.System.Interfaces.Service
             return INSPECT_CODE;
         }
 
-        public void SaveToDatabase(LotNoticeRequest request, string inspectionId)
+        public void SaveToDatabase(LotNoticeRequestYNK request, string inspectionId)
         {
             // 保存数据
             SaveMainInspection(request, inspectionId);
         }
 
-        private void SaveMainInspection(LotNoticeRequest request, string inspectionId)
+        private void SaveMainInspection(LotNoticeRequestYNK request, string inspectionId)
         {
             //更新供应商SUPP
             string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString().Trim();
@@ -169,13 +169,13 @@ namespace Meiam.System.Interfaces.Service
                     TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
                     INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
-                    APPLY_DATE, ITEM_SPECIFICATION, UNIT
+                    APPLY_DATE, ITEM_SPECIFICATION, UNIT, 
                     SUPPID, SUPPNAME, SUPPLOTNO, KEEID
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
-                    @ApplyDate, @ItemSpecification, @Unit
+                    @ApplyDate, @ItemSpecification, @Unit, 
                     @SuppID, @SuppName, @SuppLotNo, @KeeId
                 )";
 
@@ -197,7 +197,7 @@ namespace Meiam.System.Interfaces.Service
                 new SugarParameter("@SuppID", SuppID),
                 new SugarParameter("@SuppName", request.SUPPNAME),
                 new SugarParameter("@SuppLotNo", request.SUPPLOTNO),
-                new SugarParameter("@KeeId", request.ID)
+                new SugarParameter("@KeeId", request.KEEID)
             };
 
             // 执行 SQL 命令
