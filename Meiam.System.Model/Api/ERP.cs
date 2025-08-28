@@ -96,6 +96,89 @@ namespace Meiam.System.Model
         public string BUSINESSTYPE { get; set; }
     }
 
+    /// <summary>
+    /// YNK-ERP收料通知单
+    /// </summary>
+    public class LotNoticeRequestYNK
+    {
+        public string KEEID { get; set; }
+
+        /// <summary>
+        /// 行号
+        /// </summary>
+        public string SEQ { get; set; }
+
+        public string ENTRYID { get; set; }
+        public string ENTRYIDS { get; set; }
+
+        public string ERP_ARRIVEDID { get; set; }
+
+        private string _itemId;
+        public string ITEMID
+        {
+            get => _itemId;
+            set => _itemId = value?.Trim();
+        }
+
+        private string _itemName;
+        public string ITEMNAME
+        {
+            get => _itemName;
+            set => _itemName = value?.Trim();
+        }
+
+        public string ORGID { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "到货数量必须是正数")]
+        public decimal LOT_QTY { get; set; }
+
+        [RegularExpression(@"^\d{4}-\d{2}-\d{2}$", ErrorMessage = "日期格式必须是YYYY-MM-DD")]
+        public string APPLY_DATE { get; set; }
+
+        // 规格型号
+        public string MODEL_SPEC { get; set; }
+
+        // 批号（检验员维护）
+        public string LOTNO { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "长度必须是正数")]
+        // 长度（单位：毫米）
+        public decimal? LENGTH { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "宽度必须是正数")]
+        // 宽度（单位：毫米）
+        public decimal? WIDTH { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "卷数必须是正整数")]
+        // 卷数
+        public int? INUM { get; set; }
+
+        [RegularExpression(@"^\d{4}-\d{2}-\d{2}$", ErrorMessage = "生产日期格式必须是YYYY-MM-DD")]
+        // 生产日期
+        public string PRO_DATE { get; set; }
+
+        [RegularExpression(@"^\d{4}-\d{2}-\d{2}$", ErrorMessage = "失效日期格式必须是YYYY-MM-DD")]
+        // 失效日期
+        public string QUA_DATE { get; set; }
+
+        // 供应商编码
+        public string SUPPCODE { get; set; }
+
+        // 供应商名称
+        public string SUPPNAME { get; set; }
+
+        // 供应商批次号
+        public string SUPPLOTNO { get; set; }
+
+        // 收料单位
+        public string UNIT { get; set; }
+
+        /// <summary>
+        /// 金蝶单据类型
+        /// </summary>
+        public string BUSINESSTYPE { get; set; }
+    }
+
     public class ApiResponse
     {
         public bool Success { get; set; }

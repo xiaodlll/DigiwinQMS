@@ -244,7 +244,7 @@
             项目Bom接口
             </summary>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNotice(System.Collections.Generic.List{Meiam.System.Model.LotNoticeRequest})">
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNotice(System.Collections.Generic.List{Meiam.System.Model.LotNoticeRequestYNK})">
             <summary>
             ERP收料通知单(YNK)
             </summary>

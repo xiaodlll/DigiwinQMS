@@ -15,7 +15,7 @@ namespace Meiam.System.Interfaces.IService
         /// </summary>
         /// <param name="request">收料通知单请求数据</param>
         /// <returns>处理结果</returns>
-        Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequest> request);
+        Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequestYNK> request);
 
         //收料检验结果回传ERP
         List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest();
