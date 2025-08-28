@@ -583,7 +583,7 @@ namespace Meiam.System.Interfaces
                 //更新附件SCANDOC
                 string baseDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"]);
                 string scanName = @$"\Rosh\{input.DOC_CODE}\{input.ExcelFileName}";
-                string filePath = Path.Combine(baseDirPath, scanName);
+                string filePath = Path.Combine(baseDirPath, "Rosh", input.DOC_CODE, input.ExcelFileName);
                 string base64Dta = input.EXCELDATA;
 
                 string directory = Path.GetDirectoryName(filePath);
