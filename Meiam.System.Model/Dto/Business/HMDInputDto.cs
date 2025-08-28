@@ -701,6 +701,22 @@ namespace Meiam.System.Model.Dto {
         public string TENID { get; set; } = "001";
     }
 
+    public class HMDRoshDataDto {
+
+        public string DOC_CODE { get; set; }
+        public string ITEMID { get; set; }
+        public string INSPECT_PROGRESSMODIFYUSER { get; set; }
+        public List<HMDRoshDataItemDto> ROSHITEMLIST { get; set; } = new List<HMDRoshDataItemDto>();
+        public string ExcelFileName { get; set; }
+        public string EXCELDATA { get; set; }
+    }
+
+    public class HMDRoshDataItemDto {
+
+        public string INSPECT_PROGRESSNAME { get; set; }
+        public string INSPECT_RESULT { get; set; }
+    }
+
     public class INSPECT_REQCODE {
         public string DOC_CODE { get; set; }
     }

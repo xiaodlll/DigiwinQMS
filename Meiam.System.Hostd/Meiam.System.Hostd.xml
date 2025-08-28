@@ -83,6 +83,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.GetInspectInfoByRoshConditionAsync(Meiam.System.Model.Dto.INSPECT_CONDITION)">
+            <summary>
+            获取ROSH检验项目信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.UploadInpectProcessRoshData(Meiam.System.Model.Dto.HMDRoshDataDto)">
+            <summary>
+            恒铭达ROSH数据上传
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.Bisuness.IQCController">
             <summary>
             IQC

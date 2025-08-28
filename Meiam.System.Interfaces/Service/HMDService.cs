@@ -30,6 +30,7 @@ using System.Text;
 using Meiam.System.Core;
 using Oracle.ManagedDataAccess.Client;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.IO;
 
 namespace Meiam.System.Interfaces
 {
@@ -525,6 +526,92 @@ namespace Meiam.System.Interfaces
                 {
                     Success = false,
                     Message = $"二次元数据保存失败：{ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> GetInspectInfoByRoshConditionAsync(INSPECT_CONDITION input) {
+            try {
+                var parameters = new SugarParameter[] {
+                    new SugarParameter("@ITEMID", string.IsNullOrEmpty(input.ITEMID) ? null : $"%{input.ITEMID}%"),
+                    new SugarParameter("@ITEMNAME", string.IsNullOrEmpty(input.ITEMNAME) ? null : $"%{input.ITEMNAME}%"),
+                    new SugarParameter("@DOC_CODE", string.IsNullOrEmpty(input.DOC_CODE) ? null : $"%{input.DOC_CODE}%"),
+                    new SugarParameter("@LOTNO", string.IsNullOrEmpty(input.LOTNO) ? null : $"%{input.LOTNO}%"),
+                    new SugarParameter("@LOT_QTY", string.IsNullOrEmpty(input.LOT_QTY) ? null : $"%{input.LOT_QTY}%"),
+                 };
+                // 构建基础SQL
+                var sql = @"select INSPECT_CODE,ITEMID,ITEMNAME,LOTNO,LOT_QTY from INSPECT_VIEW 
+            where PSTATE!='PSTATE_003' and INSPECT_CODE in (select DISTINCT DOC_CODE from INSPECT_PROGRESS where INSPECT_NORID='021')";
+                // 动态添加条件（只添加值不为空的参数对应的条件）
+                if (!string.IsNullOrEmpty(input.DOC_CODE))
+                    sql += " and INSPECT_CODE like @DOC_CODE";
+                if (!string.IsNullOrEmpty(input.ITEMID))
+                    sql += " and ITEMID like @ITEMID";
+                if (!string.IsNullOrEmpty(input.ITEMNAME))
+                    sql += " and ITEMNAME like @ITEMNAME";
+                if (!string.IsNullOrEmpty(input.LOTNO))
+                    sql += " and LOTNO like @LOTNO";
+                if (!string.IsNullOrEmpty(input.LOT_QTY))
+                    sql += " and LOT_QTY = @LOT_QTY";
+                // 执行查询
+                var data = await Db.Ado.SqlQueryAsync<INSPECT_INFO_BYCODE>(sql, parameters);
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = JsonConvert.SerializeObject(data)
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> ProcessHMDInpectProcessRoshDataAsync(HMDRoshDataDto input) {
+            try {
+                //更新INSPECT_PROGRESSNAME
+                foreach (var item in input.ROSHITEMLIST) {
+                    string sql = @$"update INSPECT_PROGRESS set INSPECT_RESULT='{item.INSPECT_RESULT}' where INSPECT_PROGRESSNAME='{item.INSPECT_PROGRESSNAME}' and INSPECT_NORID='021'";
+                    int c = Db.Ado.ExecuteCommand(sql);
+                    if (c == 0) {
+                        throw new Exception($"[{item.INSPECT_PROGRESSNAME}]在数据库不存在!");
+                    }
+                }
+
+                //更新附件SCANDOC
+                string baseDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"]);
+                string scanName = @$"\Rosh\{input.DOC_CODE}\{input.ExcelFileName}";
+                string filePath = Path.Combine(baseDirPath, scanName);
+                string base64Dta = input.EXCELDATA;
+
+                string directory = Path.GetDirectoryName(filePath);
+                if (!Directory.Exists(directory)) {
+                    Directory.CreateDirectory(directory);
+                }
+                // 先删除已有文件（如果存在）
+                if (File.Exists(filePath)) {
+                    File.Delete(filePath);
+                }
+                // 解码base64数据
+                byte[] fileBytes = Convert.FromBase64String(input.EXCELDATA);
+
+                // 保存文件（存在则覆盖）
+                await File.WriteAllBytesAsync(filePath, fileBytes);
+
+                string sqlScanDoc = @$"update SCANDOC set SCANDOCNAME='{scanName}' where PEOPLEID='{input.DOC_CODE}' and INSPECT_NORID='021'";
+                Db.Ado.ExecuteCommand(sqlScanDoc);
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据保存成功",
+                    Data = JsonConvert.SerializeObject(input)
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"ROSH数据保存失败：{ex.Message}"
                 };
             }
         }

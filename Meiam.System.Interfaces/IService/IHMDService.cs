@@ -27,6 +27,8 @@ namespace Meiam.System.Interfaces
         Task<ApiResponse> ProcessHMDInpectDev1DataAsync(InspectDev1Entity input);
         Task<ApiResponse> GetInspectInfoByConditionAsync(INSPECT_CONDITION input);
         Task<ApiResponse> ProcessHMDInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input);
+        Task<ApiResponse> GetInspectInfoByRoshConditionAsync(INSPECT_CONDITION input);
+        Task<ApiResponse> ProcessHMDInpectProcessRoshDataAsync(HMDRoshDataDto input);
 
         /// <summary>
         /// 同步收货数据
@@ -57,6 +59,5 @@ namespace Meiam.System.Interfaces
         /// 获取上次同步时间
         /// </summary>
         string GetLastSyncTime(string tableName, string timeFieldName);
-
     }
 }

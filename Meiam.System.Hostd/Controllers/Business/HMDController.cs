@@ -192,6 +192,53 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
             return BadRequest(result);
         }
 
+
+        /// <summary>
+        /// 获取ROSH检验项目信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetInspectInfoByRoshConditionAsync")]
+        public async Task<IActionResult> GetInspectInfoByRoshConditionAsync([FromBody] INSPECT_CONDITION input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _hmdService.GetInspectInfoByRoshConditionAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        
+        /// <summary>
+        /// 恒铭达ROSH数据上传
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("UploadInpectProcessRoshData")]
+        public async Task<IActionResult> UploadInpectProcessRoshData([FromBody] HMDRoshDataDto input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _hmdService.ProcessHMDInpectProcessRoshDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
         #endregion
     }
 }
