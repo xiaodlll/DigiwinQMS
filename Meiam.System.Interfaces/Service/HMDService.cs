@@ -211,14 +211,14 @@ namespace Meiam.System.Interfaces
                 {
                     // 主表不存在，插入新主表数据
                     var mainSql = @"INSERT INTO INSPECT_DEV1 (
-                        INSPECT_DEV1ID, INSPECT_CODE, INSPECT_PROGRESSID, ISBUILD, INSPECT_SPEC,
+                        INSPECT_DEV1ID, INSPECT_CODE, INSPECT_PROGRESSID, ISBUILD, REMARK2,
                         ITEMID, INSPECT02CODE, ITEMNAME, INSPECTTYPE1, LOTID, LOT_QTY, SAMPLE_CNT, BATCHID,
                         DEFORMATION_START, DEFORMATION_END, DEFORMATION_START2, DEFORMATION_END2,
                         DEFORMATION_START3, DEFORMATION_END3, DEFORMATION_START4, DEFORMATION_END4,
                         DEFORMATION_START5, DEFORMATION_END5, PEOPLE02, APPEOPLE02, TENID,
                         INSPECT_DEV1CREATEUSER, INSPECT_DEV1CREATEDATE
                     ) VALUES (
-                        @INSPECT_DEV1ID, @INSPECT_CODE, @INSPECT_PROGRESSID, @ISBUILD, @INSPECT_SPEC,
+                        @INSPECT_DEV1ID, @INSPECT_CODE, @INSPECT_PROGRESSID, @ISBUILD, @REMARK2,
                         @ITEMID, @INSPECT02CODE, @ITEMNAME, @INSPECTTYPE1, @LOTID, @LOT_QTY, @SAMPLE_CNT, @BATCHID,
                         @DEFORMATION_START, @DEFORMATION_END, @DEFORMATION_START2, @DEFORMATION_END2,
                         @DEFORMATION_START3, @DEFORMATION_END3, @DEFORMATION_START4, @DEFORMATION_END4,
@@ -232,7 +232,7 @@ namespace Meiam.System.Interfaces
                         new SugarParameter("@INSPECT_CODE", input.INSPECT_CODE),
                         new SugarParameter("@INSPECT_PROGRESSID", input.INSPECT_PROGRESSID),
                         new SugarParameter("@ISBUILD", input.ISBUILD),
-                        new SugarParameter("@INSPECT_SPEC", input.INSPECT_SPEC),
+                        new SugarParameter("@REMARK2", input.INSPECT_SPEC),
                         new SugarParameter("@ITEMID", input.ITEMID),
                         new SugarParameter("@INSPECT02CODE", input.INSPECT02CODE),
                         new SugarParameter("@ITEMNAME", input.ITEMNAME),
@@ -541,7 +541,7 @@ namespace Meiam.System.Interfaces
                  };
                 // 构建基础SQL
                 var sql = @"select INSPECT_CODE,ITEMID,ITEMNAME,LOTNO,LOT_QTY from INSPECT_VIEW 
-            where PSTATE!='PSTATE_003' and INSPECT_CODE in (select DISTINCT DOC_CODE from INSPECT_PROGRESS where INSPECT_NORID='021')";
+            where PSTATE!='PSTATE_003' and INSPECT_CODE in (select DISTINCT DOC_CODE from INSPECT_PROGRESS where INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed169c2d027')";
                 // 动态添加条件（只添加值不为空的参数对应的条件）
                 if (!string.IsNullOrEmpty(input.DOC_CODE))
                     sql += " and INSPECT_CODE like @DOC_CODE";
@@ -573,7 +573,8 @@ namespace Meiam.System.Interfaces
             try {
                 //更新INSPECT_PROGRESSNAME
                 foreach (var item in input.ROSHITEMLIST) {
-                    string sql = @$"update INSPECT_PROGRESS set INSPECT_RESULT='{item.INSPECT_RESULT}' where INSPECT_PROGRESSNAME='{item.INSPECT_PROGRESSNAME}' and INSPECT_NORID='021'";
+                    string sql = @$"update INSPECT_PROGRESS set INSPECT_RESULT='{item.INSPECT_RESULT}' where INSPECT_PROGRESSNAME='{item.INSPECT_PROGRESSNAME}'
+and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed169c2d027'";
                     int c = Db.Ado.ExecuteCommand(sql);
                     if (c == 0) {
                         throw new Exception($"[{item.INSPECT_PROGRESSNAME}]在数据库不存在!");
@@ -600,7 +601,7 @@ namespace Meiam.System.Interfaces
                 // 保存文件（存在则覆盖）
                 await File.WriteAllBytesAsync(filePath, fileBytes);
 
-                string sqlScanDoc = @$"update SCANDOC set SCANDOCNAME='{scanName}' where PEOPLEID='{input.DOC_CODE}' and INSPECT_NORID='021'";
+                string sqlScanDoc = @$"update SCANDOC set SCANDOCNAME='{scanName}' where PEOPLEID='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed169c2d027'";
                 Db.Ado.ExecuteCommand(sqlScanDoc);
                 return new ApiResponse {
                     Success = true,
