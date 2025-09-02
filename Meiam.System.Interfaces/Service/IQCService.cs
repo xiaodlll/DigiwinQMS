@@ -3373,6 +3373,8 @@ ORDER BY
                     STRSQL += " AND " + whereField + $" = '{whereValue}'";
                 }
             }
+            //加上order条件
+            STRSQL += " ORDER BY COLUM0B03,COLUM002_COCID";
 
             //执行sql获取原始数据源
             DataTable dtCOLUM002Source = Db.Ado.GetDataTable(STRSQL);
