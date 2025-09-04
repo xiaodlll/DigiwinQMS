@@ -102,6 +102,7 @@ namespace Meiam.System.Model
     public class LotNoticeRequestYNK
     {
         public string KEEID { get; set; }
+        public string FID { get; set; }
 
         /// <summary>
         /// 行号

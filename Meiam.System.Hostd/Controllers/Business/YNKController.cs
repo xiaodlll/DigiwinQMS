@@ -82,15 +82,15 @@ namespace Meiam.System.Hostd.Controllers.Business
         public async Task<IActionResult> PostLotNoticeSync()
         {
             List<LotNoticeResultRequest> requests = _ynkService.GetQmsLotNoticeResultRequest();
-            string erpApiUrl = AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateReceiveInspectResult";
+            string erpApiUrl = AppSettings.Configuration["AppSettings:ERPApiAddress"].TrimEnd('/') + "/api/Qms/UpdateReceiveInspectResultYNK";
 
             try
             {
                 foreach (var request in requests)
                 {
-                    _logger.LogInformation(@$"请求UpdateReceiveInspectResult: erpApiUrl: {erpApiUrl} request: {JsonConvert.SerializeObject(request)}");
+                    _logger.LogInformation(@$"请求UpdateReceiveInspectResultYNK: erpApiUrl: {erpApiUrl} request: {JsonConvert.SerializeObject(request)}");
                     string postResult = await HttpHelper.PostJsonAsync(erpApiUrl, request);
-                    _logger.LogInformation(@$"回传UpdateReceiveInspectResult: postResult: {postResult}");
+                    _logger.LogInformation(@$"回传UpdateReceiveInspectResultYNK: postResult: {postResult}");
 
                     if (postResult.Contains("false"))
                     {

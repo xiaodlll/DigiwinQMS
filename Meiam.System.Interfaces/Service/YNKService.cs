@@ -170,13 +170,13 @@ namespace Meiam.System.Interfaces.Service
                     INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
                     LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, UNIT, 
-                    SUPPID, SUPPNAME, SUPPLOTNO, KEEID
+                    SUPPID, SUPPNAME, SUPPLOTNO, KEEID, FID
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
                     @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
                     @ApplyDate, @ItemSpecification, @Unit, 
-                    @SuppID, @SuppName, @SuppLotNo, @KeeId
+                    @SuppID, @SuppName, @SuppLotNo, @KeeId, @FId
                 )";
 
             // 定义参数
@@ -197,7 +197,8 @@ namespace Meiam.System.Interfaces.Service
                 new SugarParameter("@SuppID", SuppID),
                 new SugarParameter("@SuppName", request.SUPPNAME),
                 new SugarParameter("@SuppLotNo", request.SUPPLOTNO),
-                new SugarParameter("@KeeId", request.KEEID)
+                new SugarParameter("@KeeId", request.KEEID),
+                new SugarParameter("@FId", request.FID)
             };
 
             // 执行 SQL 命令
