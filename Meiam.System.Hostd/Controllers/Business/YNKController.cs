@@ -235,12 +235,13 @@ namespace Meiam.System.Hostd.Controllers.Business
                         _logger.LogInformation(@$"请求金蝶ERP接口: FID: {fid}, 包含 {entries.Count} 个明细行");
 
                         string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
+                        _logger.LogInformation(@$"请求URL: {erpApiUrl}");
                         _logger.LogInformation(@$"请求数据: {jsonRequest}");
 
                         // 使用带有SessionId的HTTP请求
                         string postResult = await HttpHelper.PostJsonWithSessionAsync(
                             erpApiUrl,
-                            erpRequestData,
+                            jsonRequest,
                             sessionId
                         );
 
@@ -266,7 +267,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                     catch (Exception ex)
                     {
                         failCount++;
-                        _logger.LogError(ex, $"处理单据 {fid} 时发生异常");
+                        _logger.LogError(ex, $"处理单据 {fid} 时发生异常:" + ex.ToString());
                         // 继续处理其他单据
                         continue;
                     }

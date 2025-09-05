@@ -821,9 +821,9 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
 
                 // 从Oracle视图查询增量数据
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) AS rvadate " +
+                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
                     $"FROM qms_rc_view " +
-                    $"WHERE rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE rvadate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any())
                 {
@@ -1011,9 +1011,9 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                 _logger.LogInformation($"开始同步QMS_WR_VIEW数据...开始时间:{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate + (TO_DATE(shbud05, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) as shbdate " +
+                    $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate " +
                     $"FROM qms_wr_view " +
-                    $"WHERE shbdate + (TO_DATE(shbud05, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
+                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
                     $"ORDER BY shbdate,shb05");
 
                 if (oracleData.Any())

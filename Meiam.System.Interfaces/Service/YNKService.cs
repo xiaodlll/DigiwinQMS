@@ -48,7 +48,7 @@ namespace Meiam.System.Interfaces.Service
 
             // 配置HttpClient
             _httpClient.Timeout = TimeSpan.FromSeconds(_config.TimeoutSeconds);
-            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            _httpClient.DefaultRequestHeaders.Add("Accept", "*/*");
         }
 
         #region ERP收料通知单

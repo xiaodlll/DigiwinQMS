@@ -38,17 +38,12 @@ namespace Meiam.System.Interfaces.Extensions
             }
         }
 
-        public static async Task<string> PostJsonWithSessionAsync(string url, object data, string sessionId)
+        public static async Task<string> PostJsonWithSessionAsync(string url, string jsonContent, string sessionId)
         {
             using (var httpClient = new HttpClient())
             {
-                // 添加SessionId到Cookie头
-                if (!string.IsNullOrEmpty(sessionId))
-                {
-                    httpClient.DefaultRequestHeaders.Add("kdservice-sessionid", $"{sessionId}");
-                }
+                httpClient.DefaultRequestHeaders.Add("kdservice-sessionid", $"{sessionId}");
 
-                var jsonContent = JsonConvert.SerializeObject(data);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
                 try
