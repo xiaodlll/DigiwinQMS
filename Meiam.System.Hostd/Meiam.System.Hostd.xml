@@ -251,6 +251,19 @@
             <param name="request"></param>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.Login">
+            <summary>
+            金蝶云登录接口
+            </summary>
+            <returns>登录结果包含KDSVCSessionId</returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.LoginWithCustom(Meiam.System.Model.ERPLoginRequestYNK)">
+            <summary>
+            自定义参数的金蝶云登录接口
+            </summary>
+            <param name="request">登录参数</param>
+            <returns>登录结果包含KDSVCSessionId</returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeSync">
             <summary>
             收料检验结果回传ERP(YNK)

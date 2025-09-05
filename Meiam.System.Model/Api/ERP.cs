@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -454,5 +455,73 @@ namespace Meiam.System.Model
         public string CUSTOMCODE { get; set; }
         public string CUSTOMNAME { get; set; }
         public string INSPECT_CUSTOMCREATEDATE { get; set; }
+    }
+
+    public class ERPLoginRequestYNK
+    {
+        [JsonProperty("password")]
+        public string Password { get; set; }
+
+        [JsonProperty("acctID")]
+        public string AcctID { get; set; }
+
+        [JsonProperty("Lcid")]
+        public int Lcid { get; set; } = 2052;
+
+        [JsonProperty("username")]
+        public string Username { get; set; }
+    }
+
+    public class ERPLoginResponseYNK
+    {
+        public bool IsSuccess { get; set; }
+        public string KDSVCSessionId { get; set; }
+        public string ErrorMessage { get; set; }
+        public int StatusCode { get; set; }
+    }
+
+    public class ERPApiConfigYNK
+    {
+        public string BaseUrl { get; set; }
+        public string LoginUrl { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string AcctID { get; set; }
+        public int Lcid { get; set; } = 2052;
+        public int TimeoutSeconds { get; set; } = 30;
+    }
+
+    public class ApiResponseYNK<T>
+    {
+        public bool Success { get; set; }
+        public T Data { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class ApiErrorResponseYNK
+    {
+        public bool Success { get; set; }
+        public string ErrorCode { get; set; }
+        public string ErrorMessage { get; set; }
+        public int StatusCode { get; set; }
+    }
+
+    /// <summary>
+    /// 收料检验结果回传ERP
+    /// </summary>
+    public class LotNoticeResultRequestYNK
+    {
+        public string FID { get; set; }
+        public string FEntryID { get; set; }
+
+        /// <summary>
+        /// 合格数
+        /// </summary>
+        public int? FReceiveQty { get; set; }
+
+        /// <summary>
+        /// 不合格数
+        /// </summary>
+        public int? FRefuseQty { get; set; }
     }
 }

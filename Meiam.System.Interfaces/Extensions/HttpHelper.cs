@@ -38,6 +38,33 @@ namespace Meiam.System.Interfaces.Extensions
             }
         }
 
+        public static async Task<string> PostJsonWithSessionAsync(string url, object data, string sessionId)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                // 添加SessionId到Cookie头
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    httpClient.DefaultRequestHeaders.Add("Cookie", $"KDSVCSessionId={sessionId}");
+                }
+
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+                var jsonContent = JsonConvert.SerializeObject(data);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(url, content);
+                    return await response.Content.ReadAsStringAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"HTTP请求失败: {ex.Message}", ex);
+                }
+            }
+        }
+
         /// <summary>
         /// 发送 GET 请求，支持自动拼接参数
         /// </summary>

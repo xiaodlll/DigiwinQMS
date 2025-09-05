@@ -17,9 +17,14 @@ namespace Meiam.System.Interfaces.IService
         /// <returns>处理结果</returns>
         Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequestYNK> request);
 
+        //金蝶云登录接口,获取KDSVCSessionId 的值
+        Task<ERPLoginResponseYNK> LoginAsync();
+        Task<ERPLoginResponseYNK> LoginAsync(string username, string password, string acctID, int lcid = 2052);
+
         //收料检验结果回传ERP
-        List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest();
-        void CallBackQmsLotNoticeResult(LotNoticeResultRequest request);
+        List<LotNoticeResultRequestYNK> GetQmsLotNoticeResultRequest();
+        void CallBackQmsLotNoticeResult(LotNoticeResultRequestYNK request);
+
         Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input);
         Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input);
         Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input);

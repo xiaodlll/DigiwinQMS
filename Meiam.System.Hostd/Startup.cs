@@ -12,6 +12,7 @@ using Meiam.System.Hostd.Global;
 using Meiam.System.Hostd.Middleware;
 using Meiam.System.Hostd.Setup;
 using Meiam.System.Interfaces;
+using Meiam.System.Interfaces.IService;
 using Meiam.System.Interfaces.Service;
 using Meiam.System.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -175,6 +176,11 @@ namespace Meiam.System.Hostd
             Console.WriteLine("Registering sync services...");
             services.AddScoped<IHMDService, HMDService>();
             #endregion
+
+            Console.WriteLine("注册金蝶云服务");
+            // 注册金蝶云服务
+            services.AddHttpClient<IYNKService, YNKService>();
+            services.AddScoped<IYNKService, YNKService>();
 
         }
 

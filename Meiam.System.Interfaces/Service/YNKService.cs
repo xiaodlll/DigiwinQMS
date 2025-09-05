@@ -4,6 +4,7 @@ using Meiam.System.Interfaces.IService;
 using Meiam.System.Model;
 using Meiam.System.Model.Dto;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SqlSugar;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,10 +27,28 @@ namespace Meiam.System.Interfaces.Service
 
         private readonly ILogger<YNKService> _logger;
         private readonly string _connectionString;
+        private readonly ERPApiConfigYNK _config;
+        private readonly HttpClient _httpClient;
 
-        public YNKService(IUnitOfWork unitOfWork, ILogger<YNKService> logger) : base(unitOfWork)
+        public YNKService(IUnitOfWork unitOfWork, HttpClient httpClient, IConfiguration configuration, ILogger<YNKService> logger) : base(unitOfWork)
         {
             _logger = logger;
+
+            _httpClient = httpClient;
+            _config = new ERPApiConfigYNK
+            {
+                BaseUrl = configuration["ERP:BaseUrl"] ?? "http://kingdeeapp/K3Cloud/",
+                LoginUrl = configuration["ERP:LoginUrl"] ?? "Kingdee.BOS.WebApi.ServicesStub.AuthService.ValidateUser.common.kdsvc",
+                Username = configuration["ERP:Username"] ?? "Administrator",
+                Password = configuration["ERP:Password"] ?? "Ynk@407409",
+                AcctID = configuration["ERP:AcctID"] ?? "674b4b07b00d63",
+                Lcid = int.Parse(configuration["ERP:Lcid"] ?? "2052"),
+                TimeoutSeconds = int.Parse(configuration["ERP:TimeoutSeconds"] ?? "30")
+            };
+
+            // 配置HttpClient
+            _httpClient.Timeout = TimeSpan.FromSeconds(_config.TimeoutSeconds);
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
         }
 
         #region ERP收料通知单
@@ -206,36 +226,150 @@ namespace Meiam.System.Interfaces.Service
         }
         #endregion
 
-        #region 回写ERP MES方法
-        public List<LotNoticeResultRequest> GetQmsLotNoticeResultRequest()
+        #region 金蝶云登录接口,获取KDSVCSessionId 的值
+        public async Task<ERPLoginResponseYNK> LoginAsync()
         {
-            var sql = @"SELECT TOP 100 
+            return await LoginAsync(_config.Username, _config.Password, _config.AcctID, _config.Lcid);
+        }
+
+        public async Task<ERPLoginResponseYNK> LoginAsync(string username, string password, string acctID, int lcid = 2052)
+        {
+            var response = new ERPLoginResponseYNK();
+
+            try
+            {
+                // 创建请求参数
+                var requestData = new ERPLoginRequestYNK
+                {
+                    Username = username,
+                    Password = password,
+                    AcctID = acctID,
+                    Lcid = lcid
+                };
+
+                // 序列化为JSON
+                var jsonContent = JsonConvert.SerializeObject(requestData);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                // 构建完整的URL
+                var url = $"{_config.BaseUrl}{_config.LoginUrl}";
+
+                // 发送POST请求
+                var httpResponse = await _httpClient.PostAsync(url, content);
+                response.StatusCode = (int)httpResponse.StatusCode;
+
+                // 检查响应状态
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    var responseContent = await httpResponse.Content.ReadAsStringAsync();
+
+                    // 从响应头中获取KDSVCSessionId
+                    if (httpResponse.Headers.TryGetValues("Set-Cookie", out var cookies))
+                    {
+                        foreach (var cookie in cookies)
+                        {
+                            if (cookie.Contains("KDSVCSessionId"))
+                            {
+                                response.KDSVCSessionId = ExtractSessionIdFromCookie(cookie);
+                                response.IsSuccess = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // 如果没有在cookie中找到，尝试从响应体中解析
+                    if (string.IsNullOrEmpty(response.KDSVCSessionId))
+                    {
+                        response.KDSVCSessionId = ParseSessionIdFromResponse(responseContent);
+                        response.IsSuccess = !string.IsNullOrEmpty(response.KDSVCSessionId);
+                    }
+
+                    if (!response.IsSuccess)
+                    {
+                        response.ErrorMessage = "登录成功但未找到KDSVCSessionId";
+                    }
+                }
+                else
+                {
+                    response.ErrorMessage = $"HTTP错误: {httpResponse.StatusCode}";
+                    var errorContent = await httpResponse.Content.ReadAsStringAsync();
+                    if (!string.IsNullOrEmpty(errorContent))
+                    {
+                        response.ErrorMessage += $", 错误信息: {errorContent}";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.ErrorMessage = $"登录失败: {ex.Message}";
+                response.StatusCode = 500;
+            }
+
+            return response;
+        }
+
+        private string ExtractSessionIdFromCookie(string cookieHeader)
+        {
+            // 从Set-Cookie头中提取KDSVCSessionId
+            var cookies = cookieHeader.Split(';');
+            foreach (var cookie in cookies)
+            {
+                var trimmedCookie = cookie.Trim();
+                if (trimmedCookie.StartsWith("KDSVCSessionId="))
+                {
+                    return trimmedCookie.Substring("KDSVCSessionId=".Length);
+                }
+            }
+            return null;
+        }
+
+        private string ParseSessionIdFromResponse(string responseContent)
+        {
+            // 根据金蝶云API的实际响应格式解析SessionId
+            try
+            {
+                // 假设响应格式为: {"LoginResultType":1,"Message":"","KDSVCSessionId":"session-id-here"}
+                dynamic responseObj = JsonConvert.DeserializeObject(responseContent);
+                return responseObj?.KDSVCSessionId?.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        #endregion
+
+        #region 回写ERP MES方法
+        public List<LotNoticeResultRequestYNK> GetQmsLotNoticeResultRequest()
+        {
+            var sql = @"SELECT 
                             ERP_ARRIVEDID AS ERP_ARRIVEDID, 
                             INSPECT_IQCCODE AS INSPECT_IQCCODE,
                             ITEMID AS ITEMID,
                             ITEMNAME AS ITEMNAME,
                             LOTNO AS LOTNO,
-                            KEEID AS KEEID,
+                            FID AS FID,
+                            KEEID AS FEntryID,
                             CASE 
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN '合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
                                 ELSE '不合格'
                             END AS OQC_STATE,
-                            ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS FQC_CNT,       -- 不可转换时返回0
-                            ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS FQC_NOT_CNT     -- 不可转换时返回0
+                            ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS FReceiveQty,       -- 不可转换时返回0
+                            ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS FRefuseQty     -- 不可转换时返回0
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
                             AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010')
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
-            var list = Db.Ado.SqlQuery<LotNoticeResultRequest>(sql);
+            var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
             return list;
         }
 
-        public void CallBackQmsLotNoticeResult(LotNoticeResultRequest request)
+        public void CallBackQmsLotNoticeResult(LotNoticeResultRequestYNK request)
         {
-            var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' ", request.ID);
+            var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' ", request.FEntryID);
             Db.Ado.ExecuteCommand(sql);
         }
         #endregion
