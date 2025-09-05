@@ -410,6 +410,7 @@ namespace Meiam.System.Model
         public string APPLY_DATE { get; set; }
         public string MODEL_SPEC { get; set; }
         public string LOTNO { get; set; }
+        public string SUPPLOTNO { get; set; }
         public decimal LENGTH { get; set; }
         public decimal WIDTH { get; set; }
         public decimal INUM { get; set; }

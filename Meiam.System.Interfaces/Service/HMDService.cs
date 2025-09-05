@@ -821,7 +821,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
 
                 // 从Oracle视图查询增量数据
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) AS rvadate " +
+                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) AS rvadate " +
                     $"FROM qms_rc_view " +
                     $"WHERE rvadate + (TO_DATE(rvacont, 'HH24:MI:SS') - TO_DATE('00:00:00', 'HH24:MI:SS')) >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}', 'YYYY-MM-DD HH24:MI:SS')");
 
@@ -838,6 +838,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                         APPLY_DATE = x.RVA06 != null && !Convert.IsDBNull(x.RVA06) ? x.RVA06.ToString() : null,
                         MODEL_SPEC = x.IMA021,
                         LOTNO = x.RVB38,
+                        SUPPLOTNO = x.RVBUD02,
                         LENGTH = x.RVBUD07 == null || Convert.IsDBNull(x.RVBUD07) ? 0 : decimal.Parse(x.RVBUD07.ToString()),
                         WIDTH = x.RVBUD01 == null || Convert.IsDBNull(x.RVBUD01) ? 0 : decimal.Parse(x.RVBUD01.ToString()),
                         INUM = x.RVBUD08 == null || Convert.IsDBNull(x.RVBUD08) ? 0 : decimal.Parse(x.RVBUD08.ToString()),
@@ -851,10 +852,10 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                     foreach (var entity in entities)
                     {
                         //判断重复
-                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ITEMID = '{entity.ITEMID}' AND LOTNO = '{entity.LOTNO}' ") > 0;
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ITEMID = '{entity.ITEMID}' AND SUPPLOTNO = '{entity.SUPPLOTNO}' ") > 0;
                         if (isExist)
                         {
-                            _logger.LogWarning($"收料通知单已存在: {entity.KEEID}");
+                            _logger.LogWarning($"收料通知单已存在。KEEID: {entity.KEEID}, ITEMID: {entity.ITEMID}, SUPPLOTNO: {entity.SUPPLOTNO}");
                             continue;
                         }
 
@@ -928,14 +929,14 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                 INSERT INTO INSPECT_IQC (
                     TENID, INSPECT_IQCID, INSPECT_IQCCREATEUSER, 
                     INSPECT_IQCCREATEDATE, ITEMNAME, ERP_ARRIVEDID, 
-                    LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, 
+                    LOT_QTY, INSPECT_IQCCODE, ITEMID, LOTNO, SUPPLOTNO, 
                     APPLY_DATE, ITEM_SPECIFICATION, QUA_DATE,
                     PRO_DATE, LENGTH, WIDTH, INUM, KEEID,
                     SUPPID, TS
                 ) VALUES (
                     @TenId, @InspectIqcId, @InspectIqcCreateUser, 
                     getdate(), @ItemName, @ErpArrivedId,
-                    @LotQty, @InspectIqcCode, @ItemId, @LotNo, 
+                    @LotQty, @InspectIqcCode, @ItemId, @LotNo, @SuppLotNo, 
                     @ApplyDate, @ItemSpecification, @QuaDate,
                     @ProDate, @Length, @Width, @Inum, @KeeId,
                     @SuppId, @TS
@@ -953,6 +954,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                 new SugarParameter("@InspectIqcCode", inspectionIqcId),
                 new SugarParameter("@ItemId", entity.ITEMID),
                 new SugarParameter("@LotNo", (entity.LOTNO==null?"":entity.LOTNO.ToString())),
+                new SugarParameter("@SuppLotNo", (entity.SUPPLOTNO==null?"":entity.SUPPLOTNO.ToString())),
                 new SugarParameter("@ApplyDate", entity.APPLY_DATE),
                 new SugarParameter("@ItemSpecification", entity.MODEL_SPEC),
                 new SugarParameter("@QuaDate", entity.QUA_DATE),

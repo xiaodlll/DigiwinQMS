@@ -45,10 +45,8 @@ namespace Meiam.System.Interfaces.Extensions
                 // 添加SessionId到Cookie头
                 if (!string.IsNullOrEmpty(sessionId))
                 {
-                    httpClient.DefaultRequestHeaders.Add("Cookie", $"KDSVCSessionId={sessionId}");
+                    httpClient.DefaultRequestHeaders.Add("kdservice-sessionid", $"{sessionId}");
                 }
-
-                httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
                 var jsonContent = JsonConvert.SerializeObject(data);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");

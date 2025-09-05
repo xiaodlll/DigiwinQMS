@@ -235,7 +235,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                         _logger.LogInformation(@$"请求金蝶ERP接口: FID: {fid}, 包含 {entries.Count} 个明细行");
 
                         string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
-                        _logger.LogDebug(@$"请求数据: {jsonRequest}");
+                        _logger.LogInformation(@$"请求数据: {jsonRequest}");
 
                         // 使用带有SessionId的HTTP请求
                         string postResult = await HttpHelper.PostJsonWithSessionAsync(
@@ -247,8 +247,12 @@ namespace Meiam.System.Hostd.Controllers.Business
                         _logger.LogInformation(@$"金蝶ERP接口响应 - FID: {fid}, 结果: {postResult}");
 
                         // 解析响应结果
-                        if (postResult.Contains("\"Result\":{\"ResponseStatus\":{\"IsSuccess\":true}}") ||
-                            postResult.Contains("\"IsSuccess\":true"))
+                        if (postResult.Contains("false"))
+                        {
+                            failCount++;
+                            _logger.LogError($"单据 {fid} 回传失败: {postResult}");
+                        }
+                        else
                         {
                             // 回传成功，更新所有相关明细行的状态
                             foreach (var entry in entries)
@@ -257,15 +261,6 @@ namespace Meiam.System.Hostd.Controllers.Business
                             }
                             successCount++;
                             _logger.LogInformation($"单据 {fid} 回传成功");
-                        }
-                        else
-                        {
-                            failCount++;
-                            _logger.LogError($"单据 {fid} 回传失败: {postResult}");
-
-                            // 可以选择继续处理其他单据，不直接返回错误
-                            // 如果需要严格处理，可以取消下面的continue并改为return
-                            continue;
                         }
                     }
                     catch (Exception ex)
