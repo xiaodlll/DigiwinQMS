@@ -170,7 +170,7 @@ namespace Meiam.System.Hostd.Controllers.Business
         {
             List<LotNoticeResultRequestYNK> requests = _ynkService.GetQmsLotNoticeResultRequest();
 
-            string erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:LoginUrl"];
+            string erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:ReceiveUrl"];
 
             try
             {
