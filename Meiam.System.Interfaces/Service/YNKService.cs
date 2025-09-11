@@ -166,22 +166,29 @@ namespace Meiam.System.Interfaces.Service
             }
 
             //更新物料ITEM
-            string ItemID = Db.Ado.GetScalar($@"SELECT TOP 1 ITEMID FROM ITEM WHERE ITEMNAME = '{request.ITEMNAME}'")?.ToString().Trim();
+            //string ItemID = Db.Ado.GetScalar($@"SELECT TOP 1 ITEMID FROM ITEM WHERE ITEMNAME = '{request.ITEMNAME}'")?.ToString().Trim();
 
-            if (string.IsNullOrEmpty(ItemID))
-            {
-                ItemID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(ITEMID) AS DECIMAL)+1 as char) from ITEM order by ITEMID desc")?.ToString().Trim();
-                if (string.IsNullOrEmpty(ItemID))
-                {
-                    ItemID = "1001";
-                }
-                Db.Ado.ExecuteCommand($@"INSERT INTO ITEM (
+            //if (string.IsNullOrEmpty(ItemID))
+            //{
+            //    ItemID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(ITEMID) AS DECIMAL)+1 as char) from ITEM order by ITEMID desc")?.ToString().Trim();
+            //    if (string.IsNullOrEmpty(ItemID))
+            //    {
+            //        ItemID = "1001";
+            //    }
+            //    Db.Ado.ExecuteCommand($@"INSERT INTO ITEM (
+            //                                TENID, ITEMID, ITEM0A17, ITEMCREATEUSER, ITEMCREATEDATE,
+            //                                ITEMMODIFYDATE, ITEMMODIFYUSER, ITEMCODE, ITEMNAME)
+            //                            VALUES (
+            //                                '001', '{ItemID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
+            //                                '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{ItemID}', '{request.ITEMNAME}')");
+            //}
+
+            Db.Ado.ExecuteCommand($@"INSERT INTO ITEM (
                                             TENID, ITEMID, ITEM0A17, ITEMCREATEUSER, ITEMCREATEDATE,
                                             ITEMMODIFYDATE, ITEMMODIFYUSER, ITEMCODE, ITEMNAME)
                                         VALUES (
-                                            '001', '{ItemID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-                                            '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{ItemID}', '{request.ITEMNAME}')");
-            }
+                                            '001', '{request.ITEMID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
+                                            '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{request.ITEMID}', '{request.ITEMNAME}')");
 
             //更新INSPECT_IQC
             string sql = @"
@@ -209,7 +216,7 @@ namespace Meiam.System.Interfaces.Service
                 new SugarParameter("@ErpArrivedId", request.ERP_ARRIVEDID),
                 new SugarParameter("@LotQty", request.LOT_QTY),
                 new SugarParameter("@InspectIqcCode", inspectionId),
-                new SugarParameter("@ItemId", ItemID),
+                new SugarParameter("@ItemId", request.ITEMID),
                 new SugarParameter("@LotNo", (request.LOTNO==null?"":request.LOTNO.ToString())),
                 new SugarParameter("@ApplyDate", request.APPLY_DATE),
                 new SugarParameter("@ItemSpecification", request.MODEL_SPEC),
