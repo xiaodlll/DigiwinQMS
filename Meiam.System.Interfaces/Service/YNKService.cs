@@ -183,12 +183,33 @@ namespace Meiam.System.Interfaces.Service
             //                                '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{ItemID}', '{request.ITEMNAME}')");
             //}
 
-            Db.Ado.ExecuteCommand($@"INSERT INTO ITEM (
-                                            TENID, ITEMID, ITEM0A17, ITEMCREATEUSER, ITEMCREATEDATE,
-                                            ITEMMODIFYDATE, ITEMMODIFYUSER, ITEMCODE, ITEMNAME)
-                                        VALUES (
-                                            '001', '{request.ITEMID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-                                            '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{request.ITEMID}', '{request.ITEMNAME}')");
+            Db.Ado.ExecuteCommand($@"
+                MERGE INTO ITEM AS target
+                USING (VALUES ('001', @ITEMID, '001', 'system', @CreateDate, 
+                                @ModifyDate, 'system', @ITEMID, @ITEMNAME)) 
+                        AS source (TENID, ITEMID, ITEM0A17, ITEMCREATEUSER, ITEMCREATEDATE,
+                                    ITEMMODIFYDATE, ITEMMODIFYUSER, ITEMCODE, ITEMNAME)
+                ON target.ITEMID = source.ITEMID AND target.TENID = source.TENID
+                WHEN MATCHED THEN
+                    UPDATE SET 
+                        ITEM0A17 = source.ITEM0A17,
+                        ITEMMODIFYDATE = source.ITEMMODIFYDATE,
+                        ITEMMODIFYUSER = source.ITEMMODIFYUSER,
+                        ITEMCODE = source.ITEMCODE,
+                        ITEMNAME = source.ITEMNAME
+                WHEN NOT MATCHED THEN
+                    INSERT (TENID, ITEMID, ITEM0A17, ITEMCREATEUSER, ITEMCREATEDATE,
+                            ITEMMODIFYDATE, ITEMMODIFYUSER, ITEMCODE, ITEMNAME)
+                    VALUES (source.TENID, source.ITEMID, source.ITEM0A17, source.ITEMCREATEUSER, 
+                            source.ITEMCREATEDATE, source.ITEMMODIFYDATE, source.ITEMMODIFYUSER, 
+                            source.ITEMCODE, source.ITEMNAME);",
+            new
+            {
+                ITEMID = request.ITEMID,
+                ITEMNAME = request.ITEMNAME,
+                CreateDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                ModifyDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")
+            });
 
             //更新INSPECT_IQC
             string sql = @"
