@@ -536,11 +536,11 @@ namespace Meiam.System.Interfaces
                     new SugarParameter("@ITEMID", string.IsNullOrEmpty(input.ITEMID) ? null : $"%{input.ITEMID}%"),
                     new SugarParameter("@ITEMNAME", string.IsNullOrEmpty(input.ITEMNAME) ? null : $"%{input.ITEMNAME}%"),
                     new SugarParameter("@DOC_CODE", string.IsNullOrEmpty(input.DOC_CODE) ? null : $"%{input.DOC_CODE}%"),
-                    new SugarParameter("@LOTNO", string.IsNullOrEmpty(input.LOTNO) ? null : $"%{input.LOTNO}%"),
+                    new SugarParameter("@SUPPLOTNO", string.IsNullOrEmpty(input.LOTNO) ? null : $"%{input.LOTNO}%"),
                     new SugarParameter("@LOT_QTY", string.IsNullOrEmpty(input.LOT_QTY) ? null : $"%{input.LOT_QTY}%"),
                  };
                 // 构建基础SQL
-                var sql = @"select INSPECT_CODE,ITEMID,ITEMNAME,LOTNO,LOT_QTY from INSPECT_VIEW 
+                var sql = @"select INSPECT_CODE,ITEMID,ITEMNAME,SUPPLOTNO,LOT_QTY from INSPECT_VIEW 
             where PSTATE!='PSTATE_003' and INSPECT_CODE in (select DISTINCT DOC_CODE from INSPECT_PROGRESS where INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed169c2d027')";
                 // 动态添加条件（只添加值不为空的参数对应的条件）
                 if (!string.IsNullOrEmpty(input.DOC_CODE))
@@ -550,7 +550,7 @@ namespace Meiam.System.Interfaces
                 if (!string.IsNullOrEmpty(input.ITEMNAME))
                     sql += " and ITEMNAME like @ITEMNAME";
                 if (!string.IsNullOrEmpty(input.LOTNO))
-                    sql += " and LOTNO like @LOTNO";
+                    sql += " and SUPPLOTNO like @SUPPLOTNO";
                 if (!string.IsNullOrEmpty(input.LOT_QTY))
                     sql += " and LOT_QTY = @LOT_QTY";
                 // 执行查询
