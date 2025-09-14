@@ -338,6 +338,39 @@ public class ExcelHelper : IDisposable {
         return address.End.Column - address.Start.Column + 1;
     }
 
+
+    /// <summary>
+    /// 替换文件中所有公式为所见值，保持单元格式不变
+    /// </summary>
+    public void ReplaceFormula() {
+        // 遍历所有工作表
+        foreach (var worksheet in _excelPackage.Workbook.Worksheets) {
+            // 跳过空工作表
+            if (worksheet.Dimension == null) continue;
+
+            // 获取数据区域范围
+            int startRow = worksheet.Dimension.Start.Row;
+            int endRow = worksheet.Dimension.End.Row;
+            int startCol = worksheet.Dimension.Start.Column;
+            int endCol = worksheet.Dimension.End.Column;
+
+            // 遍历所有单元格
+            for (int row = startRow; row <= endRow; row++) {
+                for (int col = startCol; col <= endCol; col++) {
+                    var cell = worksheet.Cells[row, col];
+                    // 检查单元格是否包含公式
+                    if (!string.IsNullOrEmpty(cell.Formula)) {
+                        // 保存公式计算后的结果
+                        var cellValue = cell.Value;
+                        // 清除公式并设置为计算后的值（保持格式不变）
+                        cell.Formula = null;
+                        cell.Value = cellValue;
+                    }
+                }
+            }
+        }
+    }
+
     public void Dispose() {
         try {
             if (!_excelPackage.Workbook.Worksheets.Any()) {
@@ -412,5 +445,4 @@ public class ExcelHelper : IDisposable {
         picture.SetSize(newWidth, (int)cellHeightPixels);
         return newWidth;
     }
-
 }

@@ -1,6 +1,8 @@
 ﻿using Meiam.System.Common;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using System;
 using System.IO;
@@ -39,17 +41,31 @@ namespace Meiam.System.Hostd.Setup
                 //c.OperationFilter<AppendAuthorizeFilter>();
 
             });
-
         }
 
-        public static void UseSwaggerSetup(this IApplicationBuilder app)
-        {
+        public static void UseSwaggerSetup(this IApplicationBuilder app) {// 获取环境信息
+            string runtimeDirectory = AppContext.BaseDirectory;
+
+            // 拼接 swagger-ui 目录路径（运行时目录下的 swagger-ui 文件夹）
+            string swaggerUiPath = Path.Combine(runtimeDirectory, "swagger-ui");
+
+            // 配置静态文件访问（仅当目录存在时）
+            if (Directory.Exists(swaggerUiPath)) {
+                app.UseStaticFiles(new StaticFileOptions {
+                    FileProvider = new PhysicalFileProvider(swaggerUiPath),
+                    RequestPath = "/swagger-ui" // 保持访问路径不变
+                });
+            }
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 var ApiName = AppSettings.Configuration["Startup:ApiName"];
 
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+                // 添加自定义CSS
+                c.InjectStylesheet("/swagger-ui/custom.css");
+                // 添加自定义JavaScript
+                c.InjectJavascript("/swagger-ui/custom.js");
                 c.RoutePrefix = string.Empty;
             });
         }

@@ -2913,6 +2913,8 @@ ORDER BY
                 fi.Directory.Create();
             }
             File.Copy(tempFilePath, filePath, true);
+
+            bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
             using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
                 //向Excel里面填充数据
                 List<DataTable> listZoneData001 = new List<DataTable>();
@@ -3151,6 +3153,12 @@ ORDER BY
                         throw new Exception($"区域[{SHEETNAME}]:" + ex.Message);
                     }
                 }
+
+                #region 替换公式
+                if (isReplaceFormula) {
+                    excelHelper.ReplaceFormula();
+                }
+                #endregion
             }
             return filePath;
         }

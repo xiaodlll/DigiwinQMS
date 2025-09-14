@@ -1,0 +1,22 @@
+﻿.hangfire-link {
+    /* 强制显示在右上角，使用醒目的样式 */
+    position: fixed !important; /* 固定定位，不受页面滚动影响 */
+    top: 100px !important; /* 向下移动20px（原20px → 现在40px） */
+    right: 20px !important;
+    padding: 10px 16px !important;
+    background-color: #29ad59 !important; /* 浅红色背景（更柔和的颜色） */
+    color: white !important;
+    font-weight: bold !important;
+    font-size: 18px !important; /* 新增：字体大小改小，可根据需求调整（如12px） */
+    text-decoration: none !important;
+    border-radius: 4px !important;
+    z-index: 9999 !important; /* 最顶层，不被遮挡 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    transition: all 0.2s ease !important; /* 平滑过渡效果 */
+}
+
+    /* 悬停效果 */
+    .hangfire-link:hover {
+        background-color: #009400 !important; /* 稍深一点的浅色（保持协调） */
+        transform: translateY(-2px) !important;
+    }

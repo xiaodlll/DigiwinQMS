@@ -1286,16 +1286,18 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     $"SELECT pmc03, pmc01, pmccrat " +
                     $"FROM qms_vend_view " +
-                    $"WHERE pmccrat >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE pmccrat >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS') " +
+                    $"OR pmccrat IS NULL");
 
                 if (oracleData.Any())
                 {
-                    var entities = oracleData.Select(x => new erp_vend
-                    {
+                    var entities = oracleData.Select(x => new erp_vend {
                         SUPPNAME = x.PMC03,
                         SUPPID = x.PMC01,
                         SUPPCODE = x.PMC01,
-                        INSPECT_SUPPCREATEDATE = ((DateTime)x.PMCCRAT).ToString("yyyy-MM-dd HH:mm:ss")
+                        // 若pmccrat为null则使用2000-01-01，否则使用实际值
+                        INSPECT_SUPPCREATEDATE = (x.PMCCRAT != null
+                            ? (DateTime)x.PMCCRAT : new DateTime(2000, 1, 1)).ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
 
@@ -1368,15 +1370,17 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
                     "SELECT * FROM qms_cust_view " +
-                    $"WHERE occdate >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS')"
+                    $"WHERE occdate >= TO_DATE('{lastSyncTime}', 'YYYY-MM-DD HH24:MI:SS') " +
+                    $"OR occdate IS NULL"
                 );
                 if (oracleData.Any())
                 {
-                    var entities = oracleData.Select(x => new erp_cust
-                    {
+                    var entities = oracleData.Select(x => new erp_cust {
                         CUSTOMCODE = x.OCC01,
                         CUSTOMNAME = x.OCC02,
-                        INSPECT_CUSTOMCREATEDATE = ((DateTime)x.OCCDATE).ToString("yyyy-MM-dd HH:mm:ss")
+                        // 若OCCDATE为null则使用默认日期2000-01-01，否则用实际值
+                        INSPECT_CUSTOMCREATEDATE = (x.OCCDATE != null
+                        ? (DateTime)x.OCCDATE : new DateTime(2000, 1, 1)).ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
                     var response = new CustomerSyncResponse
