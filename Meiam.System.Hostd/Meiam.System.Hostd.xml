@@ -101,6 +101,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.TestPostLotNoticeSync(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+            <summary>
+            测试收料检验结果回传ERP
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.Bisuness.IQCController">
             <summary>
             IQC

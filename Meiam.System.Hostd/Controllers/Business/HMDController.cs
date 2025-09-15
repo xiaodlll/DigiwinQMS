@@ -264,6 +264,30 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                 });
             }
         }
+
+        /// <summary>
+        /// 测试收料检验结果回传ERP
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("TestUpdateReceiveInspectResultHMD")]
+        public async Task<IActionResult> TestPostLotNoticeSync([FromBody] INSPECT_REQCODE request) {
+            try {
+                await _hmdService.TestUpdateReceiveInspectResult(request.DOC_CODE);
+                return Ok(new ApiResponse {
+                    Success = true,
+                    Message = $"调用成功！"
+                });
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "调用 ERP 接口异常");
+
+                return StatusCode(500, new ApiResponse {
+                    Success = false,
+                    Message = $"系统异常：{ex.ToString()}"
+                });
+            }
+        }
+
         #endregion
     }
 }

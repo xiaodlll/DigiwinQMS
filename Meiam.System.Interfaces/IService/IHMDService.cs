@@ -61,5 +61,6 @@ namespace Meiam.System.Interfaces
         string GetLastSyncTime(string tableName, string timeFieldName);
 
         Task UpdateReceiveInspectResult();
+        Task TestUpdateReceiveInspectResult(string requestXml);
     }
 }

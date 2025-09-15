@@ -33,6 +33,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.IO;
 using System.Xml;
 using System.ServiceModel;
+using TiptopService;
 
 namespace Meiam.System.Interfaces
 {
@@ -42,8 +43,9 @@ namespace Meiam.System.Interfaces
     public class HMDService : BaseService<INSPECT_TENSILE_D>, IHMDService
     {
 
-        public HMDService(IUnitOfWork unitOfWork) : base(unitOfWork)
+        public HMDService(IUnitOfWork unitOfWork, ILogger<HMDService> logger) : base(unitOfWork)
         {
+            _logger = logger;
         }
 
         private readonly ILogger<HMDService> _logger;
@@ -1497,11 +1499,15 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         </Document>
     </RequestContent>
 </Request>";
+                    requestXml = requestXml.Replace("'","\"");
                     string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
                     var newEndpointAddress = new EndpointAddress(wsUrl);
+                    _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
                     using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
-                        var result = await client.UpdateIqcAsync(requestXml);
+                        string encodedValue = EncodeXmlSpecialChars(requestXml);
+                        var result = await client.UpdateIqcAsync(encodedValue);
                         string responseXml = result.response;
+                        _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
 
                         // 解析结果：基于QMS响应XML结构（Execution+Parameter）
                         XmlDocument xmlDoc = new XmlDocument();
@@ -1566,6 +1572,97 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                 }
             }
          }
+
+        public async Task TestUpdateReceiveInspectResult(string requestXml) {
+            string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
+            var newEndpointAddress = new EndpointAddress(wsUrl);
+            requestXml = requestXml.Replace("'", "\"");
+            _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
+            using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
+                string encodedValue = EncodeXmlSpecialChars(requestXml);
+                var result = await client.UpdateIqcAsync(encodedValue);
+                string responseXml = result.response;
+                _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
+
+                // 解析结果：基于QMS响应XML结构（Execution+Parameter）
+                XmlDocument xmlDoc = new XmlDocument();
+                // 1. 加载响应XML（处理XML格式错误）
+                xmlDoc.LoadXml(responseXml);
+                Console.WriteLine("响应XML加载成功，开始解析...");
+
+                // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
+                XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
+                if (statusNode == null) {
+                    throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
+                }
+
+                // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
+                string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
+                string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
+                string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
+                bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
+
+                // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
+                XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
+                string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
+                string paramDesc = "无说明";      // Parameter段的执行结果说明
+
+                if (paramRecordNode != null) {
+                    // 提取rvu01（ERP入库单号）
+                    XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
+                    if (rvu01Node != null) {
+                        erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
+                    }
+
+                    // 提取Parameter段的description
+                    XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
+                    if (descNode != null) {
+                        paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
+                    }
+                }
+                else {
+                    _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
+                }
+
+                // 4. 输出解析结果
+                _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
+                _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
+                _logger.LogInformation($"   - 状态码（code）：{statusCode}");
+                _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
+                _logger.LogInformation($"   - 处理描述：{statusDesc}");
+                _logger.LogInformation($"2. ERP业务结果：");
+                _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
+                _logger.LogInformation($"   - 结果说明：{paramDesc}");
+                _logger.LogInformation("===========================\n");
+
+                // 5. 业务逻辑分支（根据成功/失败执行后续操作）
+                if (isSuccess) {
+                    _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
+                }
+                else {
+                    _logger.LogInformation($"执行失败：入库/验退单创建失败，错误信息：{statusDesc}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 编码XML中的特殊字符
+        /// </summary>
+        public static string EncodeXmlSpecialChars(string input) {
+            string encodeXml = AppSettings.Configuration["ERP:EncodeXml"];
+            if(encodeXml == "0")
+                return input;
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // 替换XML中不允许的特殊字符
+            return input
+                .Replace("&", "&amp;")   // & → &amp;
+                .Replace("<", "&lt;")    // < → &lt;
+                .Replace(">", "&gt;")    // > → &gt;
+                .Replace("\"", "&quot;") // " → &quot;
+                .Replace("'", "&apos;"); // ' → &apos;
+        }
 
         private List<LotNoticeResultRequestHMD> GetQmsLotNoticeResultRequest() {
             var sql = @"SELECT TOP 100 
