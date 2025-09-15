@@ -240,5 +240,30 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
         }
 
         #endregion
+
+        #region 收料检验结果回传ERP
+        /// <summary>
+        /// 收料检验结果回传ERP
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("UpdateReceiveInspectResultHMD")]
+        public async Task<IActionResult> PostLotNoticeSync() {
+            try {
+                await _hmdService.UpdateReceiveInspectResult();
+                return Ok(new ApiResponse {
+                    Success = true,
+                    Message = $"调用成功！"
+                });
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "调用 ERP 接口异常");
+
+                return StatusCode(500, new ApiResponse {
+                    Success = false,
+                    Message = $"系统异常：{ex.ToString()}"
+                });
+            }
+        }
+        #endregion
     }
 }

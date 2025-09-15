@@ -31,6 +31,8 @@ using Meiam.System.Core;
 using Oracle.ManagedDataAccess.Client;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.IO;
+using System.Xml;
+using System.ServiceModel;
 
 namespace Meiam.System.Interfaces
 {
@@ -1463,5 +1465,130 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         }
         #endregion
 
+        #region 回调方法
+        public async Task UpdateReceiveInspectResult() {
+            var requestData = GetQmsLotNoticeResultRequest();
+            if (requestData != null) {
+                foreach (var item in requestData) {
+                    string requestXml = $@"<?xml version='1.0' encoding='utf - 8'?>
+<Request>
+    <Access>
+        <Authentication user = 'tiptop' password = 'tiptop'/>
+        <Connection application = 'QMS' source = '10.99.80.40'/>  --QMS的IP
+        <Organization name = 'SZHMD/>           --不同的营运据点 SZHMD/HYHMD/...
+        <Locale language = 'zh_CN'/>
+    </Access>
+    <RequestContent>
+        <Parameter />
+        <Document>
+            <RecordSet id = '1' >
+                <Master name = 'giheader' >
+                    <Record>
+                        <Field name = 'rvb01' value = '{item.ERP_ARRIVEDID}'/>           --收货单号
+                        <Field name = 'rvb02' value = '{item.ID}'/>      --收货项次
+                        <Field name = 'rvb05' value = '{item.ITEMID}'/>       --料号
+                        <Field name = 'rvb33' value = '{item.LOT_QTY}'/>       --允收数量
+                        <Field name = 'rvb40' value = '{item.IQCDate}'/>      --检验日期
+                        <Field name = 'rvb41' value = '{item.Result}'/>            --检验结果：1.合格 2.验退  3.特采
+                        <Field name = 'rvbud06' value = '{item.INSPECT_IQCCODE}'/>         --QMS检验单号
+                    </Record>
+                </Master>
+          </RecordSet>
+        </Document>
+    </RequestContent>
+</Request>";
+                    string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
+                    var newEndpointAddress = new EndpointAddress(wsUrl);
+                    using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
+                        var result = await client.UpdateIqcAsync(requestXml);
+                        string responseXml = result.response;
+
+                        // 解析结果：基于QMS响应XML结构（Execution+Parameter）
+                        XmlDocument xmlDoc = new XmlDocument();
+                        // 1. 加载响应XML（处理XML格式错误）
+                        xmlDoc.LoadXml(responseXml);
+                        Console.WriteLine("响应XML加载成功，开始解析...");
+
+                        // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
+                        XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
+                        if (statusNode == null) {
+                            throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
+                        }
+
+                        // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
+                        string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
+                        string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
+                        string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
+                        bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
+
+                        // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
+                        XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
+                        string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
+                        string paramDesc = "无说明";      // Parameter段的执行结果说明
+
+                        if (paramRecordNode != null) {
+                            // 提取rvu01（ERP入库单号）
+                            XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
+                            if (rvu01Node != null) {
+                                erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
+                            }
+
+                            // 提取Parameter段的description
+                            XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
+                            if (descNode != null) {
+                                paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
+                            }
+                        }
+                        else {
+                            _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
+                        }
+
+                        // 4. 输出解析结果
+                        _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
+                        _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
+                        _logger.LogInformation($"   - 状态码（code）：{statusCode}");
+                        _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
+                        _logger.LogInformation($"   - 处理描述：{statusDesc}");
+                        _logger.LogInformation($"2. ERP业务结果：");
+                        _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
+                        _logger.LogInformation($"   - 结果说明：{paramDesc}");
+                        _logger.LogInformation("===========================\n");
+
+                        // 5. 业务逻辑分支（根据成功/失败执行后续操作）
+                        if (isSuccess) {
+                            CallBackQmsLotNoticeResult(item);
+                            _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
+                        }
+                        else {
+                            _logger.LogInformation($"执行失败：入库/验退单创建失败，错误信息：{statusDesc}");
+                        }
+                    }
+                }
+            }
+         }
+
+        private List<LotNoticeResultRequestHMD> GetQmsLotNoticeResultRequest() {
+            var sql = @"SELECT TOP 100 
+                            KEEID AS ID,
+                            ITEMID,
+                            APPLY_DATE AS IQCDate,
+                            ERP_ARRIVEDID, 
+                            LOT_QTY,
+                            INSPECT_IQCCODE,
+                            CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN '合格' ELSE '不合格' END AS Result
+                        FROM INSPECT_IQC
+                        WHERE (ISSY <> '1' OR ISSY IS NULL) 
+                            AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+                        ORDER BY INSPECT_IQCCREATEDATE DESC;";
+
+            var list = Db.Ado.SqlQuery<LotNoticeResultRequestHMD>(sql);
+            return list;
+        }
+
+        private void CallBackQmsLotNoticeResult(LotNoticeResultRequestHMD request) {
+            var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' and INSPECT_IQCCODE='{1}' ", request.ID, request.INSPECT_IQCCODE);
+            Db.Ado.ExecuteCommand(sql);
+        }
+        #endregion
     }
 }

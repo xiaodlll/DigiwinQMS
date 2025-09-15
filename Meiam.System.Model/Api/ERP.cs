@@ -525,4 +525,25 @@ namespace Meiam.System.Model
         /// </summary>
         public int? FRefuseQty { get; set; }
     }
+
+    /// <summary>
+    /// 收料检验结果回传ERP
+    /// </summary>
+    public class LotNoticeResultRequestHMD {
+        public string ERP_ARRIVEDID { get; set; }
+
+        public string ID { get; set; }
+
+        public string ITEMID { get; set; }
+        
+        /// <summary>
+        /// 检验单号
+        /// </summary>
+        public string INSPECT_IQCCODE { get; set; }
+        public string LOT_QTY { get; set; }
+
+        public string IQCDate { get; set; }
+
+        public string Result { get; set; }
+    }
 }

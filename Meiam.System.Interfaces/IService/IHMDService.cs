@@ -59,5 +59,7 @@ namespace Meiam.System.Interfaces
         /// 获取上次同步时间
         /// </summary>
         string GetLastSyncTime(string tableName, string timeFieldName);
+
+        Task UpdateReceiveInspectResult();
     }
 }
