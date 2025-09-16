@@ -260,7 +260,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
                 return StatusCode(500, new ApiResponse {
                     Success = false,
-                    Message = $"系统异常：{ex.ToString()}"
+                    Message = $"调用 ERP 接口异常：{ex.Message}"
                 });
             }
         }
@@ -283,7 +283,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
                 return StatusCode(500, new ApiResponse {
                     Success = false,
-                    Message = $"系统异常：{ex.ToString()}"
+                    Message = $"调用 ERP 接口异常：{ex.Message}"
                 });
             }
         }

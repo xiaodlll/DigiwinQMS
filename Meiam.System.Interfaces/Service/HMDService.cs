@@ -1472,12 +1472,12 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             var requestData = GetQmsLotNoticeResultRequest();
             if (requestData != null) {
                 foreach (var item in requestData) {
-                    string requestXml = $@"<?xml version='1.0' encoding='utf - 8'?>
+                    string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
 <Request>
     <Access>
         <Authentication user = 'tiptop' password = 'tiptop'/>
-        <Connection application = 'QMS' source = '10.99.80.40'/>  --QMS的IP
-        <Organization name = 'SZHMD/>           --不同的营运据点 SZHMD/HYHMD/...
+        <Connection application = 'QMS' source = '10.99.80.40'/>
+        <Organization name = 'SZHMD'/>
         <Locale language = 'zh_CN'/>
     </Access>
     <RequestContent>
@@ -1486,13 +1486,13 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             <RecordSet id = '1' >
                 <Master name = 'giheader' >
                     <Record>
-                        <Field name = 'rvb01' value = '{item.ERP_ARRIVEDID}'/>           --收货单号
-                        <Field name = 'rvb02' value = '{item.ID}'/>      --收货项次
-                        <Field name = 'rvb05' value = '{item.ITEMID}'/>       --料号
-                        <Field name = 'rvb33' value = '{item.LOT_QTY}'/>       --允收数量
-                        <Field name = 'rvb40' value = '{item.IQCDate}'/>      --检验日期
-                        <Field name = 'rvb41' value = '{item.Result}'/>            --检验结果：1.合格 2.验退  3.特采
-                        <Field name = 'rvbud06' value = '{item.INSPECT_IQCCODE}'/>         --QMS检验单号
+                        <Field name = 'rvb01' value = '{item.ERP_ARRIVEDID}'/>
+                        <Field name = 'rvb02' value = '{item.ID}'/>
+                        <Field name = 'rvb05' value = '{item.ITEMID}'/>
+                        <Field name = 'rvb33' value = '{item.QTY}'/>
+                        <Field name = 'rvb40' value = '{item.IQCDate}'/>
+                        <Field name = 'rvb41' value = '{item.Result}'/>
+                        <Field name = 'rvbud06' value = '{item.INSPECT_IQCCODE}'/>
                     </Record>
                 </Master>
           </RecordSet>
@@ -1566,7 +1566,8 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                             _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
                         }
                         else {
-                            _logger.LogInformation($"执行失败：入库/验退单创建失败，错误信息：{statusDesc}");
+                            _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
+                            throw new Exception($"{item.INSPECT_IQCCODE}：{statusDesc}");
                         }
                     }
                 }
@@ -1640,7 +1641,8 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                     _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
                 }
                 else {
-                    _logger.LogInformation($"执行失败：入库/验退单创建失败，错误信息：{statusDesc}");
+                    _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
+                    throw new Exception($"{statusDesc}");
                 }
             }
         }
@@ -1650,7 +1652,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         /// </summary>
         public static string EncodeXmlSpecialChars(string input) {
             string encodeXml = AppSettings.Configuration["ERP:EncodeXml"];
-            if(encodeXml == "0")
+            if(encodeXml == null || encodeXml == "0")
                 return input;
             if (string.IsNullOrEmpty(input))
                 return input;
@@ -1668,11 +1670,12 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             var sql = @"SELECT TOP 100 
                             KEEID AS ID,
                             ITEMID,
-                            APPLY_DATE AS IQCDate,
+                            INSPECT_IQCNAME AS IQCDate,
                             ERP_ARRIVEDID, 
-                            LOT_QTY,
+                            FQC_CNT AS QTY,
                             INSPECT_IQCCODE,
-                            CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN '合格' ELSE '不合格' END AS Result
+                            CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006') THEN '1'
+                           WHEN OQC_STATE ='OQC_STATE_008' THEN '3' ELSE '2' END AS Result
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
                             AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')

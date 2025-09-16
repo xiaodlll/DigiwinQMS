@@ -540,7 +540,7 @@ namespace Meiam.System.Model
         /// 检验单号
         /// </summary>
         public string INSPECT_IQCCODE { get; set; }
-        public string LOT_QTY { get; set; }
+        public string QTY { get; set; }
 
         public string IQCDate { get; set; }
 
