@@ -3358,12 +3358,13 @@ ORDER BY
             string GROUPBYNAME_C = drVLOOK["GROUPBYNAME_C"].ToString();
             string FIX_FILED = drVLOOK["FIX_FILED"].ToString();
 
-            DataTable dtCOLUM002ID = Db.Ado.GetDataTable($@"select STRSQL,FIX_FILED from COLUM002_COC where COLUM002ID='{COLUM002ID}'");
+            DataTable dtCOLUM002ID = Db.Ado.GetDataTable($@"select STRSQL,FIX_FILED,COLUM0B03 from COLUM002_COC where COLUM002ID='{COLUM002ID}'");
             if (dtCOLUM002ID.Rows.Count == 0) {
                 throw new Exception($"COLUM002ID[{COLUM002ID}]在数据库COLUM002_COC中找不到!");
             }
             string STRSQL = dtCOLUM002ID.Rows[0]["STRSQL"].ToString().Replace("@u","1");
             string COULM002_FIX_FILED = dtCOLUM002ID.Rows[0]["FIX_FILED"].ToString();
+            string COULM002_ORDER = dtCOLUM002ID.Rows[0]["COLUM0B03"].ToString();
             //加上where条件
             if (FIX_FILED == "1") {
                 STRSQL += " AND " + COULM002_FIX_FILED + " IN (" + GetSqlInString(filterValues) + ")";
@@ -3382,7 +3383,9 @@ ORDER BY
                 }
             }
             //加上order条件
-            STRSQL += " ORDER BY COLUM0B03,COLUM002_COCID";
+            if (!string.IsNullOrEmpty(COULM002_ORDER)) {
+                STRSQL += " ORDER BY " + COULM002_ORDER;
+            }
 
             //执行sql获取原始数据源
             DataTable dtCOLUM002Source = Db.Ado.GetDataTable(STRSQL);
