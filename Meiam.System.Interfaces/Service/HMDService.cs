@@ -577,7 +577,7 @@ namespace Meiam.System.Interfaces
             try {
                 //更新INSPECT_PROGRESSNAME
                 foreach (var item in input.ROSHITEMLIST) {
-                    string sql = @$"update INSPECT_PROGRESS set INSPECT_RESULT='{item.INSPECT_RESULT}' where INSPECT_PROGRESSNAME='{item.INSPECT_PROGRESSNAME}'
+                    string sql = @$"update INSPECT_PROGRESS set INSPECT_RESULT='{item.INSPECT_RESULT}',A1='{item.A1}' where INSPECT_PROGRESSNAME='{item.INSPECT_PROGRESSNAME}'
 and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed169c2d027'";
                     int c = Db.Ado.ExecuteCommand(sql);
                     if (c == 0) {

@@ -714,6 +714,7 @@ namespace Meiam.System.Model.Dto {
     public class HMDRoshDataItemDto {
 
         public string INSPECT_PROGRESSNAME { get; set; }
+        public string A1 { get; set; }
         public string INSPECT_RESULT { get; set; }
     }
 
