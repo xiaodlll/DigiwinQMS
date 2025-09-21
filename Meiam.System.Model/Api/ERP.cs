@@ -545,5 +545,6 @@ namespace Meiam.System.Model
         public string IQCDate { get; set; }
 
         public string Result { get; set; }
+        public string SUPPLOTNO { get; set; }
     }
 }

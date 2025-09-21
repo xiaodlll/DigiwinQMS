@@ -1472,7 +1472,36 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             var requestData = GetQmsLotNoticeResultRequest();
             if (requestData != null) {
                 foreach (var item in requestData) {
-                    string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
+                    //获取全部ORACLE数据
+                    // 从Oracle视图查询增量数据
+                    var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
+                        $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
+                        $"FROM qms_rc_view " +
+                        $"WHERE rvb05 = '{item.ITEMID}' AND rvbud02 = '{item.SUPPLOTNO}'");
+                    if (oracleData.Any()) {
+                        // 转换为目标实体
+                        var entities = oracleData.Select(x => new erp_rc {
+                            KEEID = x.RVB02 != null && !Convert.IsDBNull(x.RVB02) ? x.RVB02.ToString() : null,
+                            ERP_ARRIVEDID = x.RVA01,
+                            ITEMID = x.RVB05,
+                            ITEMNAME = x.RVB051,
+                            LOT_QTY = x.RVB07 == null || Convert.IsDBNull(x.RVB07) ? 0 : decimal.Parse(x.RVB07.ToString()),
+                            APPLY_DATE = x.RVA06 != null && !Convert.IsDBNull(x.RVA06) ? x.RVA06.ToString() : null,
+                            MODEL_SPEC = x.IMA021,
+                            LOTNO = x.RVB38,
+                            SUPPLOTNO = x.RVBUD02,
+                            LENGTH = x.RVBUD07 == null || Convert.IsDBNull(x.RVBUD07) ? 0 : decimal.Parse(x.RVBUD07.ToString()),
+                            WIDTH = x.RVBUD01 == null || Convert.IsDBNull(x.RVBUD01) ? 0 : decimal.Parse(x.RVBUD01.ToString()),
+                            INUM = x.RVBUD08 == null || Convert.IsDBNull(x.RVBUD08) ? 0 : decimal.Parse(x.RVBUD08.ToString()),
+                            PRO_DATE = x.RVBUD13 != null && !Convert.IsDBNull(x.RVBUD13) ? x.RVBUD13.ToString() : null,
+                            QUA_DATE = x.RVBUD14 != null && !Convert.IsDBNull(x.RVBUD14) ? x.RVBUD14.ToString() : null,
+                            SUPPNAME = x.PMC03,
+                            SUPPID = x.RVA05,
+                            TS = ((DateTime)x.RVADATE).ToString("yyyy-MM-dd HH:mm:ss")
+                        });
+
+                        foreach (var entity in entities) {
+                            string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
 <Request>
     <Access>
         <Authentication user = 'tiptop' password = 'tiptop'/>
@@ -1486,10 +1515,10 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             <RecordSet id = '1' >
                 <Master name = 'giheader' >
                     <Record>
-                        <Field name = 'rvb01' value = '{item.ERP_ARRIVEDID}'/>
-                        <Field name = 'rvb02' value = '{item.ID}'/>
+                        <Field name = 'rvb01' value = '{entity.ERP_ARRIVEDID}'/>
+                        <Field name = 'rvb02' value = '{entity.KEEID}'/>
                         <Field name = 'rvb05' value = '{item.ITEMID}'/>
-                        <Field name = 'rvb33' value = '{item.QTY}'/>
+                        <Field name = 'rvb33' value = '{(item.Result=="验退"?0:entity.LOT_QTY)}'/>
                         <Field name = 'rvb40' value = '{item.IQCDate}'/>
                         <Field name = 'rvb41' value = '{item.Result}'/>
                         <Field name = 'rvbud06' value = '{item.INSPECT_IQCCODE}'/>
@@ -1499,75 +1528,77 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         </Document>
     </RequestContent>
 </Request>";
-                    requestXml = requestXml.Replace("'","\"");
-                    string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
-                    var newEndpointAddress = new EndpointAddress(wsUrl);
-                    _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
-                    using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
-                        string encodedValue = EncodeXmlSpecialChars(requestXml);
-                        var result = await client.UpdateIqcAsync(encodedValue);
-                        string responseXml = result.response;
-                        _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
+                            requestXml = requestXml.Replace("'", "\"");
+                            string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
+                            var newEndpointAddress = new EndpointAddress(wsUrl);
+                            _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
+                            using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
+                                string encodedValue = EncodeXmlSpecialChars(requestXml);
+                                var result = await client.UpdateIqcAsync(encodedValue);
+                                string responseXml = result.response;
+                                _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
 
-                        // 解析结果：基于QMS响应XML结构（Execution+Parameter）
-                        XmlDocument xmlDoc = new XmlDocument();
-                        // 1. 加载响应XML（处理XML格式错误）
-                        xmlDoc.LoadXml(responseXml);
-                        Console.WriteLine("响应XML加载成功，开始解析...");
+                                // 解析结果：基于QMS响应XML结构（Execution+Parameter）
+                                XmlDocument xmlDoc = new XmlDocument();
+                                // 1. 加载响应XML（处理XML格式错误）
+                                xmlDoc.LoadXml(responseXml);
+                                Console.WriteLine("响应XML加载成功，开始解析...");
 
-                        // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
-                        XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
-                        if (statusNode == null) {
-                            throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
-                        }
+                                // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
+                                XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
+                                if (statusNode == null) {
+                                    throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
+                                }
 
-                        // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
-                        string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
-                        string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
-                        string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
-                        bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
+                                // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
+                                string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
+                                string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
+                                string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
+                                bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
 
-                        // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
-                        XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
-                        string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
-                        string paramDesc = "无说明";      // Parameter段的执行结果说明
+                                // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
+                                XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
+                                string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
+                                string paramDesc = "无说明";      // Parameter段的执行结果说明
 
-                        if (paramRecordNode != null) {
-                            // 提取rvu01（ERP入库单号）
-                            XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
-                            if (rvu01Node != null) {
-                                erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
+                                if (paramRecordNode != null) {
+                                    // 提取rvu01（ERP入库单号）
+                                    XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
+                                    if (rvu01Node != null) {
+                                        erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
+                                    }
+
+                                    // 提取Parameter段的description
+                                    XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
+                                    if (descNode != null) {
+                                        paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
+                                    }
+                                }
+                                else {
+                                    _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
+                                }
+
+                                // 4. 输出解析结果
+                                _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
+                                _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
+                                _logger.LogInformation($"   - 状态码（code）：{statusCode}");
+                                _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
+                                _logger.LogInformation($"   - 处理描述：{statusDesc}");
+                                _logger.LogInformation($"2. ERP业务结果：");
+                                _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
+                                _logger.LogInformation($"   - 结果说明：{paramDesc}");
+                                _logger.LogInformation("===========================\n");
+
+                                // 5. 业务逻辑分支（根据成功/失败执行后续操作）
+                                if (isSuccess) {
+                                    CallBackQmsLotNoticeResult(item);
+                                    _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
+                                }
+                                else {
+                                    _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
+                                    throw new Exception($"{item.INSPECT_IQCCODE}：{statusDesc}");
+                                }
                             }
-
-                            // 提取Parameter段的description
-                            XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
-                            if (descNode != null) {
-                                paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
-                            }
-                        }
-                        else {
-                            _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
-                        }
-
-                        // 4. 输出解析结果
-                        _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
-                        _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
-                        _logger.LogInformation($"   - 状态码（code）：{statusCode}");
-                        _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
-                        _logger.LogInformation($"   - 处理描述：{statusDesc}");
-                        _logger.LogInformation($"2. ERP业务结果：");
-                        _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
-                        _logger.LogInformation($"   - 结果说明：{paramDesc}");
-                        _logger.LogInformation("===========================\n");
-
-                        // 5. 业务逻辑分支（根据成功/失败执行后续操作）
-                        if (isSuccess) {
-                            CallBackQmsLotNoticeResult(item);
-                            _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
-                        }
-                        else {
-                            _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
-                            throw new Exception($"{item.INSPECT_IQCCODE}：{statusDesc}");
                         }
                     }
                 }
@@ -1667,19 +1698,33 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         }
 
         private List<LotNoticeResultRequestHMD> GetQmsLotNoticeResultRequest() {
-            var sql = @"SELECT TOP 100 
-                            KEEID AS ID,
-                            ITEMID,
-                            INSPECT_IQCNAME AS IQCDate,
-                            ERP_ARRIVEDID, 
-                            FQC_CNT AS QTY,
-                            INSPECT_IQCCODE,
-                            CASE WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006') THEN '1'
-                           WHEN OQC_STATE ='OQC_STATE_008' THEN '3' ELSE '2' END AS Result
-                        FROM INSPECT_IQC
-                        WHERE (ISSY <> '1' OR ISSY IS NULL) 
-                            AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
-                        ORDER BY INSPECT_IQCCREATEDATE DESC;";
+            var sql = @" SELECT TOP 100 
+    KEEID AS ID,
+    ITEMID,
+    SUPPLOTNO,
+    INSPECT_IQCNAME AS IQCDate,
+    ERP_ARRIVEDID, 
+    FQC_CNT AS QTY,
+    INSPECT_IQCCODE,
+    -- 优先使用SQM_STATE判断，当SQM_STATE为NULL时再使用OQC_STATE
+    CASE 
+        WHEN SQM_STATE IN ('OQC_STATE_005', 'OQC_STATE_006') THEN '合格'
+        WHEN SQM_STATE = 'OQC_STATE_008' THEN '特采'
+        WHEN SQM_STATE IS NULL THEN 
+            CASE 
+                WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006') THEN '合格'
+                WHEN OQC_STATE = 'OQC_STATE_008' THEN '特采'
+                ELSE '验退'
+            END
+        ELSE '验退' 
+    END AS Result
+FROM INSPECT_IQC
+WHERE (ISSY <> '1' OR ISSY IS NULL) 
+    AND (
+        SQM_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+        OR OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+    )
+ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestHMD>(sql);
             return list;
