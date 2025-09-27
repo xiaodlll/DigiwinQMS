@@ -622,165 +622,113 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         }
 
         /// <summary>
-        /// 批量保存检验进度数据
+        /// 批量保存检验进度数据（逐条保存）
         /// </summary>
         /// <param name="input">检验进度实体数组</param>
         /// <returns>是否保存成功</returns>
-        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input)
-        {
+        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input) {
             if (input == null || input.Count == 0)
                 return;
 
-            // 每个实体需要的基础参数数量：18个基础字段 + 64个A字段 = 82个
-            // 但通过复用相同值的参数，实际数量会减少
-            int parametersPerItem = 82;
-            int maxBatchSize = 2100 / parametersPerItem; // 仍保持分批处理基础逻辑
-
-            for (int i = 0; i < input.Count; i += maxBatchSize)
-            {
-                var batchItems = input.Skip(i).Take(maxBatchSize).ToList();
-                if (batchItems.Count == 0)
-                    continue;
-
-                var (sql, parameters) = BuildBatchSqlWithReusedParameters(batchItems);
-                await Db.Ado.ExecuteCommandAsync(sql, parameters.ToArray());
+            foreach (var item in input) {
+                await SaveSingleInspectProgress(item);
             }
         }
 
-        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems)
-        {
+        /// <summary>
+        /// 保存单条检验进度数据
+        /// </summary>
+        /// <param name="item">检验进度实体</param>
+        /// <returns>是否保存成功</returns>
+        private async Task SaveSingleInspectProgress(INSPECT_PROGRESSDto item) {
+            if (item == null)
+                return;
+
+            var (sql, parameters) = BuildSingleInsertSql(item);
+            await Db.Ado.ExecuteCommandAsync(sql, parameters.ToArray());
+        }
+
+        /// <summary>
+        /// 构建单条插入SQL语句
+        /// </summary>
+        /// <param name="item">检验进度实体</param>
+        /// <returns>SQL语句和参数</returns>
+        private (string Sql, List<SugarParameter> Parameters) BuildSingleInsertSql(INSPECT_PROGRESSDto item) {
             var sqlBuilder = new StringBuilder();
+            var parameters = new List<SugarParameter>();
+
+            // 构建INSERT语句
             sqlBuilder.Append("INSERT INTO INSPECT_PROGRESS (");
-            sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID,INSPECT02CODE, VER, OID, COC_ATTR, ");
+            sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID, INSPECT02CODE, VER, OID, COC_ATTR, ");
             sqlBuilder.Append("INSPECT_PROGRESSNAME, INSPECT_DEV, COUNTTYPE, INSPECT_PLANID, ");
             sqlBuilder.Append("INSPECT_CNT, STD_VALUE, MAX_VALUE, MIN_VALUE, UP_VALUE, DOWN_VALUE, ");
 
             // 拼接A1-A64样本字段
-            for (int i = 1; i <= 64; i++)
-            {
-                sqlBuilder.Append($"A{i}, ");
+            for (int i = 1; i <= 64; i++) {
+                sqlBuilder.Append($"A{i}");
+                if (i < 64) sqlBuilder.Append(", ");
             }
 
-            sqlBuilder.Append("INSPECT_PROGRESSCREATEUSER, INSPECT_PROGRESSCREATEDATE, TENID");
-            sqlBuilder.Append(") VALUES ");
+            sqlBuilder.Append(", INSPECT_PROGRESSCREATEUSER, INSPECT_PROGRESSCREATEDATE, TENID");
+            sqlBuilder.Append(") VALUES (");
 
-            var parameters = new List<SugarParameter>();
-            var parameterCache = new Dictionary<string, string>(); // 缓存值与参数名的映射
-            int paramIndex = 0;
+            // 添加参数
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PROGRESSID",
+                string.IsNullOrEmpty(item.INSPECT_PROGRESSID) ? Guid.NewGuid().ToString() : item.INSPECT_PROGRESSID);
 
-            foreach (var item in batchItems)
-            {
-                sqlBuilder.Append("(");
+            AddParameterWithValue(sqlBuilder, parameters, "DOC_CODE", item.DOC_CODE);
+            AddParameterWithValue(sqlBuilder, parameters, "ITEMID", item.ITEMID);
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT02CODE", item.INSPECT02CODE);
+            AddParameterWithValue(sqlBuilder, parameters, "VER", item.VER);
+            AddParameterWithValue(sqlBuilder, parameters, "OID", item.OID);
+            AddParameterWithValue(sqlBuilder, parameters, "COC_ATTR", item.COC_ATTR);
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PROGRESSNAME", item.INSPECT_PROGRESSNAME);
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_DEV", item.INSPECT_DEV);
+            AddParameterWithValue(sqlBuilder, parameters, "COUNTTYPE", item.COUNTTYPE);
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PLANID", item.INSPECT_PLANID);
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_CNT", item.INSPECT_CNT);
+            AddParameterWithValue(sqlBuilder, parameters, "STD_VALUE", item.STD_VALUE);
+            AddParameterWithValue(sqlBuilder, parameters, "MAX_VALUE", item.MAX_VALUE);
+            AddParameterWithValue(sqlBuilder, parameters, "MIN_VALUE", item.MIN_VALUE);
+            AddParameterWithValue(sqlBuilder, parameters, "UP_VALUE", item.UP_VALUE);
+            AddParameterWithValue(sqlBuilder, parameters, "DOWN_VALUE", item.DOWN_VALUE);
 
-                // 处理主键ID（通常唯一，难以复用）
-                paramIndex++;
-                var progressIdParamName = $"@INSPECT_PROGRESSID_{paramIndex}";
-                sqlBuilder.Append($"{progressIdParamName}, ");
-                parameters.Add(new SugarParameter(progressIdParamName,
-                    string.IsNullOrEmpty(item.INSPECT_PROGRESSID) ? Guid.NewGuid().ToString() : item.INSPECT_PROGRESSID));
-
-                // 处理可复用的字段 - 使用值作为键缓存参数名
-                sqlBuilder.Append(AddReusableParameter(
-                    "DOC_CODE", item.DOC_CODE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "ITEMID", item.ITEMID, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                   "INSPECT02CODE", item.INSPECT02CODE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "VER", item.VER, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "OID", item.OID, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "COC_ATTR", item.COC_ATTR, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "INSPECT_PROGRESSNAME", item.INSPECT_PROGRESSNAME, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "INSPECT_DEV", item.INSPECT_DEV, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "COUNTTYPE", item.COUNTTYPE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "INSPECT_PLANID", item.INSPECT_PLANID, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "INSPECT_CNT", item.INSPECT_CNT, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "STD_VALUE", item.STD_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "MAX_VALUE", item.MAX_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "MIN_VALUE", item.MIN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "UP_VALUE", item.UP_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                sqlBuilder.Append(AddReusableParameter(
-                    "DOWN_VALUE", item.DOWN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
-
-                // 处理A1-A64样本字段
-                for (int j = 1; j <= 64; j++)
-                {
-                    var propName = $"A{j}";
-                    var propValue = item.GetType().GetProperty(propName)?.GetValue(item);
-                    var paramKey = $"{propName}_{propValue}";
-
-                    sqlBuilder.Append(AddReusableParameter(
-                        propName, propValue, ref paramIndex, parameters, parameterCache) + (j < 64 ? ", " : ""));
-                }
-
-                // 处理创建用户和日期
-                sqlBuilder.Append(", " + AddReusableParameter(
-                    "INSPECT_PROGRESSCREATEUSER", item.INSPECT_PROGRESSCREATEUSER, ref paramIndex, parameters, parameterCache));
-
-                sqlBuilder.Append(", " + AddReusableParameter(
-                    "INSPECT_PROGRESSCREATEDATE", item.INSPECT_PROGRESSDATE, ref paramIndex, parameters, parameterCache));
-
-                sqlBuilder.Append(", " + AddReusableParameter(
-                    "TENID", item.TENID, ref paramIndex, parameters, parameterCache));
-
-                sqlBuilder.Append("),");
+            // 添加A1-A64字段参数
+            for (int i = 1; i <= 64; i++) {
+                var propName = $"A{i}";
+                var propValue = item.GetType().GetProperty(propName)?.GetValue(item);
+                AddParameterWithValue(sqlBuilder, parameters, propName, propValue);
             }
 
-            // 移除最后一个逗号
-            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',')
-            {
-                sqlBuilder.Length--;
-            }
+            // 添加创建信息参数
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PROGRESSCREATEUSER", item.INSPECT_PROGRESSCREATEUSER);
+            AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PROGRESSCREATEDATE", item.INSPECT_PROGRESSDATE);
+            AddParameterWithValue(sqlBuilder, parameters, "TENID", item.TENID, false); // 最后一个参数不需要逗号
+
+            sqlBuilder.Append(")");
 
             return (sqlBuilder.ToString(), parameters);
         }
 
-        // 复用参数的核心方法：相同值使用同一个参数
-        private string AddReusableParameter(string fieldName, object value, ref int paramIndex,
-            List<SugarParameter> parameters, Dictionary<string, string> parameterCache)
-        {
-            // 创建唯一键：字段名+值（处理null情况）
-            var cacheKey = $"{fieldName}_{(value ?? "NULL").ToString()}";
-
-            // 如果已有相同值的参数，直接返回已存在的参数名
-            if (parameterCache.TryGetValue(cacheKey, out var existingParamName))
-            {
-                return existingParamName;
+        /// <summary>
+        /// 添加参数值到SQL构建器和参数列表
+        /// </summary>
+        /// <param name="sqlBuilder">SQL构建器</param>
+        /// <param name="parameters">参数列表</param>
+        /// <param name="fieldName">字段名</param>
+        /// <param name="value">字段值</param>
+        /// <param name="addComma">是否添加逗号分隔符</param>
+        private void AddParameterWithValue(StringBuilder sqlBuilder, List<SugarParameter> parameters,
+            string fieldName, object value, bool addComma = true) {
+            // 生成参数名（使用字段名避免冲突）
+            var paramName = $"@{fieldName}";
+            sqlBuilder.Append(paramName);
+            if (addComma) {
+                sqlBuilder.Append(", ");
             }
 
-            // 否则创建新参数
-            paramIndex++;
-            var newParamName = $"@{fieldName}_{paramIndex}";
-            parameters.Add(new SugarParameter(newParamName, value ?? DBNull.Value));
-            parameterCache[cacheKey] = newParamName;
-
-            return newParamName;
+            // 添加参数
+            parameters.Add(new SugarParameter(paramName, value ?? DBNull.Value));
         }
 
         #endregion
@@ -856,10 +804,10 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                     foreach (var entity in entities)
                     {
                         //判断重复
-                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE ITEMID = '{entity.ITEMID}' AND SUPPLOTNO = '{entity.SUPPLOTNO}' ") > 0;
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{entity.KEEID}' AND ERP_ARRIVEDID= '{entity.ERP_ARRIVEDID}' ") > 0;
                         if (isExist)
                         {
-                            _logger.LogWarning($"收料通知单已存在。KEEID: {entity.KEEID}, ITEMID: {entity.ITEMID}, SUPPLOTNO: {entity.SUPPLOTNO}");
+                            _logger.LogWarning($"收料通知单已存在。KEEID: {entity.KEEID}, ERP_ARRIVEDID: {entity.ERP_ARRIVEDID}, ITEMID: {entity.ITEMID}, SUPPLOTNO: {entity.SUPPLOTNO}");
                             continue;
                         }
 
@@ -900,22 +848,20 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             string INSPECT_CODE = "";//检验单号
 
             // 处理SynTime为null的情况，取当天日期
-            string effectiveDate = SynTime ?? DateTime.Now.ToString("yyyy-MM-dd");
-
+            //string effectiveDate = SynTime ?? DateTime.Now.ToString("yyyy-MM-dd");
+            DateTime effectiveDate = DateTime.Now;
+            if (!string.IsNullOrEmpty(SynTime)) {
+                DateTime.TryParse(SynTime, out effectiveDate);
+            }
             const string sql = @"
-                DECLARE @INSPECT_CODE  	  NVARCHAR(200) 
-
                 --获得IQC检验单号
-                SELECT TOP 1 @INSPECT_CODE=CAST(CAST(dbo.getNumericValue(INSPECT_IQCCODE) AS DECIMAL)+1 AS CHAR)  FROM  INSPECT_IQC
-                WHERE  TENID='001' AND ISNULL(REPLACE(INSPECT_IQCCODE,'IQC_',''),'') like REPLACE(CONVERT(VARCHAR(10),TRY_CONVERT(DATETIME, @effectiveDate),120),'-','')+'%' 
-                ORDER BY INSPECT_IQCCODE DESC
-
-                IF(ISNULL(@INSPECT_CODE,'')='')
-                   SET @INSPECT_CODE ='IQC_'+REPLACE(CONVERT(VARCHAR(10),TRY_CONVERT(DATETIME, @effectiveDate),120),'-','')+'001'
-                ELSE 
-                   SET @INSPECT_CODE ='IQC_'+@INSPECT_CODE
-
-                SELECT @INSPECT_CODE AS INSPECT_CODE
+DECLARE @prefix VARCHAR(20) = 'IQC_' + CONVERT(VARCHAR(8), @effectiveDate, 112); -- 生成前缀
+DECLARE @maxNum INT;
+SELECT @maxNum = MAX(CAST(RIGHT(INSPECT_IQCCODE, LEN(INSPECT_IQCCODE) - LEN(@prefix)) AS INT))
+FROM INSPECT_IQC
+WHERE INSPECT_IQCCODE LIKE @prefix + '%';
+SET @maxNum = ISNULL(@maxNum, 0);
+SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_CODE;
                 ";
 
             // 执行 SQL 命令
@@ -1472,36 +1418,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             var requestData = GetQmsLotNoticeResultRequest();
             if (requestData != null) {
                 foreach (var item in requestData) {
-                    //获取全部ORACLE数据
-                    // 从Oracle视图查询增量数据
-                    var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                        $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
-                        $"FROM qms_rc_view " +
-                        $"WHERE rvb05 = '{item.ITEMID}' AND rvbud02 = '{item.SUPPLOTNO}'");
-                    if (oracleData.Any()) {
-                        // 转换为目标实体
-                        var entities = oracleData.Select(x => new erp_rc {
-                            KEEID = x.RVB02 != null && !Convert.IsDBNull(x.RVB02) ? x.RVB02.ToString() : null,
-                            ERP_ARRIVEDID = x.RVA01,
-                            ITEMID = x.RVB05,
-                            ITEMNAME = x.RVB051,
-                            LOT_QTY = x.RVB07 == null || Convert.IsDBNull(x.RVB07) ? 0 : decimal.Parse(x.RVB07.ToString()),
-                            APPLY_DATE = x.RVA06 != null && !Convert.IsDBNull(x.RVA06) ? x.RVA06.ToString() : null,
-                            MODEL_SPEC = x.IMA021,
-                            LOTNO = x.RVB38,
-                            SUPPLOTNO = x.RVBUD02,
-                            LENGTH = x.RVBUD07 == null || Convert.IsDBNull(x.RVBUD07) ? 0 : decimal.Parse(x.RVBUD07.ToString()),
-                            WIDTH = x.RVBUD01 == null || Convert.IsDBNull(x.RVBUD01) ? 0 : decimal.Parse(x.RVBUD01.ToString()),
-                            INUM = x.RVBUD08 == null || Convert.IsDBNull(x.RVBUD08) ? 0 : decimal.Parse(x.RVBUD08.ToString()),
-                            PRO_DATE = x.RVBUD13 != null && !Convert.IsDBNull(x.RVBUD13) ? x.RVBUD13.ToString() : null,
-                            QUA_DATE = x.RVBUD14 != null && !Convert.IsDBNull(x.RVBUD14) ? x.RVBUD14.ToString() : null,
-                            SUPPNAME = x.PMC03,
-                            SUPPID = x.RVA05,
-                            TS = ((DateTime)x.RVADATE).ToString("yyyy-MM-dd HH:mm:ss")
-                        });
-
-                        foreach (var entity in entities) {
-                            string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
+                    string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
 <Request>
     <Access>
         <Authentication user = 'tiptop' password = 'tiptop'/>
@@ -1515,10 +1432,10 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             <RecordSet id = '1' >
                 <Master name = 'giheader' >
                     <Record>
-                        <Field name = 'rvb01' value = '{entity.ERP_ARRIVEDID}'/>
-                        <Field name = 'rvb02' value = '{entity.KEEID}'/>
+                        <Field name = 'rvb01' value = '{item.ERP_ARRIVEDID}'/>
+                        <Field name = 'rvb02' value = '{item.ID}'/>
                         <Field name = 'rvb05' value = '{item.ITEMID}'/>
-                        <Field name = 'rvb33' value = '{(item.Result=="验退"?0:entity.LOT_QTY)}'/>
+                        <Field name = 'rvb33' value = '{(item.Result == "验退" ? 0 : item.QTY)}'/>
                         <Field name = 'rvb40' value = '{item.IQCDate}'/>
                         <Field name = 'rvb41' value = '{item.Result}'/>
                         <Field name = 'rvbud06' value = '{item.INSPECT_IQCCODE}'/>
@@ -1528,77 +1445,75 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
         </Document>
     </RequestContent>
 </Request>";
-                            requestXml = requestXml.Replace("'", "\"");
-                            string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
-                            var newEndpointAddress = new EndpointAddress(wsUrl);
-                            _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
-                            using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
-                                string encodedValue = EncodeXmlSpecialChars(requestXml);
-                                var result = await client.UpdateIqcAsync(encodedValue);
-                                string responseXml = result.response;
-                                _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
+                    requestXml = requestXml.Replace("'", "\"");
+                    string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
+                    var newEndpointAddress = new EndpointAddress(wsUrl);
+                    _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
+                    using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
+                        string encodedValue = EncodeXmlSpecialChars(requestXml);
+                        var result = await client.UpdateIqcAsync(encodedValue);
+                        string responseXml = result.response;
+                        _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
 
-                                // 解析结果：基于QMS响应XML结构（Execution+Parameter）
-                                XmlDocument xmlDoc = new XmlDocument();
-                                // 1. 加载响应XML（处理XML格式错误）
-                                xmlDoc.LoadXml(responseXml);
-                                Console.WriteLine("响应XML加载成功，开始解析...");
+                        // 解析结果：基于QMS响应XML结构（Execution+Parameter）
+                        XmlDocument xmlDoc = new XmlDocument();
+                        // 1. 加载响应XML（处理XML格式错误）
+                        xmlDoc.LoadXml(responseXml);
+                        Console.WriteLine("响应XML加载成功，开始解析...");
 
-                                // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
-                                XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
-                                if (statusNode == null) {
-                                    throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
-                                }
+                        // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
+                        XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
+                        if (statusNode == null) {
+                            throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
+                        }
 
-                                // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
-                                string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
-                                string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
-                                string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
-                                bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
+                        // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
+                        string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
+                        string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
+                        string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
+                        bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
 
-                                // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
-                                XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
-                                string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
-                                string paramDesc = "无说明";      // Parameter段的执行结果说明
+                        // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
+                        XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
+                        string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
+                        string paramDesc = "无说明";      // Parameter段的执行结果说明
 
-                                if (paramRecordNode != null) {
-                                    // 提取rvu01（ERP入库单号）
-                                    XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
-                                    if (rvu01Node != null) {
-                                        erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
-                                    }
-
-                                    // 提取Parameter段的description
-                                    XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
-                                    if (descNode != null) {
-                                        paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
-                                    }
-                                }
-                                else {
-                                    _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
-                                }
-
-                                // 4. 输出解析结果
-                                _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
-                                _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
-                                _logger.LogInformation($"   - 状态码（code）：{statusCode}");
-                                _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
-                                _logger.LogInformation($"   - 处理描述：{statusDesc}");
-                                _logger.LogInformation($"2. ERP业务结果：");
-                                _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
-                                _logger.LogInformation($"   - 结果说明：{paramDesc}");
-                                _logger.LogInformation("===========================\n");
-
-                                // 5. 业务逻辑分支（根据成功/失败执行后续操作）
-                                if (isSuccess) {
-                                    CallBackQmsLotNoticeResult(item);
-                                    _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
-                                }
-                                else {
-                                    _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
-                                    throw new Exception($"{item.INSPECT_IQCCODE}：{statusDesc}");
-                                }
+                        if (paramRecordNode != null) {
+                            // 提取rvu01（ERP入库单号）
+                            XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
+                            if (rvu01Node != null) {
+                                erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
                             }
+
+                            // 提取Parameter段的description
+                            XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
+                            if (descNode != null) {
+                                paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
+                            }
+                        }
+                        else {
+                            _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
+                        }
+
+                        // 4. 输出解析结果
+                        _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
+                        _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
+                        _logger.LogInformation($"   - 状态码（code）：{statusCode}");
+                        _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
+                        _logger.LogInformation($"   - 处理描述：{statusDesc}");
+                        _logger.LogInformation($"2. ERP业务结果：");
+                        _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
+                        _logger.LogInformation($"   - 结果说明：{paramDesc}");
+                        _logger.LogInformation("===========================\n");
+
+                        // 5. 业务逻辑分支（根据成功/失败执行后续操作）
+                        if (isSuccess) {
+                            CallBackQmsLotNoticeResult(item);
+                            _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
+                        }
+                        else {
+                            _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
+                            throw new Exception($"{item.INSPECT_IQCCODE}：{statusDesc}");
                         }
                     }
                 }
