@@ -513,17 +513,20 @@ namespace Meiam.System.Model
     public class LotNoticeResultRequestYNK
     {
         public string FID { get; set; }
+
+        public string ERP_ARRIVEDID{ get; set; }
+
         public string FEntryID { get; set; }
 
         /// <summary>
         /// 合格数
         /// </summary>
-        public int? FReceiveQty { get; set; }
+        public decimal? FReceiveQty { get; set; }
 
         /// <summary>
         /// 不合格数
         /// </summary>
-        public int? FRefuseQty { get; set; }
+        public decimal? FRefuseQty { get; set; }
     }
 
     /// <summary>

@@ -13,6 +13,7 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Meiam.System.Hostd.Controllers.Business
@@ -255,6 +256,32 @@ namespace Meiam.System.Hostd.Controllers.Business
                         }
                         else
                         {
+                            string requestJsonAudit = string.Empty;
+                            List<string> numbers = new List<string>();
+                            foreach (var entry in entries) {
+                                numbers.Add(entry.ERP_ARRIVEDID);
+                            }
+                            string erpApiAuditUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
+                            _logger.LogInformation(@$"请求金蝶ERP审核接口: FID: {fid}, 包含 {entries.Count} 个明细行");
+                            var erpRequestAuditData = new {
+                                formid = "PUR_ReceiveBill",
+                                data = new {
+                                    Numbers = numbers
+                                }
+                            };
+
+                            requestJsonAudit = JsonConvert.SerializeObject(erpRequestAuditData);
+                            _logger.LogInformation(@$"请求URL: {erpApiAuditUrl}");
+                            _logger.LogInformation(@$"请求数据: {requestJsonAudit}");
+                            // 使用带有SessionId的HTTP请求
+                            postResult = await HttpHelper.PostJsonWithSessionAsync(
+                                erpApiAuditUrl,
+                                requestJsonAudit,
+                                sessionId
+                            );
+
+                            _logger.LogInformation(@$"金蝶ERP审核接口响应 - FID: {fid}, 结果: {postResult}");
+
                             // 回传成功，更新所有相关明细行的状态
                             foreach (var entry in entries)
                             {

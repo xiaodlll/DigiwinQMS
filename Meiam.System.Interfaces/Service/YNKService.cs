@@ -384,8 +384,8 @@ namespace Meiam.System.Interfaces.Service
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
                                 ELSE '不合格'
                             END AS OQC_STATE,
-                            ISNULL(TRY_CAST(FQC_CNT AS INT), 0) AS FReceiveQty,       -- 不可转换时返回0
-                            ISNULL(TRY_CAST(FQC_NOT_CNT AS INT), 0) AS FRefuseQty     -- 不可转换时返回0
+                            ISNULL(TRY_CAST(FQC_CNT AS DECIMAL), 0) AS FReceiveQty,       -- 不可转换时返回0
+                            ISNULL(TRY_CAST(FQC_NOT_CNT AS DECIMAL), 0) AS FRefuseQty     -- 不可转换时返回0
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
                             AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010')
