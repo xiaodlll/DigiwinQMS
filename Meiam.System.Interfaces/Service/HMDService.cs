@@ -34,6 +34,9 @@ using System.IO;
 using System.Xml;
 using System.ServiceModel;
 using TiptopService;
+using System.Text.Json;
+using iText.StyledXmlParser.Jsoup.Nodes;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace Meiam.System.Interfaces
 {
@@ -828,13 +831,14 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                         }
                     }
 
+                    var syncConfig = _syncConfigHandler.GetConfig();
+                    syncConfig.RCDate = entities.Max(a => a.TS).ToString();
                     _logger.LogInformation($"成功同步{entities.Count()}条QMS_RC_VIEW数据");
-                }
+  }
                 else
                 {
                     _logger.LogInformation("没有需要同步的QMS_RC_VIEW数据");
                 }
-
             }
             catch (Exception ex)
             {
@@ -1048,6 +1052,10 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                             }
                         }
                     }
+
+                    var syncConfig = _syncConfigHandler.GetConfig();
+                    syncConfig.WRDate = groupedData.Max(a => a.TS).ToString();
+
                     _logger.LogInformation($"同步完成: 新增{insertCount}条, 更新{updateCount}条QMS_WR_VIEW数据");
                 }
                 else
@@ -1388,10 +1396,20 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
         #endregion
 
         #region 获取上次同步时间
+        private readonly SyncConfigHandler _syncConfigHandler = new SyncConfigHandler();
         public string GetLastSyncTime(string tableName, string timeFieldName)
         {
             try
             {
+                var syncConfig = _syncConfigHandler.GetConfig();
+
+                if (tableName == "INSPECT_IQC") {
+                    return syncConfig.RCDate;
+                }
+                if (tableName == "INSPECT_SI") {
+                    return syncConfig.WRDate;
+                }
+
                 string sql = $"SELECT CONVERT(VARCHAR(20), MAX({timeFieldName}), 120) AS LastTimeStr FROM {tableName}";
 
                 //string sql = $"SELECT CONVERT(VARCHAR(20), MAX(INSPECT_IQCCREATEDATE), 120) AS LastTimeStr FROM {tableName}";
@@ -1410,6 +1428,95 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                 return "2000-01-01 00:00:00";// 默认最小时间
             }
 
+        }
+
+        public class SyncConfig {
+            public string RCDate { get; set; }
+            public string WRDate { get; set; }
+        }
+
+        public class SyncConfigHandler {
+            // 定义默认日期变量
+            private const string DEFAULT_DATE = "2025-10-05";
+            private readonly string _configFilePath;
+
+            public SyncConfigHandler() {
+                // 设置配置文件路径
+                _configFilePath = Path.Combine(AppContext.BaseDirectory, "SyncConfig.json");
+            }
+
+            // 获取配置，如果文件不存在则创建并返回默认值
+            public SyncConfig GetConfig() {
+                // 检查文件是否存在
+                if (!File.Exists(_configFilePath)) {
+                    // 创建默认配置，使用默认日期变量
+                    var defaultConfig = new SyncConfig {
+                        RCDate = DEFAULT_DATE,
+                        WRDate = DEFAULT_DATE
+                    };
+
+                    // 使用JSONConvert序列化并保存到文件
+                    string json = JsonConvert.SerializeObject(defaultConfig, Newtonsoft.Json.Formatting.Indented);
+                    File.WriteAllText(_configFilePath, json);
+
+                    return defaultConfig;
+                }
+
+                // 读取现有配置文件
+                try {
+                    string json = File.ReadAllText(_configFilePath);
+                    var config = JsonConvert.DeserializeObject<SyncConfig>(json);
+
+                    // 确保配置项存在，不存在则设置默认值
+                    if (config == null) {
+                        return new SyncConfig {
+                            RCDate = DEFAULT_DATE,
+                            WRDate = DEFAULT_DATE
+                        };
+                    }
+
+                    // 检查是否有缺失的字段，如有则补充默认值
+                    if (string.IsNullOrEmpty(config.RCDate))
+                        config.RCDate = DEFAULT_DATE;
+
+                    if (string.IsNullOrEmpty(config.WRDate))
+                        config.WRDate = DEFAULT_DATE;
+
+                    return config;
+                }
+                catch (Exception) {
+                    // 处理其他错误
+                    return new SyncConfig {
+                        RCDate = DEFAULT_DATE,
+                        WRDate = DEFAULT_DATE
+                    };
+                }
+            }
+
+            public void SetConfig(SyncConfig config) {
+                if (config == null) {
+                    throw new ArgumentNullException(nameof(config), "配置对象不能为null");
+                }
+
+                try {
+                    // 确保日期字段不为空
+                    if (string.IsNullOrEmpty(config.RCDate))
+                        config.RCDate = DEFAULT_DATE;
+
+                    if (string.IsNullOrEmpty(config.WRDate))
+                        config.WRDate = DEFAULT_DATE;
+
+                    // 序列化并写入文件
+                    string json = JsonConvert.SerializeObject(config, Newtonsoft.Json.Formatting.Indented);
+                    File.WriteAllText(_configFilePath, json);
+                }
+                catch (IOException ex) {
+                    throw new InvalidOperationException("写入配置文件失败", ex);
+                }
+                catch (Exception ex) {
+                    throw new InvalidOperationException("更新配置时发生错误", ex);
+                }
+            }
         }
         #endregion
 

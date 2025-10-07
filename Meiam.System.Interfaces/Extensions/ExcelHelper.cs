@@ -86,7 +86,7 @@ public class ExcelHelper : IDisposable {
         return format.Contains("0") || format.Contains("#") || format.Contains("?");
     }
 
-    public void AddAttachsToCell(string sheetName, string cellAddress, string[] filePaths) {
+    public void AddAttachsToCell(string sheetName, string cellAddress, string[] filePaths, bool attMode = false) {
         // 定义完整路径数组并初始化
         string[] fullFilePaths = new string[filePaths.Length];
 
@@ -108,7 +108,7 @@ public class ExcelHelper : IDisposable {
 
         foreach (var filePath in fullFilePaths.Where(File.Exists)) {
             try {
-                var (embedObject, isImage, width) = CreateEmbedObject(worksheet, filePath, cellHeight);
+                var (embedObject, isImage, width) = CreateEmbedObject(worksheet, filePath, cellHeight, attMode);
 
                 var (actColumn, actStartLeft) = GetMergedCellLeft(worksheet, cell, startLeft);
                 // 设置对象位置
@@ -390,23 +390,33 @@ public class ExcelHelper : IDisposable {
 
     private (ExcelDrawing embedObject, bool isImage, int width) CreateEmbedObject(
         ExcelWorksheet worksheet,
-        string filePath ,double targetRowHeight) {
+        string filePath ,double targetRowHeight,bool attMode = false) {
         var extension = Path.GetExtension(filePath).ToLower();
         var imageTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf" };
         int width = (int)(targetRowHeight);
         if (imageTypes.Contains(extension)) {
             //pdf
             if (extension.Contains(".pdf")) {
-                using (var stream = FileToImageHelper.ConvertFirstPageToImageStream(filePath)) {
-                    var picture = worksheet.Drawings.AddPicture(
-                      Guid.NewGuid().ToString(),
-                      stream
+                if (attMode) {
+                    var oleObject = worksheet.Drawings.AddOleObject(
+                        Guid.NewGuid().ToString(),
+                        filePath
                     );
-                    if (imageTypes.Contains(extension)) {
-                        // 添加图片后立即缩放
-                        width = ScaleImageToCell(picture, targetRowHeight);
+                    oleObject.SetSize(width, width);
+                    return (oleObject, false, width);
+                }
+                else {
+                    using (var stream = FileToImageHelper.ConvertFirstPageToImageStream(filePath)) {
+                        var picture = worksheet.Drawings.AddPicture(
+                          Guid.NewGuid().ToString(),
+                          stream
+                        );
+                        if (imageTypes.Contains(extension)) {
+                            // 添加图片后立即缩放
+                            width = ScaleImageToCell(picture, targetRowHeight);
+                        }
+                        return (picture, true, width);
                     }
-                    return (picture, true, width);
                 }
             }
             else {

@@ -2962,6 +2962,7 @@ ORDER BY
                                 string F_FIX = drZONE_D["F_FIX"].ToString();
                                 string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = drZONE_D["CELLS"].ToString();
+                                bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
                                     if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
@@ -2969,7 +2970,7 @@ ORDER BY
                                             if (byName == "REPORT_URL") {
                                                 string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
                                             }
                                             else {
                                                 string textValue = F_FIX + drData[byName].ToString() + E_FIX;
@@ -2990,7 +2991,7 @@ ORDER BY
                                             if (dtSource.Columns.Contains(byName)) {
                                                 string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
                                             }
                                         }
                                     }
@@ -3034,6 +3035,7 @@ ORDER BY
                                 string F_FIX = drZONE_D["F_FIX"].ToString();
                                 string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
+                                bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
                                     if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
@@ -3055,7 +3057,7 @@ ORDER BY
                                             if (dtSource.Columns.Contains(byName)) {
                                                 string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
                                             }
                                         }
                                     }
@@ -3107,6 +3109,7 @@ ORDER BY
                                 string F_FIX = drZONE_D["F_FIX"].ToString();
                                 string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
+                                bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
                                     if (ISSQ == "1") {
                                         excelHelper.AddTextToCell(SHEETNAME, CELLS, (i + 1).ToString());
@@ -3117,7 +3120,7 @@ ORDER BY
                                             if (byName == "REPORT_URL") {
                                                 string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
                                             }
                                             else {
                                                 string textValue = F_FIX + drData[byName].ToString() + E_FIX;
@@ -3138,7 +3141,7 @@ ORDER BY
                                             if (dtSource.Columns.Contains(byName)) {
                                                 string textValue = drData[byName].ToString();
                                                 string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
                                             }
                                         }
                                     }

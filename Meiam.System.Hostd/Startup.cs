@@ -26,6 +26,7 @@ using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Reflection;
+using static Meiam.System.Interfaces.HMDService;
 
 namespace Meiam.System.Hostd
 {
@@ -240,7 +241,6 @@ namespace Meiam.System.Hostd
                 endpoints.MapControllers();
                 endpoints.MapHangfireDashboard();
             });
-
             #endregion
         }
 
