@@ -37,6 +37,7 @@ using TiptopService;
 using System.Text.Json;
 using iText.StyledXmlParser.Jsoup.Nodes;
 using DocumentFormat.OpenXml.Spreadsheet;
+using static Meiam.System.Interfaces.HMDService;
 
 namespace Meiam.System.Interfaces
 {
@@ -776,9 +777,9 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
 
                 // 从Oracle视图查询增量数据
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvadate " +
+                    $"SELECT rvb02, rva01, rvb05, rvb051, rvb07, rva06, ima021, rvb38, rvbud02, rvbud07, rvbud01, rvbud08, rvbud13, rvbud14, pmc03, rva05, rvacond as rvadate " +
                     $"FROM qms_rc_view " +
-                    $"WHERE rvadate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')");
+                    $"WHERE rvacond >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')");
 
                 if (oracleData.Any())
                 {
@@ -833,6 +834,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
 
                     var syncConfig = _syncConfigHandler.GetConfig();
                     syncConfig.RCDate = entities.Max(a => a.TS).ToString();
+                    _syncConfigHandler.SetConfig(syncConfig);
                     _logger.LogInformation($"成功同步{entities.Count()}条QMS_RC_VIEW数据");
   }
                 else
@@ -1055,7 +1057,7 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
 
                     var syncConfig = _syncConfigHandler.GetConfig();
                     syncConfig.WRDate = groupedData.Max(a => a.TS).ToString();
-
+                    _syncConfigHandler.SetConfig(syncConfig);
                     _logger.LogInformation($"同步完成: 新增{insertCount}条, 更新{updateCount}条QMS_WR_VIEW数据");
                 }
                 else

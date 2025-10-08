@@ -516,6 +516,8 @@ namespace Meiam.System.Model
 
         public string ERP_ARRIVEDID{ get; set; }
 
+        public string INSPECT_IQCCODE { get; set; }
+
         public string FEntryID { get; set; }
 
         /// <summary>
@@ -527,6 +529,11 @@ namespace Meiam.System.Model
         /// 不合格数
         /// </summary>
         public decimal? FRefuseQty { get; set; }
+
+        /// <summary>
+        /// 检验数量
+        /// </summary>
+        public decimal? FCheckQty { get; set; }
     }
 
     /// <summary>

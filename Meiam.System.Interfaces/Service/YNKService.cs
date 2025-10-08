@@ -392,6 +392,9 @@ namespace Meiam.System.Interfaces.Service
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
+            foreach (var item in list) {
+                item.FCheckQty = Db.Ado.GetDecimal($"select isnull(MAX(INSPECT_CNT),0) INSPECT_CNT FROM INSPECT_PROGRESS WHERE DOC_CODE='{item.INSPECT_IQCCODE}'");
+            }
             return list;
         }
 

@@ -227,7 +227,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                                         FEntryID = entry.FEntryID, // 传进来的FEntryID
                                         FReceiveQty = entry.FReceiveQty, // 传进来的FReceiveQty
                                         FRefuseQty = entry.FRefuseQty, // 传进来的FRefuseQty
-                                        FCheckQty = entry.FReceiveQty + entry.FRefuseQty // FReceiveQty和FRefuseQty相加
+                                        FCheckQty = entry.FCheckQty
                                     }).ToList()
                                 }
                             }
