@@ -393,7 +393,21 @@ namespace Meiam.System.Interfaces.Service
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
             foreach (var item in list) {
-                item.FCheckQty = Db.Ado.GetDecimal($"select isnull(MAX(INSPECT_CNT),0) INSPECT_CNT FROM INSPECT_PROGRESS WHERE DOC_CODE='{item.INSPECT_IQCCODE}'");
+                item.FCheckQty = Db.Ado.GetDecimal(@$"SELECT COALESCE((
+    SELECT TOP 1 
+        MAX(CAST(INSPECT_CNT AS INT)) OVER (PARTITION BY INSPECT_TYPE) AS INSPECT_CNT
+    FROM INSPECT_PROGRESS 
+    WHERE DOC_CODE = '{item.INSPECT_IQCCODE}'
+        AND INSPECT_TYPE IN ('INSPECT_TYPE_002', 'INSPECT_TYPE_001', 'INSPECT_TYPE_003', 'INSPECT_TYPE_999', 'INSPECT_TYPE_000')
+    ORDER BY 
+        CASE INSPECT_TYPE 
+            WHEN 'INSPECT_TYPE_002' THEN 1
+            WHEN 'INSPECT_TYPE_001' THEN 2
+            WHEN 'INSPECT_TYPE_003' THEN 3
+            WHEN 'INSPECT_TYPE_999' THEN 4
+            WHEN 'INSPECT_TYPE_000' THEN 5
+        END
+), 0) AS INSPECT_CNT");
             }
             return list;
         }
