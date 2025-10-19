@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Mapster;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using Meiam.System.Common;
 using Meiam.System.Extensions;
@@ -217,17 +218,25 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
         [HttpPost]
         public IActionResult TestCPKExcel()
         {
-            //bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
-            //string filePath = @"C:\Users\Administrator\Desktop\Temp\test111.xlsx";
-            //using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
+            bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
+            string filePath = @"C:\Users\Administrator\Desktop\Temp\1.xlsx";
+            string[] sourceExcelPaths = new string[] { @"C:\Users\Administrator\Desktop\Temp\2.xls" };
+            try {
+                using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
 
-            //    #region 替换公式
-            //    if (isReplaceFormula) {
-            //        excelHelper.ReplaceFormula();
-            //    }
-            //    #endregion
-            //}
-            return toResponse(StatusCodeType.Success, "测试成功!");
+                    //excelHelper.CopyColumnsCells("CPK", "C21:D30", 5);
+                    excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
+                    #region 替换公式
+                    //if (isReplaceFormula) {
+                    //    excelHelper.ReplaceFormula();
+                    //}
+                    #endregion
+                }
+                return toResponse(StatusCodeType.Success, "测试成功!");
+            }
+            catch (Exception ex) {
+                return toResponse(StatusCodeType.Error, ex.ToString());
+            }
         }
 
         /// <summary>

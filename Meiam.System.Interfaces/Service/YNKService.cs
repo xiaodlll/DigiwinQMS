@@ -66,6 +66,10 @@ namespace Meiam.System.Interfaces.Service
                         throw new ArgumentException("到货数量必须大于0");
                     }
 
+                    if (request.ITEMID.StartsWith("Z")|| request.ITEMID.StartsWith("H")) {
+                        _logger.LogWarning($"过滤Z和H开头的物料: {request.ITEMID}");
+                        continue;
+                    }
                     //判断重复
                     bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{request.KEEID}'") > 0;
                     if (isExist)

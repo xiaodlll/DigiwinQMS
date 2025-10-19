@@ -435,6 +435,18 @@ namespace Meiam.System.Model
         public string TS { get; set; }
     }
 
+    public class erp_fqc {
+        public string ERP_FQCID { get; set; }
+        public decimal REPORT_QTY { get; set; }
+        public string ITEMID { get; set; }
+        public string ITEMNAME { get; set; }
+        public string MO_DATE { get; set; }
+        public string INSPECT_SICREATEDATE { get; set; }
+        public string MOID { get; set; }
+        public decimal LOT_QTY { get; set; }
+        public string APPLY_DATE { get; set; }
+    }
+
     public class erp_item {
         public string ITEMID { get; set; }
         public string ITEMCODE { get; set; }

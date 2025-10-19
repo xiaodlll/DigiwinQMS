@@ -1,10 +1,12 @@
-﻿using Meiam.System.Common;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Meiam.System.Common;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 public class ExcelHelper : IDisposable {
     private readonly ExcelPackage _excelPackage;
@@ -93,6 +95,11 @@ public class ExcelHelper : IDisposable {
         // 填充完整路径
         for (int i = 0; i < filePaths.Length; i++) {
             fullFilePaths[i] = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], filePaths[i].TrimStart('\\'));
+        }
+
+        if ((filePaths[0].EndsWith(".xlsx") || filePaths[0].EndsWith(".xls")) && !attMode) {
+            CopySheet(fullFilePaths, sheetName, cellAddress);
+            return;
         }
 
         var worksheet = GetOrCreateWorksheet(sheetName);
@@ -322,6 +329,109 @@ public class ExcelHelper : IDisposable {
         }
     }
 
+    public void CopySheet(string[] sourceExcelPaths, string targetSheetName, string targetStartCell) {
+
+        var targetWorksheet = _excelPackage.Workbook.Worksheets[targetSheetName]
+                            ?? _excelPackage.Workbook.Worksheets.Add(targetSheetName);
+
+        var startCell = new ExcelCellAddress(targetStartCell);
+        int currentCol = startCell.Column;
+
+        foreach (var sourcePath in sourceExcelPaths) {
+            if (!File.Exists(sourcePath)) {
+                throw new Exception($"文件不存在: {sourcePath}");
+            }
+            if (sourcePath.EndsWith(".xls")) {
+                string newPath = ConvertXlsToXlsx(sourcePath);
+                using (var sourcePackage = new ExcelPackage(new FileInfo(newPath))) {
+                    var sourceWorksheet = sourcePackage.Workbook.Worksheets.FirstOrDefault();
+                    if (sourceWorksheet?.Dimension == null) continue;
+
+                    // 直接使用Copy方法复制整个工作表区域
+                    var sourceRange = sourceWorksheet.Cells[sourceWorksheet.Dimension.Address];
+                    var targetStart = targetWorksheet.Cells[startCell.Row, currentCol];
+
+                    // 复制整个区域到目标位置
+                    sourceRange.Copy(targetStart);
+
+                    // 更新下一个位置
+                    currentCol += sourceWorksheet.Dimension.Columns + 1;
+                }
+                File.Delete(newPath);
+            }
+            else {
+                using (var sourcePackage = new ExcelPackage(new FileInfo(sourcePath))) {
+                    var sourceWorksheet = sourcePackage.Workbook.Worksheets.FirstOrDefault();
+                    if (sourceWorksheet?.Dimension == null) continue;
+
+                    // 直接使用Copy方法复制整个工作表区域
+                    var sourceRange = sourceWorksheet.Cells[sourceWorksheet.Dimension.Address];
+                    var targetStart = targetWorksheet.Cells[startCell.Row, currentCol];
+
+                    // 复制整个区域到目标位置
+                    sourceRange.Copy(targetStart);
+
+                    // 更新下一个位置
+                    currentCol += sourceWorksheet.Dimension.Columns + 1;
+                }
+            }
+        }
+    }
+
+    public string ConvertXlsToXlsx(string inputPath) {
+        object excelApp = null;
+        object workbooks = null;
+        object workbook = null;
+
+        try {
+            // 通过后期绑定创建Excel应用实例
+            Type excelType = Type.GetTypeFromProgID("Excel.Application");
+            excelApp = Activator.CreateInstance(excelType);
+
+            // 设置属性
+            excelType.InvokeMember("Visible", BindingFlags.SetProperty, null, excelApp, new object[] { false });
+            excelType.InvokeMember("DisplayAlerts", BindingFlags.SetProperty, null, excelApp, new object[] { false });
+
+            // 获取Workbooks集合
+            workbooks = excelType.InvokeMember("Workbooks", BindingFlags.GetProperty, null, excelApp, null);
+
+            // 打开文件
+            workbook = workbooks.GetType().InvokeMember("Open", BindingFlags.InvokeMethod, null, workbooks, new object[] { inputPath });
+
+            // 生成新的XLSX文件名
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(inputPath),
+                Guid.NewGuid().ToString() + ".xlsx"
+            );
+
+            // 保存为XLSX格式 (51代表xlsx格式)
+            workbook.GetType().InvokeMember("SaveAs", BindingFlags.InvokeMethod, null, workbook, new object[] { outputPath, 51 });
+
+            return outputPath;
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"转换失败: {ex.Message}");
+            throw;
+        }
+        finally {
+            // 清理COM对象
+            if (workbook != null) {
+                workbook.GetType().InvokeMember("Close", BindingFlags.InvokeMethod, null, workbook, new object[] { false });
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+            }
+            if (workbooks != null) {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(workbooks);
+            }
+            if (excelApp != null) {
+                excelApp.GetType().InvokeMember("Quit", BindingFlags.InvokeMethod, null, excelApp, null);
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(excelApp);
+            }
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+    }
+
     /// <summary>
     /// 获取Excel区域的行数
     /// </summary>
@@ -353,21 +463,58 @@ public class ExcelHelper : IDisposable {
             int endRow = worksheet.Dimension.End.Row;
             int startCol = worksheet.Dimension.Start.Column;
             int endCol = worksheet.Dimension.End.Column;
+            worksheet.Calculate();
 
-            // 遍历所有单元格
             for (int row = startRow; row <= endRow; row++) {
                 for (int col = startCol; col <= endCol; col++) {
                     var cell = worksheet.Cells[row, col];
                     // 检查单元格是否包含公式
                     if (!string.IsNullOrEmpty(cell.Formula)) {
-                        // 保存公式计算后的结果
                         var cellValue = cell.Value;
-                        // 清除公式并设置为计算后的值（保持格式不变）
+                        // 清除公式
                         cell.Formula = null;
+                        // 恢复值
                         cell.Value = cellValue;
                     }
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// 向右复制N次（支持多列区域）
+    /// </summary>
+    /// <param name="sheetName">Sheet名称</param>
+    /// <param name="cellsZone">单元格区域（如"A1:C3"）</param>
+    /// <param name="copyCount">复制次数</param>
+    public void CopyColumnsCells(string sheetName, string cellsZone, int copyCount) {
+        var targetWorksheet = _excelPackage.Workbook.Worksheets[sheetName]
+                            ?? _excelPackage.Workbook.Worksheets.Add(sheetName);
+        // 获取原始单元格区域
+        var originalRange = targetWorksheet.Cells[cellsZone];
+
+        // 验证：复制次数必须为正数，且原始区域有效
+        if (copyCount <= 0 || originalRange == null) {
+            return;
+        }
+
+        // 获取原始区域的行列信息
+        int originalStartCol = originalRange.Start.Column;   // 原始区域起始列
+        int originalEndCol = originalRange.End.Column;       // 原始区域结束列
+        int originalColumnCount = originalEndCol - originalStartCol + 1;  // 原始区域列数
+        int startRow = originalRange.Start.Row;              // 原始区域起始行
+        int endRow = originalRange.End.Row;                  // 原始区域结束行
+
+        // 循环复制到右侧（共复制copyCount次）
+        for (int i = 1; i <= copyCount; i++) {
+            // 计算当前复制块的目标列范围
+            int targetStartCol = originalEndCol + 1 + (i - 1) * originalColumnCount;  // 目标起始列
+            int targetEndCol = targetStartCol + originalColumnCount - 1;              // 目标结束列（与原始区域列数一致）
+
+            // 定义目标区域（与原始区域行列范围相同，仅列整体右移）
+            var targetRange = targetWorksheet.Cells[startRow, targetStartCol, endRow, targetEndCol];
+            // 复制原始区域到目标区域（包含值、公式、格式等）
+            originalRange.Copy(targetRange);
         }
     }
 

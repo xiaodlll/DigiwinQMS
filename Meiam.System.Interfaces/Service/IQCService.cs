@@ -3024,6 +3024,7 @@ ORDER BY
   CAST(SUBSTRING(CELLS, PATINDEX('%[0-9]%', CELLS), LEN(CELLS)) AS INT)");
 
                         int[] copyColumns = GetCopyColumnsByCellsZone(CELLS_ZONE);
+                        excelHelper.CopyColumnsCells(SHEETNAME, CELLS_ZONE, dtSource.Rows.Count - 1);//向右复制
                         //按照数据区域复制行
                         for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
                             DataRow drData = dtSource.Rows[i];
@@ -3163,6 +3164,7 @@ ORDER BY
                 }
                 #endregion
             }
+
             return filePath;
         }
 

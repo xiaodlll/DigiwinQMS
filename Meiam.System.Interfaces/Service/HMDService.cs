@@ -928,12 +928,10 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
         }
         #endregion
 
-        #region 同步报工数据
-        public async Task SyncWrDataAsync()
-        {
-            _logger.LogInformation("开始处理报工单");
-            try
-            {
+        #region 同步FQC数据
+        public async Task SyncWrDataAsync() {
+            _logger.LogInformation("开始处理FQC");
+            try {
                 //获取上次同步时间lastSyncTime
                 string lastSyncTime;
                 lastSyncTime = GetLastSyncTime("INSPECT_SI", "TS");
@@ -943,23 +941,19 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                 DateTime syncStartTime;
 
                 // 尝试解析传入的lastSyncTime
-                if (DateTime.TryParse(lastSyncTime, out DateTime parsedTime))
-                {
+                if (DateTime.TryParse(lastSyncTime, out DateTime parsedTime)) {
                     // 如果解析成功，判断是否超出一周范围
-                    if (parsedTime < defaultStartTime)
-                    {
+                    if (parsedTime < defaultStartTime) {
                         // 若超出一周，则强制设为一周前
                         syncStartTime = defaultStartTime;
                         _logger.LogWarning("传入的同步时间超出一周范围，自动调整为一周前: {Time}", syncStartTime);
                     }
-                    else
-                    {
+                    else {
                         // 未超出范围则使用解析后的时间
                         syncStartTime = parsedTime;
                     }
                 }
-                else
-                {
+                else {
                     // 解析失败（如首次同步或格式错误），使用默认一周前时间
                     syncStartTime = defaultStartTime;
                     _logger.LogWarning("同步时间格式无效或未提供，使用默认时间: {Time}", syncStartTime);
@@ -967,114 +961,69 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                 _logger.LogInformation($"开始同步QMS_WR_VIEW数据...开始时间:{syncStartTime.ToString("yyyy-MM-dd HH:mm:ss")}");
 
                 var oracleData = await _oracleDb.Ado.SqlQueryAsync<dynamic>(
-                    $"SELECT shb05, sfb08, shb111, shb10, ima02, shb02, shb09, eci06, shbdate " +
-                    $"FROM qms_wr_view " +
-                    $"WHERE shbdate >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
-                    $"ORDER BY shbdate,shb05");
+                    $"SELECT qcf01, qcf22, qcf021, ima02, shb32, qcfdate, qcf02, sfb08, qcf04 " +
+                    $"FROM qms_fqc_view " +
+                    $"WHERE qcf04 >= TO_DATE('{syncStartTime.ToString("yyyy-MM-dd 00:00:00")}', 'YYYY-MM-DD HH24:MI:SS')" +
+                    $"ORDER BY qcf04,qcf041");
 
-                if (oracleData.Any())
-                {
-                    // 按ITEMID+INSPECT_SICREATEDATE分组并求和
-                    var groupedData = oracleData
-                        .GroupBy(x => new
-                        {
-                            ITEMID = x.SHB10,
-                            INSPECT_SICREATEDATE = DateTime.Parse(x.SHB02).ToString("yyyy-MM-dd") // 确保日期格式一致
-                        })
-                        .Select(g => new erp_wr
-                        {
-                            MOID = g.First().SHB05, // 取第一个MOID（可根据需求调整）
-                            LOT_QTY = g.Sum(x =>
-                            {
-                                decimal value;
-                                return decimal.TryParse(x.SFB08.ToString(), out value) ? value : 0m;
-                            }),
-                            REPORT_QTY = g.Sum(x =>
-                            {
-                                decimal value;
-                                return decimal.TryParse(x.SHB111.ToString(), out value) ? value : 0m;
-                            }),
-                            ITEMID = g.Key.ITEMID,
-                            ITEMNAME = g.First().IMA02, // 取第一个ITEMNAME
-                            INSPECT_SICREATEDATE = g.Key.INSPECT_SICREATEDATE,
-                            INSPECT02CODE = g.First().SHB09, // 取第一个INSPECT02CODE
-                            INSPECT02NAME = g.First().ECI06, // 取第一个INSPECT02NAME
-                            TS = ((DateTime)g.First().SHBDATE).ToString("yyyy-MM-dd HH:mm:ss")  // 取第一个SHBDATE
-                        });
+                if (oracleData.Any()) {
+                    // 转换为目标实体
+                    var entities = oracleData.Select(x => new erp_fqc {
+                        ERP_FQCID = x.QCF01 != null && !Convert.IsDBNull(x.QCF01) ? x.QCF01.ToString() : null,
+                        REPORT_QTY = x.QCF22 == null || Convert.IsDBNull(x.QCF22) ? 0 : decimal.Parse(x.QCF22.ToString()),
+                        ITEMID = x.QCF021 != null && !Convert.IsDBNull(x.QCF021) ? x.QCF021.ToString() : null,
+                        ITEMNAME = x.IMA02 != null && !Convert.IsDBNull(x.IMA02) ? x.IMA02.ToString() : null,
+                        MO_DATE = x.SHB32 != null && !Convert.IsDBNull(x.SHB32) ? x.SHB32.ToString() : null,
+                        INSPECT_SICREATEDATE = x.QCFDATE != null && !Convert.IsDBNull(x.QCFDATE) ? x.QCFDATE.ToString() : null,
+                        MOID = x.QCF02 != null && !Convert.IsDBNull(x.QCF02) ? x.QCF02.ToString() : null,
+                        LOT_QTY = x.SFB08 == null || Convert.IsDBNull(x.SFB08) ? 0 : decimal.Parse(x.SFB08.ToString()),
+                        APPLY_DATE = ((DateTime)x.QCF04).ToString("yyyy-MM-dd HH:mm:ss")
+                    });
 
                     int insertCount = 0;
-                    int updateCount = 0;
 
-                    foreach (var entity in groupedData)
-                    {
-                        //判断重复（品号+日期）
-                        var existingRecord = Db.Ado.SqlQuery<dynamic>(
-                            $@"SELECT INSPECT_SIID, LOT_QTY, REPORT_QTY FROM INSPECT_SI 
-                               WHERE ITEMID = '{entity.ITEMID}' 
-                               AND CONVERT(VARCHAR(10), INSPECT_SICREATEDATE, 120) = '{entity.INSPECT_SICREATEDATE}'")
-                            .FirstOrDefault();
+                    foreach (var entity in entities) {
+                        //判断重复
+                        var existingRecord = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_SI WHERE ERP_FQCID = '{entity.ERP_FQCID}' AND MOID = '{entity.MOID}'");
 
-                        if (existingRecord != null)
-                        {
-                            // 如果记录已存在，则更新数量
-                            string updateSql = @"
-                                UPDATE INSPECT_SI SET 
-                                    LOT_QTY = @NewLotQty,
-                                    REPORT_QTY = @NewReportQty
-                                WHERE INSPECT_SIID = @InspectSiId";
-
-                            Db.Ado.ExecuteCommand(updateSql, new
-                            {
-                                NewLotQty = entity.LOT_QTY,
-                                NewReportQty = entity.REPORT_QTY,
-                                InspectSiId = existingRecord.INSPECT_SIID.ToString()
-                            });
-
-                            _logger.LogInformation($"更新记录: 品号={entity.ITEMID}, 日期={entity.INSPECT_SICREATEDATE}");
-                            updateCount++;
+                        if (existingRecord != 0) {
+                            // 记录已存在
+                            _logger.LogInformation($"记录已存在: ERP_FQCID={entity.ERP_FQCID}, MOID={entity.MOID}");
                         }
-                        else
-                        {
-
+                        else {
                             // 生成检验单号
-                            var inspectionSiId = GenerateInspectionSiId(entity.TS);
+                            var inspectionSiId = GenerateInspectionSiId(entity.APPLY_DATE);
                             _logger.LogInformation("生成检验单号: {InspectionSiId}", inspectionSiId);
 
                             // 保存到数据库
-                            _logger.LogDebug("正在保存报工单到数据库...");
-                            try
-                            {
-                                SaveWrDataToDatabase(entity, inspectionSiId);
+                            _logger.LogDebug("正在保存FQC到数据库...");
+                            try {
+                                SaveFqcDataToDatabase(entity, inspectionSiId);
                                 insertCount++;
                             }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError("保存报工单到数据库异常:" + ex.ToString());
+                            catch (Exception ex) {
+                                _logger.LogError("保存FQC到数据库异常:" + ex.ToString());
                                 throw;
                             }
                         }
                     }
 
                     var syncConfig = _syncConfigHandler.GetConfig();
-                    syncConfig.WRDate = groupedData.Max(a => a.TS).ToString();
+                    syncConfig.WRDate = entities.Max(a => a.APPLY_DATE).ToString();
                     _syncConfigHandler.SetConfig(syncConfig);
-                    _logger.LogInformation($"同步完成: 新增{insertCount}条, 更新{updateCount}条QMS_WR_VIEW数据");
+                    _logger.LogInformation($"同步完成: 新增{insertCount}条QMS_FQC_VIEW数据");
                 }
-                else
-                {
-                    _logger.LogInformation("没有需要同步的QMS_WR_VIEW数据");
+                else {
+                    _logger.LogInformation("没有需要同步的QMS_FQC_VIEW数据");
                 }
 
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "同步QMS_WR_VIEW数据失败");
+            catch (Exception ex) {
+                _logger.LogError(ex, "同步QMS_FQC_VIEW数据失败");
                 throw;
             }
         }
-
-        private string GenerateInspectionSiId(string SynTime)
-        {
+        private string GenerateInspectionSiId(string SynTime) {
             string INSPECT_CODE = "";//检验单号
 
             // 处理SynTime为null的情况，取当天日期
@@ -1098,25 +1047,17 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
 
             // 执行 SQL 命令
             var dataTable = Db.Ado.GetDataTable(sql, new { effectiveDate });
-            if (dataTable.Rows.Count > 0)
-            {
+            if (dataTable.Rows.Count > 0) {
                 INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString().Trim();
             }
             return INSPECT_CODE;
         }
 
-        private void SaveWrDataToDatabase(erp_wr entity, string inspectionSiId)
-        {
-            string sql = @"
-                INSERT INTO INSPECT_SI (
-                    TENID, INSPECT_SIID, MOID, LOT_QTY, REPORT_QTY, 
-                    ITEMID, ITEMNAME, INSPECT_SICREATEDATE, 
-                    INSPECT02CODE, INSPECT02NAME, TS, INSPECT_SICODE
-                ) VALUES (
-                    @TenId, @INSPECT_SIID, @MoId, @LotQty, @ReportQty, 
-                    @ItemId, @ItemName, @INSPECT_SICREATEDATE,
-                    @Inspect02Code, @Inspect02Name, @TS, @InspectSiCode
-                )";
+        private void SaveFqcDataToDatabase(erp_fqc entity, string inspectionSiId) {
+            string sql = @"INSERT INTO INSPECT_SI (TENID, INSPECT_SIID, MOID, LOT_QTY, REPORT_QTY, ITEMID, ITEMNAME, 
+                            INSPECT_SICREATEDATE, APPLY_DATE, INSPECT_SICODE, ERP_FQCID, MO_DATE, TS) 
+                        VALUES (@TenId, @INSPECT_SIID, @MoId, @LotQty, @ReportQty, @ItemId, @ItemName, 
+                            @INSPECT_SICREATEDATE, @APPLY_DATE, @InspectSiCode, @ERP_FQCID, @MO_DATE, @TS)";
 
             // 定义参数
             var parameters = new SugarParameter[]
@@ -1129,11 +1070,12 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                 new SugarParameter("@ItemId", entity.ITEMID),
                 new SugarParameter("@ItemName", entity.ITEMNAME),
                 new SugarParameter("@INSPECT_SICREATEDATE", entity.INSPECT_SICREATEDATE),
-                new SugarParameter("@Inspect02Code", entity.INSPECT02CODE),
-                new SugarParameter("@Inspect02Name", entity.INSPECT02NAME),
-                new SugarParameter("@TS", entity.TS),
-                new SugarParameter("@InspectSiCode", inspectionSiId)
-            };
+                new SugarParameter("@APPLY_DATE", entity.APPLY_DATE),
+                new SugarParameter("@InspectSiCode", inspectionSiId),
+                new SugarParameter("@ERP_FQCID", entity.ERP_FQCID),
+                new SugarParameter("@MO_DATE", entity.MO_DATE),
+                new SugarParameter("@TS", entity.APPLY_DATE)
+           };
 
             // 执行 SQL 命令
             Db.Ado.ExecuteCommand(sql, parameters);
