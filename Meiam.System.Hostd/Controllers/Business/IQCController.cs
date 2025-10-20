@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
+using iText.IO.Image;
 using Mapster;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using Meiam.System.Common;
@@ -18,8 +19,8 @@ using NPOI.XSSF.UserModel;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
+using System.Data;
 using System.Linq;
 
 namespace Meiam.System.Hostd.Controllers.Bisuness {
@@ -219,13 +220,19 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
         public IActionResult TestCPKExcel()
         {
             bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
-            string filePath = @"C:\Users\Administrator\Desktop\Temp\1.xlsx";
+            string filePath = @"C:\Users\Administrator\Desktop\Temp\22.xlsx";
+            string filePath2 = @"C:\Users\Administrator\Desktop\Temp\22.doc";
             string[] sourceExcelPaths = new string[] { @"C:\Users\Administrator\Desktop\Temp\2.xls" };
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
 
                     //excelHelper.CopyColumnsCells("CPK", "C21:D30", 5);
-                    excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
+                    //excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
+                    //excelHelper.CopyRows("出货报告", new int[] { 39 }, 40);
+                    //excelHelper.CopyRows("出货报告", "B39:R39", 2);
+                    string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
+                    string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
+                    //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {
                     //    excelHelper.ReplaceFormula();

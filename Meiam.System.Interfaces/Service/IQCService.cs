@@ -3090,14 +3090,7 @@ ORDER BY
   -- 提取数字部分
   CAST(SUBSTRING(CELLS, PATINDEX('%[0-9]%', CELLS), LEN(CELLS)) AS INT)");
                         int[] copyRows = GetCopyRowsByCellsZone(CELLS_ZONE);
-                        for (int i = 0; i < dtSource.Rows.Count - 1; i++) {//排除自身，只需要复制N-1份
-                            try {
-                                excelHelper.CopyRows(SHEETNAME, copyRows, copyRows[copyRows.Length - 1] + 1);
-                            }
-                            catch {//有合并行，改为插入行
-                                excelHelper.InsertRows(SHEETNAME, copyRows.Length, copyRows[copyRows.Length - 1] + 1);
-                            }
-                        }
+                        excelHelper.CopyRows(SHEETNAME, CELLS_ZONE, dtSource.Rows.Count - 1);
 
                         for (int i = 0; i < dtSource.Rows.Count; i++) {//填充数据
                             DataRow drData = dtSource.Rows[i];

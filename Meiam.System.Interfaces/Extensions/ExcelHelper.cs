@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 public class ExcelHelper : IDisposable {
     private readonly ExcelPackage _excelPackage;
@@ -115,17 +116,18 @@ public class ExcelHelper : IDisposable {
 
         foreach (var filePath in fullFilePaths.Where(File.Exists)) {
             try {
-                var (embedObject, isImage, width) = CreateEmbedObject(worksheet, filePath, cellHeight, attMode);
-
-                var (actColumn, actStartLeft) = GetMergedCellLeft(worksheet, cell, startLeft);
-                // 设置对象位置
-                embedObject.SetPosition(
-                    startRow - 1,
-                    5,
-                    actColumn - 1,
-                    (int)(actStartLeft)
-                );
-                startLeft += width + 5;
+                var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, filePath, cellHeight, attMode);
+                foreach (var embedObject in embedObjects) {
+                    var (actColumn, actStartLeft) = GetMergedCellLeft(worksheet, cell, startLeft);
+                    // 设置对象位置
+                    embedObject.SetPosition(
+                        startRow - 1,
+                        5,
+                        actColumn - 1,
+                        (int)(actStartLeft)
+                    );
+                    startLeft += width + 5;
+                }
             }
             catch (Exception ex) {
                 throw new Exception($"文件[{filePath}]嵌入失败: {ex.ToString()}");
@@ -220,33 +222,129 @@ public class ExcelHelper : IDisposable {
         worksheet.InsertRow(targetRow, rowCount);
     }
 
-    public void CopyRows(string sheetName, int[] sourceRows, int targetRow) {
+    #region CopyRows
+    /// <summary>
+    /// 简化版本 - 只复制非合并单元格，包含行高复制
+    /// </summary>
+    public void CopyRows(string sheetName, string cellsZone, int copyRows) {
         var worksheet = GetOrCreateWorksheet(sheetName);
 
-        // 对源行进行降序排序，避免插入操作影响后续源行索引
-        var sortedSourceRows = sourceRows.OrderByDescending(r => r).ToList();
+        // 解析区域
+        var address = new ExcelAddress(cellsZone);
+        int startRow = address.Start.Row;
+        int startCol = address.Start.Column;
+        int endRow = address.End.Row;
+        int endCol = address.End.Column;
 
-        // 计算源行总高度（行数）
-        int totalRowsToCopy = sortedSourceRows.Distinct().Count();
+        int sourceRowCount = endRow - startRow + 1;
+        int totalRowsToCopy = sourceRowCount * copyRows;
 
-        // 插入足够的空行
-        worksheet.InsertRow(targetRow, totalRowsToCopy);
+        // 插入目标行
+        int targetStartRow = endRow + 1;
+        worksheet.InsertRow(targetStartRow, totalRowsToCopy);
 
-        // 复制整个源区域到目标位置
-        var sourceAddress = $"{sortedSourceRows.Min()}:{sortedSourceRows.Max()}";
-        var targetAddress = $"{targetRow}:{targetRow + totalRowsToCopy - 1}";
-        // 复制单元格内容和格式
-        worksheet.Cells[sourceAddress].Copy(worksheet.Cells[targetAddress]);
+        // 逐行逐列复制，跳过合并单元格
+        for (int copyIndex = 0; copyIndex < copyRows; copyIndex++) {
+            for (int rowOffset = 0; rowOffset < sourceRowCount; rowOffset++) {
+                int sourceRow = startRow + rowOffset;
+                int targetRow = targetStartRow + (copyIndex * sourceRowCount) + rowOffset;
 
-        // 单独复制行高（解决行高问题的关键）
-        for (int i = 0; i < sortedSourceRows.Count; i++) {
-            int sourceRowIndex = sortedSourceRows[i];
-            int targetRowIndex = targetRow + i;
+                // 复制行高（在复制单元格内容之前设置行高）
+                worksheet.Row(targetRow).Height = worksheet.Row(sourceRow).Height;
 
-            // 复制行高
-            worksheet.Row(targetRowIndex).Height = worksheet.Row(sourceRowIndex).Height;
+                // 复制行隐藏状态
+                worksheet.Row(targetRow).Hidden = worksheet.Row(sourceRow).Hidden;
+
+                for (int col = startCol; col <= endCol; col++) {
+                    var sourceCell = worksheet.Cells[sourceRow, col];
+
+                    // 检查是否是合并单元格的一部分
+                    if (sourceCell.Merge) {
+                        // 获取合并区域
+                        var mergedRange = worksheet.MergedCells[sourceRow, col];
+                        if (mergedRange != null) {
+                            var mergedAddress = new ExcelAddress(mergedRange);
+                            // 只复制合并区域的第一个单元格
+                            if (sourceRow != mergedAddress.Start.Row || col != mergedAddress.Start.Column) {
+                                continue; // 跳过非第一个单元格
+                            }
+                        }
+                    }
+
+                    // 复制到目标单元格
+                    var targetCell = worksheet.Cells[targetRow, col];
+                    sourceCell.Copy(targetCell);
+                }
+            }
+        }
+
+        // 额外处理：复制自定义行高（如果存在）
+        CopyCustomRowProperties(worksheet, startRow, endRow, targetStartRow, copyRows, sourceRowCount);
+    }
+
+    /// <summary>
+    /// 复制自定义行属性
+    /// </summary>
+    private void CopyCustomRowProperties(ExcelWorksheet worksheet, int sourceStartRow, int sourceEndRow,
+                                       int targetStartRow, int copyRows, int sourceRowCount) {
+        for (int copyIndex = 0; copyIndex < copyRows; copyIndex++) {
+            for (int rowOffset = 0; rowOffset < sourceRowCount; rowOffset++) {
+                int sourceRow = sourceStartRow + rowOffset;
+                int targetRow = targetStartRow + (copyIndex * sourceRowCount) + rowOffset;
+
+                var sourceRowObj = worksheet.Row(sourceRow);
+                var targetRowObj = worksheet.Row(targetRow);
+
+                // 复制行高（确保已设置）
+                if (sourceRowObj.Height >= 0) // 检查是否是自定义行高
+                {
+                    targetRowObj.Height = sourceRowObj.Height;
+                }
+
+                // 复制其他行属性
+                targetRowObj.Hidden = sourceRowObj.Hidden;
+                targetRowObj.OutlineLevel = sourceRowObj.OutlineLevel;
+                targetRowObj.Collapsed = sourceRowObj.Collapsed;
+
+                // 复制行样式（如果存在）
+                if (sourceRowObj.StyleName != null) {
+                    targetRowObj.StyleName = sourceRowObj.StyleName;
+                }
+
+                // 复制自定义行样式
+                //CopyRowStyle(sourceRowObj, targetRowObj);
+            }
         }
     }
+
+    /// <summary>
+    /// 复制行样式
+    /// </summary>
+    private void CopyRowStyle(ExcelRow sourceRow, ExcelRow targetRow) {
+        try {
+            // 复制行样式设置
+            targetRow.Style.Fill.PatternType = sourceRow.Style.Fill.PatternType;
+            if (sourceRow.Style.Fill.BackgroundColor.Rgb != null) {
+                //targetRow.Style.Fill.BackgroundColor.SetColor(sourceRow.Style.Fill.BackgroundColor.Rgb);
+            }
+
+            targetRow.Style.Font.Bold = sourceRow.Style.Font.Bold;
+            targetRow.Style.Font.Italic = sourceRow.Style.Font.Italic;
+            targetRow.Style.Font.Size = sourceRow.Style.Font.Size;
+            //targetRow.Style.Font.Color.SetColor(sourceRow.Style.Font.Color.Rgb);
+            targetRow.Style.Font.Name = sourceRow.Style.Font.Name;
+
+            targetRow.Style.HorizontalAlignment = sourceRow.Style.HorizontalAlignment;
+            targetRow.Style.VerticalAlignment = sourceRow.Style.VerticalAlignment;
+
+            targetRow.Style.Numberformat.Format = sourceRow.Style.Numberformat.Format;
+        }
+        catch (Exception ex) {
+            // 记录错误但不中断流程
+            System.Diagnostics.Debug.WriteLine($"复制行样式时出错: {ex.Message}");
+        }
+    }
+    #endregion
 
     public void CopyCells(string sheetName, string cellAddress, string targetCells) {
         // 获取指定工作表
@@ -378,6 +476,9 @@ public class ExcelHelper : IDisposable {
         }
     }
 
+    /// <summary>
+    /// 将Xls格式文件转Excel（依赖本地Excel）
+    /// </summary>
     public string ConvertXlsToXlsx(string inputPath) {
         object excelApp = null;
         object workbooks = null;
@@ -427,6 +528,177 @@ public class ExcelHelper : IDisposable {
                 System.Runtime.InteropServices.Marshal.ReleaseComObject(excelApp);
             }
 
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+    }
+
+    /// <summary>
+    /// 将Excel转PDF（依赖本地Excel）
+    /// </summary>
+    /// <param name="inputExcelPath">输入Excel路径（.xls/.xlsx）</param>
+    /// <returns>输出PDF路径</returns>
+    public string ConvertExcelToPdf(string inputExcelPath) {
+        object excelApp = null;
+        object workbooks = null;
+        object workbook = null;
+
+        try {
+            // 验证输入文件
+            if (!File.Exists(inputExcelPath))
+                throw new FileNotFoundException("输入Excel文件不存在", inputExcelPath);
+
+            // 1. 获取Excel应用类型（ProgID：Excel.Application）
+            Type excelType = Type.GetTypeFromProgID("Excel.Application");
+            if (excelType == null)
+                throw new Exception("未安装Excel或无法访问Excel COM组件");
+
+            // 2. 创建Excel实例
+            excelApp = Activator.CreateInstance(excelType);
+
+            // 3. 设置属性：后台运行（不显示界面）、关闭警告
+            excelType.InvokeMember("Visible", BindingFlags.SetProperty, null, excelApp, new object[] { false });
+            excelType.InvokeMember("DisplayAlerts", BindingFlags.SetProperty, null, excelApp, new object[] { false });
+
+            // 4. 获取Workbooks集合
+            workbooks = excelType.InvokeMember("Workbooks", BindingFlags.GetProperty, null, excelApp, null);
+
+            // 5. 打开Excel文件
+            workbook = workbooks.GetType().InvokeMember(
+                "Open",
+                BindingFlags.InvokeMethod,
+                null,
+                workbooks,
+                new object[] { inputExcelPath, Type.Missing, true } // 第三个参数：ReadOnly=true
+            );
+
+            // 6. 生成输出PDF路径（在原目录创建唯一文件名）
+            string outputPdfPath = Path.Combine(
+                Path.GetDirectoryName(inputExcelPath),
+                $"{Guid.NewGuid()}.pdf"
+            );
+
+            // 7. 调用ExportAsFixedFormat导出PDF
+            // 参数说明：
+            // Type：0 = xlTypePDF（PDF格式）
+            // Filename：输出路径
+            // Quality：0 = xlQualityStandard（标准质量）
+            workbook.GetType().InvokeMember(
+                "ExportAsFixedFormat",
+                BindingFlags.InvokeMethod,
+                null,
+                workbook,
+                new object[] { 0, outputPdfPath, 0 } // Type=0(PDF), Filename, Quality=0(标准)
+            );
+
+            return outputPdfPath;
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Excel转PDF失败：{ex.Message}");
+            throw;
+        }
+        finally {
+            // 强制清理COM对象，避免进程残留
+            if (workbook != null) {
+                // 关闭工作簿（不保存修改）
+                workbook.GetType().InvokeMember("Close", BindingFlags.InvokeMethod, null, workbook, new object[] { false });
+                Marshal.ReleaseComObject(workbook);
+            }
+            if (workbooks != null) {
+                Marshal.ReleaseComObject(workbooks);
+            }
+            if (excelApp != null) {
+                // 退出Excel应用
+                excelApp.GetType().InvokeMember("Quit", BindingFlags.InvokeMethod, null, excelApp, null);
+                Marshal.ReleaseComObject(excelApp);
+            }
+
+            // 强制垃圾回收
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+    }
+
+    /// <summary>
+    /// 将Word转PDF（依赖本地Word）
+    /// </summary>
+    /// <param name="inputWordPath">输入Word路径（.doc/.docx）</param>
+    /// <returns>输出PDF路径</returns>
+    public string ConvertWordToPdf(string inputWordPath) {
+        object wordApp = null;
+        object documents = null;
+        object document = null;
+
+        try {
+            // 验证输入文件
+            if (!File.Exists(inputWordPath))
+                throw new FileNotFoundException("输入Word文件不存在", inputWordPath);
+
+            // 1. 获取Word应用类型（ProgID：Word.Application）
+            Type wordType = Type.GetTypeFromProgID("Word.Application");
+            if (wordType == null)
+                throw new Exception("未安装Word或无法访问Word COM组件");
+
+            // 2. 创建Word实例
+            wordApp = Activator.CreateInstance(wordType);
+
+            // 3. 设置属性：后台运行、关闭警告
+            wordType.InvokeMember("Visible", BindingFlags.SetProperty, null, wordApp, new object[] { false });
+            wordType.InvokeMember("DisplayAlerts", BindingFlags.SetProperty, null, wordApp, new object[] { 0 }); // 0=wdAlertsNone
+
+            // 4. 获取Documents集合
+            documents = wordType.InvokeMember("Documents", BindingFlags.GetProperty, null, wordApp, null);
+
+            // 5. 打开Word文件（只读模式）
+            document = documents.GetType().InvokeMember(
+                "Open",
+                BindingFlags.InvokeMethod,
+                null,
+                documents,
+                new object[] { inputWordPath, Type.Missing, true } // 第三个参数：ReadOnly=true
+            );
+
+            // 6. 生成输出PDF路径
+            string outputPdfPath = Path.Combine(
+                Path.GetDirectoryName(inputWordPath),
+                $"{Guid.NewGuid()}.pdf"
+            );
+
+            // 7. 调用SaveAs2保存为PDF
+            // 参数说明：
+            // FileName：输出路径
+            // FileFormat：17 = wdFormatPDF（PDF格式）
+            document.GetType().InvokeMember(
+                "SaveAs2",
+                BindingFlags.InvokeMethod,
+                null,
+                document,
+                new object[] { outputPdfPath, 17 } // FileName, FileFormat=17(PDF)
+            );
+
+            return outputPdfPath;
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Word转PDF失败：{ex.Message}");
+            throw;
+        }
+        finally {
+            // 清理COM对象
+            if (document != null) {
+                // 关闭文档（不保存修改）
+                document.GetType().InvokeMember("Close", BindingFlags.InvokeMethod, null, document, new object[] { 0 }); // 0=wdDoNotSaveChanges
+                Marshal.ReleaseComObject(document);
+            }
+            if (documents != null) {
+                Marshal.ReleaseComObject(documents);
+            }
+            if (wordApp != null) {
+                // 退出Word应用
+                wordApp.GetType().InvokeMember("Quit", BindingFlags.InvokeMethod, null, wordApp, null);
+                Marshal.ReleaseComObject(wordApp);
+            }
+
+            // 强制垃圾回收
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
@@ -535,25 +807,29 @@ public class ExcelHelper : IDisposable {
             _excelPackage.Workbook.Worksheets.Add(sheetName);
     }
 
-    private (ExcelDrawing embedObject, bool isImage, int width) CreateEmbedObject(
+    private (ExcelDrawing[] embedObjects, bool isImage, int width) CreateEmbedObject(
         ExcelWorksheet worksheet,
         string filePath ,double targetRowHeight,bool attMode = false) {
         var extension = Path.GetExtension(filePath).ToLower();
         var imageTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf" };
         int width = (int)(targetRowHeight);
-        if (imageTypes.Contains(extension)) {
-            //pdf
-            if (extension.Contains(".pdf")) {
-                if (attMode) {
-                    var oleObject = worksheet.Drawings.AddOleObject(
-                        Guid.NewGuid().ToString(),
-                        filePath
-                    );
-                    oleObject.SetSize(width, width);
-                    return (oleObject, false, width);
-                }
-                else {
-                    using (var stream = FileToImageHelper.ConvertFirstPageToImageStream(filePath)) {
+        //word
+        if (new string[] { ".doc", ".docx" }.Contains(extension)) {
+            if (attMode) {
+                var oleObject = worksheet.Drawings.AddOleObject(
+                    Guid.NewGuid().ToString(),
+                    filePath
+                );
+                oleObject.SetSize(width, width);
+                return (new ExcelDrawing[] { oleObject }, false, width);
+            }
+            else {
+                //1.转pdf
+                string pdfPath  = ConvertWordToPdf(filePath);
+                var listStream = FileToImageHelper.ConvertAllPagesToImageStreams(pdfPath);
+                List<ExcelPicture> list = new List<ExcelPicture>();
+                foreach (var stream in listStream) {
+                    using (stream) {
                         var picture = worksheet.Drawings.AddPicture(
                           Guid.NewGuid().ToString(),
                           stream
@@ -562,8 +838,84 @@ public class ExcelHelper : IDisposable {
                             // 添加图片后立即缩放
                             width = ScaleImageToCell(picture, targetRowHeight);
                         }
-                        return (picture, true, width);
+                        list.Add(picture);
                     }
+                }
+                File.Delete(pdfPath);
+                return (list.ToArray(), true, width);
+            }
+        }
+        //excel
+        else if (new string[] { ".xls", ".xlsx" }.Contains(extension)) {
+            if (attMode) {
+                var oleObject = worksheet.Drawings.AddOleObject(
+                    Guid.NewGuid().ToString(),
+                    filePath
+                );
+                oleObject.SetSize(width, width);
+                return (new ExcelDrawing[] { oleObject }, false, width);
+            }
+            else {
+                //1.转pdf
+                string pdfPath = ConvertExcelToPdf(filePath);
+                var listStream = FileToImageHelper.ConvertAllPagesToImageStreams(pdfPath);
+                List<ExcelPicture> list = new List<ExcelPicture>();
+                foreach (var stream in listStream) {
+                    using (stream) {
+                        var picture = worksheet.Drawings.AddPicture(
+                          Guid.NewGuid().ToString(),
+                          stream
+                        );
+                        if (imageTypes.Contains(extension)) {
+                            // 添加图片后立即缩放
+                            width = ScaleImageToCell(picture, targetRowHeight);
+                        }
+                        list.Add(picture);
+                    }
+                }
+                File.Delete(pdfPath);
+                return (list.ToArray(), true, width);
+            }
+        }
+        else if (imageTypes.Contains(extension)) {
+            //pdf
+            if (extension.Contains(".pdf")) {
+                if (attMode) {
+                    var oleObject = worksheet.Drawings.AddOleObject(
+                        Guid.NewGuid().ToString(),
+                        filePath
+                    );
+                    oleObject.SetSize(width, width);
+                    return (new ExcelDrawing[] { oleObject }, false, width);
+                }
+                else {
+                    //using (var stream = FileToImageHelper.ConvertFirstPageToImageStream(filePath)) {
+                    //    var picture = worksheet.Drawings.AddPicture(
+                    //      Guid.NewGuid().ToString(),
+                    //      stream
+                    //    );
+                    //    if (imageTypes.Contains(extension)) {
+                    //        // 添加图片后立即缩放
+                    //        width = ScaleImageToCell(picture, targetRowHeight);
+                    //    }
+                    //    return (new ExcelDrawing[] { picture }, true, width);
+                    //}
+                    var listStream = FileToImageHelper.ConvertAllPagesToImageStreams(filePath);
+                    List<ExcelPicture> list = new List<ExcelPicture>();
+                    foreach (var stream in listStream) {
+                        using (stream) {
+                            var picture = worksheet.Drawings.AddPicture(
+                              Guid.NewGuid().ToString(),
+                              stream
+                            );
+                            if (imageTypes.Contains(extension)) {
+                                // 添加图片后立即缩放
+                                width = ScaleImageToCell(picture, targetRowHeight);
+                            }
+                            list.Add(picture);
+                        }
+                    }
+                    return (list.ToArray(), true, width);
                 }
             }
             else {
@@ -577,7 +929,7 @@ public class ExcelHelper : IDisposable {
                         // 添加图片后立即缩放
                         width = ScaleImageToCell(picture, targetRowHeight);
                     }
-                    return (picture, true, width);
+                    return (new ExcelDrawing[] { picture }, true, width);
                 }
             }
         }
@@ -587,7 +939,7 @@ public class ExcelHelper : IDisposable {
                 filePath
             );
             oleObject.SetSize(width, width);
-            return (oleObject, false, width);
+            return (new ExcelDrawing[] { oleObject }, false, width);
         }
     }
     private int ScaleImageToCell(ExcelPicture picture, double cellHeightPoints) {
