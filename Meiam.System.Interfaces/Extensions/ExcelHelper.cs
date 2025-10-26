@@ -1,7 +1,10 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
+using iText.Barcodes.Dmcode;
 using Meiam.System.Common;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
+using OfficeOpenXml.Drawing.OleObject;
+using OfficeOpenXml.Style;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -78,9 +81,120 @@ public class ExcelHelper : IDisposable {
                 return;
             }
         }
+        int caretIndex = text.IndexOf('^');
+        while (caretIndex != -1) {
+            // 定义上标终止分隔符集合
+            char[] separators = { ';', ',', '-', '\\', '/', '~' };
+            int start = caretIndex + 1;
+
+            // 若 "^" 位于字符串末尾，直接移除
+            if (start >= text.Length) {
+                text = text.Remove(caretIndex, 1);
+                caretIndex = text.IndexOf('^');
+                continue;
+            }
+
+            // 查找上标内容的终止位置（第一个分隔符或字符串结尾）
+            int separatorIndex = text.IndexOfAny(separators, start);
+            int end = separatorIndex != -1 ? separatorIndex : text.Length;
+
+            // 提取需要转换为上标的文本
+            string supText = text.Substring(start, end - start);
+
+            // 转换为 Unicode 上标字符
+            string superscript = "";
+            foreach (char c in supText) {
+                if (superscriptMap.ContainsKey(c)) {
+                    superscript += superscriptMap[c];
+                }
+                else {
+                    superscript += c; // 非映射字符保留原样
+                }
+            }
+
+            // 重构字符串（移除 "^" 并替换为上标内容）
+            text = text.Substring(0, caretIndex) + superscript + text.Substring(end);
+
+            // 查找下一个 "^" 继续处理
+            caretIndex = text.IndexOf('^');
+        }
+
+        // 检查单元格是否已有数字格式
+        if (IsNumericFormat(cell.Style.Numberformat.Format)) {
+            // 尝试将文本转换为数字
+            if (double.TryParse(text, out double numberValue)) {
+                cell.Value = numberValue; // 设置为数字类型
+                return;
+            }
+        }
 
         // 默认作为文本处理
         cell.Value = text;
+    }
+
+    /// <summary>
+    /// 解析包含^的文本，分离出普通文本和上标文本
+    /// </summary>
+    /// <param name="text">输入文本</param>
+    /// <returns>包含(是否上标, 文本内容)的列表</returns>
+    private List<(bool IsSuperscript, string Text)> ParseTextWithSuperscript(string text) {
+        var parts = new List<(bool, string)>();
+        if (string.IsNullOrEmpty(text))
+            return parts;
+
+        // 定义上标结束的分隔符集合
+        char[] superscriptSeparators = { ';', ',', '-', '\\', '/', '~' };
+        int currentIndex = 0;
+        int textLength = text.Length;
+
+        while (currentIndex < textLength) {
+            // 查找下一个^的位置
+            int caretIndex = text.IndexOf('^', currentIndex);
+            if (caretIndex == -1) {
+                // 没有^了，剩余内容作为普通文本
+                parts.Add((false, text.Substring(currentIndex)));
+                break;
+            }
+
+            // 处理^之前的普通文本
+            if (caretIndex > currentIndex) {
+                string normalText = text.Substring(currentIndex, caretIndex - currentIndex);
+                parts.Add((false, normalText));
+            }
+
+            // 处理^后面的上标文本
+            int superscriptStart = caretIndex + 1;
+            if (superscriptStart >= textLength) {
+                // ^是最后一个字符，上标文本为空
+                parts.Add((true, string.Empty));
+                currentIndex = textLength;
+                break;
+            }
+
+            // 查找上标后的第一个分隔符
+            int separatorIndex = text.IndexOfAny(superscriptSeparators, superscriptStart);
+            if (separatorIndex == -1) {
+                // 没有分隔符，^右侧所有内容为上标
+                string superscript = text.Substring(superscriptStart);
+                parts.Add((true, superscript));
+                currentIndex = textLength;
+                break;
+            }
+            else {
+                // 有分隔符，^到分隔符之间的内容为上标
+                if (separatorIndex > superscriptStart) {
+                    string superscript = text.Substring(superscriptStart, separatorIndex - superscriptStart);
+                    parts.Add((true, superscript));
+                }
+                else {
+                    // 分隔符紧跟^，上标文本为空
+                    parts.Add((true, string.Empty));
+                }
+                currentIndex = separatorIndex; // 从分隔符位置继续解析
+            }
+        }
+
+        return parts;
     }
 
     private bool IsNumericFormat(string format) {
@@ -90,6 +204,10 @@ public class ExcelHelper : IDisposable {
     }
 
     public void AddAttachsToCell(string sheetName, string cellAddress, string[] filePaths, bool attMode = false) {
+
+        if (filePaths.Length == 0)
+            return;
+
         // 定义完整路径数组并初始化
         string[] fullFilePaths = new string[filePaths.Length];
 
@@ -133,6 +251,16 @@ public class ExcelHelper : IDisposable {
                 throw new Exception($"文件[{filePath}]嵌入失败: {ex.ToString()}");
             }
         }
+    }
+    private (int rowHeightTwips, int colWidthTwips) GetCellDimensions(ExcelWorksheet worksheet, int row, int col) {
+        // 行高：Excel行高单位是“点”，1点=20缇（1点=1/72英寸，1缇=1/1440英寸 → 1点=20缇）
+        int rowHeightTwips = (int)(worksheet.Row(row).Height * 20);
+
+        // 列宽：Excel列宽单位是“字符宽度”，1字符宽≈256缇（动态计算更精准）
+        double colWidthChars = worksheet.Column(col).Width;
+        int colWidthTwips = (int)(colWidthChars * 256); // 1字符宽≈256缇（基于默认字体）
+
+        return (rowHeightTwips, colWidthTwips);
     }
 
     private (int, double) GetMergedCellLeft(ExcelWorksheet worksheet, ExcelRange cell, double startLeft) {
@@ -227,6 +355,8 @@ public class ExcelHelper : IDisposable {
     /// 简化版本 - 只复制非合并单元格，包含行高复制
     /// </summary>
     public void CopyRows(string sheetName, string cellsZone, int copyRows) {
+        if (copyRows <= 0)
+            return;
         var worksheet = GetOrCreateWorksheet(sheetName);
 
         // 解析区域
@@ -818,7 +948,12 @@ public class ExcelHelper : IDisposable {
             if (attMode) {
                 var oleObject = worksheet.Drawings.AddOleObject(
                     Guid.NewGuid().ToString(),
-                    filePath
+                    filePath,
+                    parameters =>
+                    {
+                       // 在这里设置参数
+                       parameters.ProgId = "Word.Document";
+                    }
                 );
                 oleObject.SetSize(width, width);
                 return (new ExcelDrawing[] { oleObject }, false, width);
@@ -850,7 +985,11 @@ public class ExcelHelper : IDisposable {
             if (attMode) {
                 var oleObject = worksheet.Drawings.AddOleObject(
                     Guid.NewGuid().ToString(),
-                    filePath
+                    filePath,
+                    parameters => {
+                        // 在这里设置参数
+                        parameters.ProgId = "Excel.Sheet";
+                    }
                 );
                 oleObject.SetSize(width, width);
                 return (new ExcelDrawing[] { oleObject }, false, width);
@@ -883,7 +1022,11 @@ public class ExcelHelper : IDisposable {
                 if (attMode) {
                     var oleObject = worksheet.Drawings.AddOleObject(
                         Guid.NewGuid().ToString(),
-                        filePath
+                        filePath,
+                        parameters => {
+                            // 在这里设置参数
+                            parameters.ProgId = "AcroExch.Document";
+                        }
                     );
                     oleObject.SetSize(width, width);
                     return (new ExcelDrawing[] { oleObject }, false, width);
@@ -936,7 +1079,11 @@ public class ExcelHelper : IDisposable {
         else {
             var oleObject = worksheet.Drawings.AddOleObject(
                 Guid.NewGuid().ToString(),
-                filePath
+                filePath,
+                parameters => {
+                    // 在这里设置参数
+                    parameters.ProgId = "Package";
+                }
             );
             oleObject.SetSize(width, width);
             return (new ExcelDrawing[] { oleObject }, false, width);

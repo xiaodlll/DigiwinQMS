@@ -569,4 +569,18 @@ namespace Meiam.System.Model
         public string Result { get; set; }
         public string SUPPLOTNO { get; set; }
     }
+
+    /// <summary>
+    /// FQC检验结果回传ERP
+    /// </summary>
+    public class FQCResultRequestHMD {
+        public string ERP_FQCID { get; set; }
+        public string MOID { get; set; }
+        public string ITEMID { get; set; }
+        public string QTY { get; set; }
+        public string Result { get; set; }
+        public string PEOPLEID { get; set; }
+        public string INSPECT_SICODE { get; set; }
+
+    }
 }

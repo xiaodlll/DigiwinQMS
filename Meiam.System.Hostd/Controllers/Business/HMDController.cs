@@ -241,7 +241,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
 
         #endregion
 
-        #region 收料检验结果回传ERP
+        #region 检验结果回传ERP
         /// <summary>
         /// 收料检验结果回传ERP
         /// </summary>
@@ -264,15 +264,15 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                 });
             }
         }
-
+        
         /// <summary>
-        /// 测试收料检验结果回传ERP
+        /// FQC检验结果回传ERP
         /// </summary>
         /// <returns></returns>
-        [HttpPost("TestUpdateReceiveInspectResultHMD")]
-        public async Task<IActionResult> TestPostLotNoticeSync([FromBody] INSPECT_REQCODE request) {
+        [HttpPost("UpdateFQCResultHMD")]
+        public async Task<IActionResult> UpdateFQCResultHMD() {
             try {
-                await _hmdService.TestUpdateReceiveInspectResult(request.DOC_CODE);
+                await _hmdService.UpdateFqcResult();
                 return Ok(new ApiResponse {
                     Success = true,
                     Message = $"调用成功！"
@@ -287,7 +287,8 @@ namespace Meiam.System.Hostd.Controllers.Bisuness
                 });
             }
         }
-
         #endregion
+
+
     }
 }

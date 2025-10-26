@@ -1464,7 +1464,7 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
         }
         #endregion
 
-        #region 回调方法
+        #region 回调方法RC
         public async Task UpdateReceiveInspectResult() {
             var requestData = GetQmsLotNoticeResultRequest();
             if (requestData != null) {
@@ -1569,7 +1569,7 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                     }
                 }
             }
-         }
+        }
 
         public async Task TestUpdateReceiveInspectResult(string requestXml) {
             string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
@@ -1701,5 +1701,152 @@ ORDER BY INSPECT_IQCCREATEDATE DESC;";
             Db.Ado.ExecuteCommand(sql);
         }
         #endregion
+
+        #region 回调方法FQC
+        public async Task UpdateFqcResult() {
+            var requestData = GetQmsFQCResultRequest();
+            if (requestData != null) {
+                foreach (var item in requestData) {
+                    string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
+<Request>
+    <Access>
+        <Authentication user = 'tiptop' password = 'tiptop'/>
+        <Connection application = 'QMS' source = '10.99.80.40'/>
+        <Organization name = 'SZHMD'/>
+        <Locale language = 'zh_CN'/>
+    </Access>
+    <RequestContent>
+        <Parameter />
+        <Document>
+            <RecordSet id = '1' >
+                <Master name = 'giheader' >
+                    <Record>
+                        <Field name = 'qcf01' value = '{item.ERP_FQCID}'/>
+                        <Field name = 'qcf02' value = '{item.MOID}'/>
+                        <Field name = 'qcf021' value = '{item.ITEMID}'/>
+                        <Field name = 'qcf09' value = '{item.Result}'/>
+                        <Field name = 'qcf091' value = '{(item.Result == "2" ? 0 : item.QTY)}'/>
+                        <Field name = 'qcf15' value = '{DateTime.Today.ToString("yyyy/MM/dd")}'/>
+                        <Field name = 'qcfud05' value = '{DateTime.Now.ToString("HH:mm:ss")}'/>
+                        <Field name = 'qcf13' value = '{item.PEOPLEID}'/>
+                        <Field name = 'qcfud06' value = '{item.INSPECT_SICODE}'/>
+                    </Record>
+                </Master>
+          </RecordSet>
+        </Document>
+    </RequestContent>
+</Request>";
+                    requestXml = requestXml.Replace("'", "\"");
+                    string wsUrl = AppSettings.Configuration["ERP:TiptopWs"];
+                    var newEndpointAddress = new EndpointAddress(wsUrl);
+                    _logger.LogInformation($"调用Webservice请求Xml：{requestXml}");
+                    using (var client = new TiptopService.TIPTOPServiceGateWayPortTypeClient(wsUrl.Contains("https:") ? new BasicHttpsBinding() : new BasicHttpBinding(), newEndpointAddress)) {
+                        string encodedValue = EncodeXmlSpecialChars(requestXml);
+                        var result = await client.UpdateFqcAsync(encodedValue);
+                        string responseXml = result.response;
+                        _logger.LogInformation($"调用Webservice返回Xml：{responseXml}");
+
+                        // 解析结果：基于QMS响应XML结构（Execution+Parameter）
+                        XmlDocument xmlDoc = new XmlDocument();
+                        // 1. 加载响应XML（处理XML格式错误）
+                        xmlDoc.LoadXml(responseXml);
+                        Console.WriteLine("响应XML加载成功，开始解析...");
+
+                        // 2. 解析【Execution段】：获取ERP处理状态（成功/失败）
+                        XmlNode statusNode = xmlDoc.SelectSingleNode("/Response/Execution/Status");
+                        if (statusNode == null) {
+                            throw new Exception("响应XML缺失核心节点：/Response/Execution/Status");
+                        }
+
+                        // 提取Status节点属性（文档定义：code=0表示成功，<>0表示失败）
+                        string statusCode = statusNode.Attributes["code"]?.Value ?? string.Empty;
+                        string sqlCode = statusNode.Attributes["sqlcode"]?.Value ?? string.Empty;
+                        string statusDesc = statusNode.Attributes["description"]?.Value ?? "无描述信息";
+                        bool isSuccess = statusCode.Equals("0", StringComparison.Ordinal); // 处理成功标记
+
+                        // 3. 解析【Parameter段】：获取ERP生成的入库单号等结果
+                        XmlNode paramRecordNode = xmlDoc.SelectSingleNode("/Response/ResponseContent/Parameter/Record");
+                        string erpInboundNo = "未获取到"; // 文档定义的rvu01（ERP入库单号）
+                        string paramDesc = "无说明";      // Parameter段的执行结果说明
+
+                        if (paramRecordNode != null) {
+                            // 提取rvu01（ERP入库单号）
+                            XmlNode rvu01Node = paramRecordNode.SelectSingleNode("Field[@name='rvu01']");
+                            if (rvu01Node != null) {
+                                erpInboundNo = rvu01Node.Attributes["value"]?.Value ?? "未获取到";
+                            }
+
+                            // 提取Parameter段的description
+                            XmlNode descNode = paramRecordNode.SelectSingleNode("Field[@name='description']");
+                            if (descNode != null) {
+                                paramDesc = descNode.Attributes["value"]?.Value ?? "无说明";
+                            }
+                        }
+                        else {
+                            _logger.LogWarning("警告：响应XML缺失Parameter/Record节点，无法获取ERP入库单号");
+                        }
+
+                        // 4. 输出解析结果
+                        _logger.LogInformation("\n=== QMS IQC响应解析结果 ===");
+                        _logger.LogInformation($"1. ERP处理状态：{(isSuccess ? "成功" : "失败")}");
+                        _logger.LogInformation($"   - 状态码（code）：{statusCode}");
+                        _logger.LogInformation($"   - SQL状态码（sqlcode）：{sqlCode}");
+                        _logger.LogInformation($"   - 处理描述：{statusDesc}");
+                        _logger.LogInformation($"2. ERP业务结果：");
+                        _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
+                        _logger.LogInformation($"   - 结果说明：{paramDesc}");
+                        _logger.LogInformation("===========================\n");
+
+                        // 5. 业务逻辑分支（根据成功/失败执行后续操作）
+                        if (isSuccess) {
+                            CallBackQmsFQCResult(item);
+                            _logger.LogInformation($"执行成功：使用ERP入库单号【{erpInboundNo}】更新本地记录");
+                        }
+                        else {
+                            _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
+                            throw new Exception($"{item.INSPECT_SICODE}：{statusDesc}");
+                        }
+                    }
+                }
+            }
+        }
+
+        private List<FQCResultRequestHMD> GetQmsFQCResultRequest() {
+            var sql = @" SELECT TOP 100 
+    ERP_FQCID,
+	MOID, ITEMID,
+    FQC_CNT AS QTY,
+	PEOPLEID,
+	INSPECT_SICODE,
+    -- 优先使用SQM_STATE判断，当SQM_STATE为NULL时再使用OQC_STATE
+    CASE 
+        WHEN SQM_STATE IN ('OQC_STATE_005', 'OQC_STATE_006') THEN '1'
+        WHEN SQM_STATE = 'OQC_STATE_008' THEN '3'
+        WHEN SQM_STATE IS NULL THEN 
+            CASE 
+                WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006') THEN '1'
+                WHEN OQC_STATE = 'OQC_STATE_008' THEN '3'
+                ELSE '2'
+            END
+        ELSE '2' 
+    END AS Result
+FROM INSPECT_SI
+WHERE (ISSY <> '1' OR ISSY IS NULL) 
+    AND (
+        SQM_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+        OR OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008')
+    )
+ORDER BY INSPECT_SICREATEDATE DESC;";
+
+            var list = Db.Ado.SqlQuery<FQCResultRequestHMD>(sql);
+            return list;
+        }
+
+        private void CallBackQmsFQCResult(FQCResultRequestHMD request) {
+            var sql = string.Format(@"update INSPECT_SI set ISSY='1' where INSPECT_SICODE='{0}' ", request.INSPECT_SICODE);
+            Db.Ado.ExecuteCommand(sql);
+        }
+        #endregion
+
     }
 }

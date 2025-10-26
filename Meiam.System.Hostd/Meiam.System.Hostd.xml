@@ -101,9 +101,9 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.TestPostLotNoticeSync(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+        <member name="M:Meiam.System.Hostd.Controllers.Bisuness.HMDController.UpdateFQCResultHMD">
             <summary>
-            测试收料检验结果回传ERP
+            FQC检验结果回传ERP
             </summary>
             <returns></returns>
         </member>

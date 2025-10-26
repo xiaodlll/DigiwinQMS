@@ -8,563 +8,564 @@
 //------------------------------------------------------------------------------
 
 namespace TiptopService {
-
-
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(Namespace = "http://www.dsc.com.tw/tiptop/TIPTOPServiceGateWay", ConfigurationName = "TiptopService.TIPTOPServiceGateWayPortType")]
+    [System.ServiceModel.ServiceContractAttribute(Namespace = "http://www.dsc.com.tw/tiptop/TIPTOPServiceGateWay", ConfigurationName = "TIPTOPServiceGateWayPortType")]
     public interface TIPTOPServiceGateWayPortType {
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwOAReturnResultResponse> FwOAReturnResultAsync(TiptopService.FwOAReturnResultRequest request);
+        System.Threading.Tasks.Task<FwOAReturnResultResponse> FwOAReturnResultAsync(FwOAReturnResultRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwCreateVendorResponse> FwCreateVendorAsync(TiptopService.FwCreateVendorRequest request);
+        System.Threading.Tasks.Task<FwCreateVendorResponse> FwCreateVendorAsync(FwCreateVendorRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwCreateCustomerResponse> FwCreateCustomerAsync(TiptopService.FwCreateCustomerRequest request);
+        System.Threading.Tasks.Task<FwCreateCustomerResponse> FwCreateCustomerAsync(FwCreateCustomerRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwCreateForecastResponse> FwCreateForecastAsync(TiptopService.FwCreateForecastRequest request);
+        System.Threading.Tasks.Task<FwCreateForecastResponse> FwCreateForecastAsync(FwCreateForecastRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateTransferNoteResponse> UpdateTransferNoteAsync(TiptopService.UpdateTransferNoteRequest request);
+        System.Threading.Tasks.Task<UpdateTransferNoteResponse> UpdateTransferNoteAsync(UpdateTransferNoteRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateShbResponse> CreateShbAsync(TiptopService.CreateShbRequest request);
+        System.Threading.Tasks.Task<CreateShbResponse> CreateShbAsync(CreateShbRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateChaiResponse> UpdateChaiAsync(TiptopService.UpdateChaiRequest request);
+        System.Threading.Tasks.Task<UpdateChaiResponse> UpdateChaiAsync(UpdateChaiRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateAimt324Response> UpdateAimt324Async(TiptopService.UpdateAimt324Request request);
+        System.Threading.Tasks.Task<UpdateAimt324Response> UpdateAimt324Async(UpdateAimt324Request request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwCreateBillingResponse> FwCreateBillingAsync(TiptopService.FwCreateBillingRequest request);
+        System.Threading.Tasks.Task<UpdateFqcResponse> UpdateFqcAsync(UpdateFqcRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwCreateSalesOrderResponse> FwCreateSalesOrderAsync(TiptopService.FwCreateSalesOrderRequest request);
+        System.Threading.Tasks.Task<FwCreateBillingResponse> FwCreateBillingAsync(FwCreateBillingRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateWOCompleteDataResponse> UpdateWOCompleteDataAsync(TiptopService.UpdateWOCompleteDataRequest request);
+        System.Threading.Tasks.Task<FwCreateSalesOrderResponse> FwCreateSalesOrderAsync(FwCreateSalesOrderRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateShippingDataResponse> UpdateShippingDataAsync(TiptopService.UpdateShippingDataRequest request);
+        System.Threading.Tasks.Task<UpdateWOCompleteDataResponse> UpdateWOCompleteDataAsync(UpdateWOCompleteDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateMixDataResponse> UpdateMixDataAsync(TiptopService.UpdateMixDataRequest request);
+        System.Threading.Tasks.Task<UpdateShippingDataResponse> UpdateShippingDataAsync(UpdateShippingDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateSupplierItemDataResponse> CreateSupplierItemDataAsync(TiptopService.CreateSupplierItemDataRequest request);
+        System.Threading.Tasks.Task<UpdateMixDataResponse> UpdateMixDataAsync(UpdateMixDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateWOWorkReportDataResponse> CreateWOWorkReportDataAsync(TiptopService.CreateWOWorkReportDataRequest request);
+        System.Threading.Tasks.Task<CreateSupplierItemDataResponse> CreateSupplierItemDataAsync(CreateSupplierItemDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateBOMDataResponse> CreateBOMDataAsync(TiptopService.CreateBOMDataRequest request);
+        System.Threading.Tasks.Task<CreateWOWorkReportDataResponse> CreateWOWorkReportDataAsync(CreateWOWorkReportDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateShippingOrdersWithoutOrdersResponse> CreateShippingOrdersWithoutOrdersAsync(TiptopService.CreateShippingOrdersWithoutOrdersRequest request);
+        System.Threading.Tasks.Task<CreateBOMDataResponse> CreateBOMDataAsync(CreateBOMDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetItemGroupDataResponse> GetItemGroupDataAsync(TiptopService.GetItemGroupDataRequest request);
+        System.Threading.Tasks.Task<CreateShippingOrdersWithoutOrdersResponse> CreateShippingOrdersWithoutOrdersAsync(CreateShippingOrdersWithoutOrdersRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetProdStateResponse> GetProdStateAsync(TiptopService.GetProdStateRequest request);
+        System.Threading.Tasks.Task<GetItemGroupDataResponse> GetItemGroupDataAsync(GetItemGroupDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPaymentTermsDataResponse> GetPaymentTermsDataAsync(TiptopService.GetPaymentTermsDataRequest request);
+        System.Threading.Tasks.Task<GetProdStateResponse> GetProdStateAsync(GetProdStateRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSSOKeyResponse> GetSSOKeyAsync(TiptopService.GetSSOKeyRequest request);
+        System.Threading.Tasks.Task<GetPaymentTermsDataResponse> GetPaymentTermsDataAsync(GetPaymentTermsDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateECNDataResponse> CreateECNDataAsync(TiptopService.CreateECNDataRequest request);
+        System.Threading.Tasks.Task<GetSSOKeyResponse> GetSSOKeyAsync(GetSSOKeyRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatePLMBOMDataResponse> CreatePLMBOMDataAsync(TiptopService.CreatePLMBOMDataRequest request);
+        System.Threading.Tasks.Task<CreateECNDataResponse> CreateECNDataAsync(CreateECNDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetQuotationDataResponse> GetQuotationDataAsync(TiptopService.GetQuotationDataRequest request);
+        System.Threading.Tasks.Task<CreatePLMBOMDataResponse> CreatePLMBOMDataAsync(CreatePLMBOMDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustClassificationDataResponse> GetCustClassificationDataAsync(TiptopService.GetCustClassificationDataRequest request);
+        System.Threading.Tasks.Task<GetQuotationDataResponse> GetQuotationDataAsync(GetQuotationDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetInvoiceTypeListResponse> GetInvoiceTypeListAsync(TiptopService.GetInvoiceTypeListRequest request);
+        System.Threading.Tasks.Task<GetCustClassificationDataResponse> GetCustClassificationDataAsync(GetCustClassificationDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetTradeTermDataResponse> GetTradeTermDataAsync(TiptopService.GetTradeTermDataRequest request);
+        System.Threading.Tasks.Task<GetInvoiceTypeListResponse> GetInvoiceTypeListAsync(GetInvoiceTypeListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.SyncAccountDataResponse> SyncAccountDataAsync(TiptopService.SyncAccountDataRequest request);
+        System.Threading.Tasks.Task<GetTradeTermDataResponse> GetTradeTermDataAsync(GetTradeTermDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerAccAmtDataResponse> GetCustomerAccAmtDataAsync(TiptopService.GetCustomerAccAmtDataRequest request);
+        System.Threading.Tasks.Task<SyncAccountDataResponse> SyncAccountDataAsync(SyncAccountDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetDataCountResponse> GetDataCountAsync(TiptopService.GetDataCountRequest request);
+        System.Threading.Tasks.Task<GetCustomerAccAmtDataResponse> GetCustomerAccAmtDataAsync(GetCustomerAccAmtDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSODataResponse> GetSODataAsync(TiptopService.GetSODataRequest request);
+        System.Threading.Tasks.Task<GetDataCountResponse> GetDataCountAsync(GetDataCountRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetShappingDataResponse> GetShappingDataAsync(TiptopService.GetShappingDataRequest request);
+        System.Threading.Tasks.Task<GetSODataResponse> GetSODataAsync(GetSODataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetUserDefOrgResponse> GetUserDefOrgAsync(TiptopService.GetUserDefOrgRequest request);
+        System.Threading.Tasks.Task<GetShappingDataResponse> GetShappingDataAsync(GetShappingDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckCardResponse> CheckCardAsync(TiptopService.CheckCardRequest request);
+        System.Threading.Tasks.Task<GetUserDefOrgResponse> GetUserDefOrgAsync(GetUserDefOrgRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckCardTypeResponse> CheckCardTypeAsync(TiptopService.CheckCardTypeRequest request);
+        System.Threading.Tasks.Task<CheckCardResponse> CheckCardAsync(CheckCardRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckCouponResponse> CheckCouponAsync(TiptopService.CheckCouponRequest request);
+        System.Threading.Tasks.Task<CheckCardTypeResponse> CheckCardTypeAsync(CheckCardTypeRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckMemberUpgradeResponse> CheckMemberUpgradeAsync(TiptopService.CheckMemberUpgradeRequest request);
+        System.Threading.Tasks.Task<CheckCouponResponse> CheckCouponAsync(CheckCouponRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCardScoreResponse> GetCardScoreAsync(TiptopService.GetCardScoreRequest request);
+        System.Threading.Tasks.Task<CheckMemberUpgradeResponse> CheckMemberUpgradeAsync(CheckMemberUpgradeRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCashCardInfoResponse> GetCashCardInfoAsync(TiptopService.GetCashCardInfoRequest request);
+        System.Threading.Tasks.Task<GetCardScoreResponse> GetCardScoreAsync(GetCardScoreRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.RechargeCardResponse> RechargeCardAsync(TiptopService.RechargeCardRequest request);
+        System.Threading.Tasks.Task<GetCashCardInfoResponse> GetCashCardInfoAsync(GetCashCardInfoRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.ReturnCardResponse> ReturnCardAsync(TiptopService.ReturnCardRequest request);
+        System.Threading.Tasks.Task<RechargeCardResponse> RechargeCardAsync(RechargeCardRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.DeductSPaymentResponse> DeductSPaymentAsync(TiptopService.DeductSPaymentRequest request);
+        System.Threading.Tasks.Task<ReturnCardResponse> ReturnCardAsync(ReturnCardRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.ReturnOrderBillResponse> ReturnOrderBillAsync(TiptopService.ReturnOrderBillRequest request);
+        System.Threading.Tasks.Task<DeductSPaymentResponse> DeductSPaymentAsync(DeductSPaymentRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.ChangeCardResponse> ChangeCardAsync(TiptopService.ChangeCardRequest request);
+        System.Threading.Tasks.Task<ReturnOrderBillResponse> ReturnOrderBillAsync(ReturnOrderBillRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.MemberUpgradeResponse> MemberUpgradeAsync(TiptopService.MemberUpgradeRequest request);
+        System.Threading.Tasks.Task<ChangeCardResponse> ChangeCardAsync(ChangeCardRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetOrderInfoResponse> GetOrderInfoAsync(TiptopService.GetOrderInfoRequest request);
+        System.Threading.Tasks.Task<MemberUpgradeResponse> MemberUpgradeAsync(MemberUpgradeRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.RollbackBillingAPResponse> RollbackBillingAPAsync(TiptopService.RollbackBillingAPRequest request);
+        System.Threading.Tasks.Task<GetOrderInfoResponse> GetOrderInfoAsync(GetOrderInfoRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAPCategoryAccountCodeResponse> GetAPCategoryAccountCodeAsync(TiptopService.GetAPCategoryAccountCodeRequest request);
+        System.Threading.Tasks.Task<RollbackBillingAPResponse> RollbackBillingAPAsync(RollbackBillingAPRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.DeletePLMTempTableDataResponse> DeletePLMTempTableDataAsync(TiptopService.DeletePLMTempTableDataRequest request);
+        System.Threading.Tasks.Task<GetAPCategoryAccountCodeResponse> GetAPCategoryAccountCodeAsync(GetAPCategoryAccountCodeRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPLMTempTableDataStatusResponse> GetPLMTempTableDataStatusAsync(TiptopService.GetPLMTempTableDataStatusRequest request);
+        System.Threading.Tasks.Task<DeletePLMTempTableDataResponse> DeletePLMTempTableDataAsync(DeletePLMTempTableDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatePLMTempTableDataResponse> CreatePLMTempTableDataAsync(TiptopService.CreatePLMTempTableDataRequest request);
+        System.Threading.Tasks.Task<GetPLMTempTableDataStatusResponse> GetPLMTempTableDataStatusAsync(GetPLMTempTableDataStatusRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.SelCardInfoResponse> SelCardInfoAsync(TiptopService.SelCardInfoRequest request);
+        System.Threading.Tasks.Task<CreatePLMTempTableDataResponse> CreatePLMTempTableDataAsync(CreatePLMTempTableDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckGiftNoResponse> CheckGiftNoAsync(TiptopService.CheckGiftNoRequest request);
+        System.Threading.Tasks.Task<SelCardInfoResponse> SelCardInfoAsync(SelCardInfoRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.DeductGiftNOResponse> DeductGiftNOAsync(TiptopService.DeductGiftNORequest request);
+        System.Threading.Tasks.Task<CheckGiftNoResponse> CheckGiftNoAsync(CheckGiftNoRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.DeductMoneyResponse> DeductMoneyAsync(TiptopService.DeductMoneyRequest request);
+        System.Threading.Tasks.Task<DeductGiftNOResponse> DeductGiftNOAsync(DeductGiftNORequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.DeductScoreResponse> DeductScoreAsync(TiptopService.DeductScoreRequest request);
+        System.Threading.Tasks.Task<DeductMoneyResponse> DeductMoneyAsync(DeductMoneyRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMemberCardInfoResponse> GetMemberCardInfoAsync(TiptopService.GetMemberCardInfoRequest request);
+        System.Threading.Tasks.Task<DeductScoreResponse> DeductScoreAsync(DeductScoreRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetScoreResponse> GetScoreAsync(TiptopService.GetScoreRequest request);
+        System.Threading.Tasks.Task<GetMemberCardInfoResponse> GetMemberCardInfoAsync(GetMemberCardInfoRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.ModPassWordResponse> ModPassWordAsync(TiptopService.ModPassWordRequest request);
+        System.Threading.Tasks.Task<GetScoreResponse> GetScoreAsync(GetScoreRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.WritePointResponse> WritePointAsync(TiptopService.WritePointRequest request);
+        System.Threading.Tasks.Task<ModPassWordResponse> ModPassWordAsync(ModPassWordRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAreaDataResponse> GetAreaDataAsync(TiptopService.GetAreaDataRequest request);
+        System.Threading.Tasks.Task<WritePointResponse> WritePointAsync(WritePointRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAreaListResponse> GetAreaListAsync(TiptopService.GetAreaListRequest request);
+        System.Threading.Tasks.Task<GetAreaDataResponse> GetAreaDataAsync(GetAreaDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAxmDocumentResponse> GetAxmDocumentAsync(TiptopService.GetAxmDocumentRequest request);
+        System.Threading.Tasks.Task<GetAreaListResponse> GetAreaListAsync(GetAreaListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPurchaseStockInQtyResponse> GetPurchaseStockInQtyAsync(TiptopService.GetPurchaseStockInQtyRequest request);
+        System.Threading.Tasks.Task<GetAxmDocumentResponse> GetAxmDocumentAsync(GetAxmDocumentRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetBasicCodeDataResponse> GetBasicCodeDataAsync(TiptopService.GetBasicCodeDataRequest request);
+        System.Threading.Tasks.Task<GetPurchaseStockInQtyResponse> GetPurchaseStockInQtyAsync(GetPurchaseStockInQtyRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetComponentrepsubDataResponse> GetComponentrepsubDataAsync(TiptopService.GetComponentrepsubDataRequest request);
+        System.Threading.Tasks.Task<GetBasicCodeDataResponse> GetBasicCodeDataAsync(GetBasicCodeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCostGroupDataResponse> GetCostGroupDataAsync(TiptopService.GetCostGroupDataRequest request);
+        System.Threading.Tasks.Task<GetComponentrepsubDataResponse> GetComponentrepsubDataAsync(GetComponentrepsubDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCountryDataResponse> GetCountryDataAsync(TiptopService.GetCountryDataRequest request);
+        System.Threading.Tasks.Task<GetCostGroupDataResponse> GetCostGroupDataAsync(GetCostGroupDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCountryListResponse> GetCountryListAsync(TiptopService.GetCountryListRequest request);
+        System.Threading.Tasks.Task<GetCountryDataResponse> GetCountryDataAsync(GetCountryDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCurrencyDataResponse> GetCurrencyDataAsync(TiptopService.GetCurrencyDataRequest request);
+        System.Threading.Tasks.Task<GetCountryListResponse> GetCountryListAsync(GetCountryListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCurrencyListResponse> GetCurrencyListAsync(TiptopService.GetCurrencyListRequest request);
+        System.Threading.Tasks.Task<GetCurrencyDataResponse> GetCurrencyDataAsync(GetCurrencyDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustListResponse> GetCustListAsync(TiptopService.GetCustListRequest request);
+        System.Threading.Tasks.Task<GetCurrencyListResponse> GetCurrencyListAsync(GetCurrencyListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerDataResponse> GetCustomerDataAsync(TiptopService.GetCustomerDataRequest request);
+        System.Threading.Tasks.Task<GetCustListResponse> GetCustListAsync(GetCustListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerProductDataResponse> GetCustomerProductDataAsync(TiptopService.GetCustomerProductDataRequest request);
+        System.Threading.Tasks.Task<GetCustomerDataResponse> GetCustomerDataAsync(GetCustomerDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetDepartmentDataResponse> GetDepartmentDataAsync(TiptopService.GetDepartmentDataRequest request);
+        System.Threading.Tasks.Task<GetCustomerProductDataResponse> GetCustomerProductDataAsync(GetCustomerProductDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetDepartmentListResponse> GetDepartmentListAsync(TiptopService.GetDepartmentListRequest request);
+        System.Threading.Tasks.Task<GetDepartmentDataResponse> GetDepartmentDataAsync(GetDepartmentDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPOReceivingOutDataResponse> GetPOReceivingOutDataAsync(TiptopService.GetPOReceivingOutDataRequest request);
+        System.Threading.Tasks.Task<GetDepartmentListResponse> GetDepartmentListAsync(GetDepartmentListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetEmployeeDataResponse> GetEmployeeDataAsync(TiptopService.GetEmployeeDataRequest request);
+        System.Threading.Tasks.Task<GetPOReceivingOutDataResponse> GetPOReceivingOutDataAsync(GetPOReceivingOutDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetEmployeeListResponse> GetEmployeeListAsync(TiptopService.GetEmployeeListRequest request);
+        System.Threading.Tasks.Task<GetEmployeeDataResponse> GetEmployeeDataAsync(GetEmployeeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetInspectionDataResponse> GetInspectionDataAsync(TiptopService.GetInspectionDataRequest request);
+        System.Threading.Tasks.Task<GetEmployeeListResponse> GetEmployeeListAsync(GetEmployeeListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatePurchaseStockOutResponse> CreatePurchaseStockOutAsync(TiptopService.CreatePurchaseStockOutRequest request);
+        System.Threading.Tasks.Task<GetInspectionDataResponse> GetInspectionDataAsync(GetInspectionDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetItemListResponse> GetItemListAsync(TiptopService.GetItemListRequest request);
+        System.Threading.Tasks.Task<CreatePurchaseStockOutResponse> CreatePurchaseStockOutAsync(CreatePurchaseStockOutRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetLocationDataResponse> GetLocationDataAsync(TiptopService.GetLocationDataRequest request);
+        System.Threading.Tasks.Task<GetItemListResponse> GetItemListAsync(GetItemListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMonthListResponse> GetMonthListAsync(TiptopService.GetMonthListRequest request);
+        System.Threading.Tasks.Task<GetLocationDataResponse> GetLocationDataAsync(GetLocationDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetOverdueAmtDetailDataResponse> GetOverdueAmtDetailDataAsync(TiptopService.GetOverdueAmtDetailDataRequest request);
+        System.Threading.Tasks.Task<GetMonthListResponse> GetMonthListAsync(GetMonthListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetOverdueAmtRankingDataResponse> GetOverdueAmtRankingDataAsync(TiptopService.GetOverdueAmtRankingDataRequest request);
+        System.Threading.Tasks.Task<GetOverdueAmtDetailDataResponse> GetOverdueAmtDetailDataAsync(GetOverdueAmtDetailDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetProdClassListResponse> GetProdClassListAsync(TiptopService.GetProdClassListRequest request);
+        System.Threading.Tasks.Task<GetOverdueAmtRankingDataResponse> GetOverdueAmtRankingDataAsync(GetOverdueAmtRankingDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetProductClassDataResponse> GetProductClassDataAsync(TiptopService.GetProductClassDataRequest request);
+        System.Threading.Tasks.Task<GetProdClassListResponse> GetProdClassListAsync(GetProdClassListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSOInfoDataResponse> GetSOInfoDataAsync(TiptopService.GetSOInfoDataRequest request);
+        System.Threading.Tasks.Task<GetProductClassDataResponse> GetProductClassDataAsync(GetProductClassDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSOInfoDetailDataResponse> GetSOInfoDetailDataAsync(TiptopService.GetSOInfoDetailDataRequest request);
+        System.Threading.Tasks.Task<GetSOInfoDataResponse> GetSOInfoDataAsync(GetSOInfoDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSalesDetailDataResponse> GetSalesDetailDataAsync(TiptopService.GetSalesDetailDataRequest request);
+        System.Threading.Tasks.Task<GetSOInfoDetailDataResponse> GetSOInfoDetailDataAsync(GetSOInfoDetailDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSalesStatisticsDataResponse> GetSalesStatisticsDataAsync(TiptopService.GetSalesStatisticsDataRequest request);
+        System.Threading.Tasks.Task<GetSalesDetailDataResponse> GetSalesDetailDataAsync(GetSalesDetailDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSupplierDataResponse> GetSupplierDataAsync(TiptopService.GetSupplierDataRequest request);
+        System.Threading.Tasks.Task<GetSalesStatisticsDataResponse> GetSalesStatisticsDataAsync(GetSalesStatisticsDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSupplierItemDataResponse> GetSupplierItemDataAsync(TiptopService.GetSupplierItemDataRequest request);
+        System.Threading.Tasks.Task<GetSupplierDataResponse> GetSupplierDataAsync(GetSupplierDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetWarehouseDataResponse> GetWarehouseDataAsync(TiptopService.GetWarehouseDataRequest request);
+        System.Threading.Tasks.Task<GetSupplierItemDataResponse> GetSupplierItemDataAsync(GetSupplierItemDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetItemDataResponse> GetItemDataAsync(TiptopService.GetItemDataRequest request);
+        System.Threading.Tasks.Task<GetWarehouseDataResponse> GetWarehouseDataAsync(GetWarehouseDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetBOMDataResponse> GetBOMDataAsync(TiptopService.GetBOMDataRequest request);
+        System.Threading.Tasks.Task<GetItemDataResponse> GetItemDataAsync(GetItemDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetDocumentNumberResponse> GetDocumentNumberAsync(TiptopService.GetDocumentNumberRequest request);
+        System.Threading.Tasks.Task<GetBOMDataResponse> GetBOMDataAsync(GetBOMDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateQuotationDataResponse> CreateQuotationDataAsync(TiptopService.CreateQuotationDataRequest request);
+        System.Threading.Tasks.Task<GetDocumentNumberResponse> GetDocumentNumberAsync(GetDocumentNumberRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetStockDataResponse> GetStockDataAsync(TiptopService.GetStockDataRequest request);
+        System.Threading.Tasks.Task<CreateQuotationDataResponse> CreateQuotationDataAsync(CreateQuotationDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetReceivingQtyResponse> GetReceivingQtyAsync(TiptopService.GetReceivingQtyRequest request);
+        System.Threading.Tasks.Task<GetStockDataResponse> GetStockDataAsync(GetStockDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPODataResponse> GetPODataAsync(TiptopService.GetPODataRequest request);
+        System.Threading.Tasks.Task<GetReceivingQtyResponse> GetReceivingQtyAsync(GetReceivingQtyRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMFGDocumentResponse> GetMFGDocumentAsync(TiptopService.GetMFGDocumentRequest request);
+        System.Threading.Tasks.Task<GetPODataResponse> GetPODataAsync(GetPODataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatePOReceivingDataResponse> CreatePOReceivingDataAsync(TiptopService.CreatePOReceivingDataRequest request);
+        System.Threading.Tasks.Task<GetMFGDocumentResponse> GetMFGDocumentAsync(GetMFGDocumentRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateIssueReturnDataResponse> CreateIssueReturnDataAsync(TiptopService.CreateIssueReturnDataRequest request);
+        System.Threading.Tasks.Task<CreatePOReceivingDataResponse> CreatePOReceivingDataAsync(CreatePOReceivingDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPOReceivingInDataResponse> GetPOReceivingInDataAsync(TiptopService.GetPOReceivingInDataRequest request);
+        System.Threading.Tasks.Task<CreateIssueReturnDataResponse> CreateIssueReturnDataAsync(CreateIssueReturnDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateStockInDataResponse> CreateStockInDataAsync(TiptopService.CreateStockInDataRequest request);
+        System.Threading.Tasks.Task<GetPOReceivingInDataResponse> GetPOReceivingInDataAsync(GetPOReceivingInDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAccountSubjectDataResponse> GetAccountSubjectDataAsync(TiptopService.GetAccountSubjectDataRequest request);
+        System.Threading.Tasks.Task<CreateStockInDataResponse> CreateStockInDataAsync(CreateStockInDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatePurchaseStockInResponse> CreatePurchaseStockInAsync(TiptopService.CreatePurchaseStockInRequest request);
+        System.Threading.Tasks.Task<GetAccountSubjectDataResponse> GetAccountSubjectDataAsync(GetAccountSubjectDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPurchaseStockOutQtyResponse> GetPurchaseStockOutQtyAsync(TiptopService.GetPurchaseStockOutQtyRequest request);
+        System.Threading.Tasks.Task<CreatePurchaseStockInResponse> CreatePurchaseStockInAsync(CreatePurchaseStockInRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateTransferNoteResponse> CreateTransferNoteAsync(TiptopService.CreateTransferNoteRequest request);
+        System.Threading.Tasks.Task<GetPurchaseStockOutQtyResponse> GetPurchaseStockOutQtyAsync(GetPurchaseStockOutQtyRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetQtyConversionResponse> GetQtyConversionAsync(TiptopService.GetQtyConversionRequest request);
+        System.Threading.Tasks.Task<CreateTransferNoteResponse> CreateTransferNoteAsync(CreateTransferNoteRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetShippingNoticeDataResponse> GetShippingNoticeDataAsync(TiptopService.GetShippingNoticeDataRequest request);
+        System.Threading.Tasks.Task<GetQtyConversionResponse> GetQtyConversionAsync(GetQtyConversionRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetSalesDocumentResponse> GetSalesDocumentAsync(TiptopService.GetSalesDocumentRequest request);
+        System.Threading.Tasks.Task<GetShippingNoticeDataResponse> GetShippingNoticeDataAsync(GetShippingNoticeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetShippingOrderDataResponse> GetShippingOrderDataAsync(TiptopService.GetShippingOrderDataRequest request);
+        System.Threading.Tasks.Task<GetSalesDocumentResponse> GetSalesDocumentAsync(GetSalesDocumentRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetFQCDataResponse> GetFQCDataAsync(TiptopService.GetFQCDataRequest request);
+        System.Threading.Tasks.Task<GetShippingOrderDataResponse> GetShippingOrderDataAsync(GetShippingOrderDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetWODataResponse> GetWODataAsync(TiptopService.GetWODataRequest request);
+        System.Threading.Tasks.Task<GetFQCDataResponse> GetFQCDataAsync(GetFQCDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetWOStockQtyResponse> GetWOStockQtyAsync(TiptopService.GetWOStockQtyRequest request);
+        System.Threading.Tasks.Task<GetWODataResponse> GetWODataAsync(GetWODataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateWOStockinDataResponse> CreateWOStockinDataAsync(TiptopService.CreateWOStockinDataRequest request);
+        System.Threading.Tasks.Task<GetWOStockQtyResponse> GetWOStockQtyAsync(GetWOStockQtyRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetWOIssueDataResponse> GetWOIssueDataAsync(TiptopService.GetWOIssueDataRequest request);
+        System.Threading.Tasks.Task<CreateWOStockinDataResponse> CreateWOStockinDataAsync(CreateWOStockinDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateWOIssueDataResponse> UpdateWOIssueDataAsync(TiptopService.UpdateWOIssueDataRequest request);
+        System.Threading.Tasks.Task<GetWOIssueDataResponse> GetWOIssueDataAsync(GetWOIssueDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateShippingOrderResponse> CreateShippingOrderAsync(TiptopService.CreateShippingOrderRequest request);
+        System.Threading.Tasks.Task<UpdateWOIssueDataResponse> UpdateWOIssueDataAsync(UpdateWOIssueDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetReasonCodeResponse> GetReasonCodeAsync(TiptopService.GetReasonCodeRequest request);
+        System.Threading.Tasks.Task<CreateShippingOrderResponse> CreateShippingOrderAsync(CreateShippingOrderRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetLabelTypeDataResponse> GetLabelTypeDataAsync(TiptopService.GetLabelTypeDataRequest request);
+        System.Threading.Tasks.Task<GetReasonCodeResponse> GetReasonCodeAsync(GetReasonCodeRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCountingLabelDataResponse> GetCountingLabelDataAsync(TiptopService.GetCountingLabelDataRequest request);
+        System.Threading.Tasks.Task<GetLabelTypeDataResponse> GetLabelTypeDataAsync(GetLabelTypeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateCountingLabelDataResponse> UpdateCountingLabelDataAsync(TiptopService.UpdateCountingLabelDataRequest request);
+        System.Threading.Tasks.Task<GetCountingLabelDataResponse> GetCountingLabelDataAsync(GetCountingLabelDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateMISCIssueDataResponse> CreateMISCIssueDataAsync(TiptopService.CreateMISCIssueDataRequest request);
+        System.Threading.Tasks.Task<UpdateCountingLabelDataResponse> UpdateCountingLabelDataAsync(UpdateCountingLabelDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckExecAuthorizationResponse> CheckExecAuthorizationAsync(TiptopService.CheckExecAuthorizationRequest request);
+        System.Threading.Tasks.Task<CreateMISCIssueDataResponse> CreateMISCIssueDataAsync(CreateMISCIssueDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateStockDataResponse> CreateStockDataAsync(TiptopService.CreateStockDataRequest request);
+        System.Threading.Tasks.Task<CheckExecAuthorizationResponse> CheckExecAuthorizationAsync(CheckExecAuthorizationRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.EboGetCustDataResponse> EboGetCustDataAsync(TiptopService.EboGetCustDataRequest request);
+        System.Threading.Tasks.Task<CreateStockDataResponse> CreateStockDataAsync(CreateStockDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.EboGetProdDataResponse> EboGetProdDataAsync(TiptopService.EboGetProdDataRequest request);
+        System.Threading.Tasks.Task<EboGetCustDataResponse> EboGetCustDataAsync(EboGetCustDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.EboGetOrderDataResponse> EboGetOrderDataAsync(TiptopService.EboGetOrderDataRequest request);
+        System.Threading.Tasks.Task<EboGetProdDataResponse> EboGetProdDataAsync(EboGetProdDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.RunCommandResponse> RunCommandAsync(TiptopService.RunCommandRequest request);
+        System.Threading.Tasks.Task<EboGetOrderDataResponse> EboGetOrderDataAsync(EboGetOrderDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckApsExecutionResponse> CheckApsExecutionAsync(TiptopService.CheckApsExecutionRequest request);
+        System.Threading.Tasks.Task<RunCommandResponse> RunCommandAsync(RunCommandRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetOrganizationListResponse> GetOrganizationListAsync(TiptopService.GetOrganizationListRequest request);
+        System.Threading.Tasks.Task<CheckApsExecutionResponse> CheckApsExecutionAsync(CheckApsExecutionRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetUserTokenResponse> GetUserTokenAsync(TiptopService.GetUserTokenRequest request);
+        System.Threading.Tasks.Task<GetOrganizationListResponse> GetOrganizationListAsync(GetOrganizationListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CheckUserAuthResponse> CheckUserAuthAsync(TiptopService.CheckUserAuthRequest request);
+        System.Threading.Tasks.Task<GetUserTokenResponse> GetUserTokenAsync(GetUserTokenRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMenuDataResponse> GetMenuDataAsync(TiptopService.GetMenuDataRequest request);
+        System.Threading.Tasks.Task<CheckUserAuthResponse> CheckUserAuthAsync(CheckUserAuthRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateVendorDataResponse> CreateVendorDataAsync(TiptopService.CreateVendorDataRequest request);
+        System.Threading.Tasks.Task<GetMenuDataResponse> GetMenuDataAsync(GetMenuDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateBOMMasterDataResponse> CreateBOMMasterDataAsync(TiptopService.CreateBOMMasterDataRequest request);
+        System.Threading.Tasks.Task<CreateVendorDataResponse> CreateVendorDataAsync(CreateVendorDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateBOMDetailDataResponse> CreateBOMDetailDataAsync(TiptopService.CreateBOMDetailDataRequest request);
+        System.Threading.Tasks.Task<CreateBOMMasterDataResponse> CreateBOMMasterDataAsync(CreateBOMMasterDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateVoucherDataResponse> CreateVoucherDataAsync(TiptopService.CreateVoucherDataRequest request);
+        System.Threading.Tasks.Task<CreateBOMDetailDataResponse> CreateBOMDetailDataAsync(CreateBOMDetailDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAccountDataResponse> GetAccountDataAsync(TiptopService.GetAccountDataRequest request);
+        System.Threading.Tasks.Task<CreateVoucherDataResponse> CreateVoucherDataAsync(CreateVoucherDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateCustomerDataResponse> CreateCustomerDataAsync(TiptopService.CreateCustomerDataRequest request);
+        System.Threading.Tasks.Task<GetAccountDataResponse> GetAccountDataAsync(GetAccountDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateItemMasterDataResponse> CreateItemMasterDataAsync(TiptopService.CreateItemMasterDataRequest request);
+        System.Threading.Tasks.Task<CreateCustomerDataResponse> CreateCustomerDataAsync(CreateCustomerDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateEmployeeDataResponse> CreateEmployeeDataAsync(TiptopService.CreateEmployeeDataRequest request);
+        System.Threading.Tasks.Task<CreateItemMasterDataResponse> CreateItemMasterDataAsync(CreateItemMasterDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateAddressDataResponse> CreateAddressDataAsync(TiptopService.CreateAddressDataRequest request);
+        System.Threading.Tasks.Task<CreateEmployeeDataResponse> CreateEmployeeDataAsync(CreateEmployeeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.TIPTOPGateWayResponse> TIPTOPGateWayAsync(TiptopService.TIPTOPGateWayRequest request);
+        System.Threading.Tasks.Task<CreateAddressDataResponse> CreateAddressDataAsync(CreateAddressDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateBillingAPResponse> CreateBillingAPAsync(TiptopService.CreateBillingAPRequest request);
+        System.Threading.Tasks.Task<TIPTOPGateWayResponse> TIPTOPGateWayAsync(TIPTOPGateWayRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateCustomerOtheraddressDataResponse> CreateCustomerOtheraddressDataAsync(TiptopService.CreateCustomerOtheraddressDataRequest request);
+        System.Threading.Tasks.Task<CreateBillingAPResponse> CreateBillingAPAsync(CreateBillingAPRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatePotentialCustomerDataResponse> CreatePotentialCustomerDataAsync(TiptopService.CreatePotentialCustomerDataRequest request);
+        System.Threading.Tasks.Task<CreateCustomerOtheraddressDataResponse> CreateCustomerOtheraddressDataAsync(CreateCustomerOtheraddressDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerContactDataResponse> GetCustomerContactDataAsync(TiptopService.GetCustomerContactDataRequest request);
+        System.Threading.Tasks.Task<CreatePotentialCustomerDataResponse> CreatePotentialCustomerDataAsync(CreatePotentialCustomerDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerOtheraddressDataResponse> GetCustomerOtheraddressDataAsync(TiptopService.GetCustomerOtheraddressDataRequest request);
+        System.Threading.Tasks.Task<GetCustomerContactDataResponse> GetCustomerContactDataAsync(GetCustomerContactDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetItemStockListResponse> GetItemStockListAsync(TiptopService.GetItemStockListRequest request);
+        System.Threading.Tasks.Task<GetCustomerOtheraddressDataResponse> GetCustomerOtheraddressDataAsync(GetCustomerOtheraddressDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMFGSettingSmaDataResponse> GetMFGSettingSmaDataAsync(TiptopService.GetMFGSettingSmaDataRequest request);
+        System.Threading.Tasks.Task<GetItemStockListResponse> GetItemStockListAsync(GetItemStockListRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPackingMethodDataResponse> GetPackingMethodDataAsync(TiptopService.GetPackingMethodDataRequest request);
+        System.Threading.Tasks.Task<GetMFGSettingSmaDataResponse> GetMFGSettingSmaDataAsync(GetMFGSettingSmaDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetPotentialCustomerDataResponse> GetPotentialCustomerDataAsync(TiptopService.GetPotentialCustomerDataRequest request);
+        System.Threading.Tasks.Task<GetPackingMethodDataResponse> GetPackingMethodDataAsync(GetPackingMethodDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetTableAmendmentDataResponse> GetTableAmendmentDataAsync(TiptopService.GetTableAmendmentDataRequest request);
+        System.Threading.Tasks.Task<GetPotentialCustomerDataResponse> GetPotentialCustomerDataAsync(GetPotentialCustomerDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetTaxTypeDataResponse> GetTaxTypeDataAsync(TiptopService.GetTaxTypeDataRequest request);
+        System.Threading.Tasks.Task<GetTableAmendmentDataResponse> GetTableAmendmentDataAsync(GetTableAmendmentDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetUnitConversionDataResponse> GetUnitConversionDataAsync(TiptopService.GetUnitConversionDataRequest request);
+        System.Threading.Tasks.Task<GetTaxTypeDataResponse> GetTaxTypeDataAsync(GetTaxTypeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetUnitDataResponse> GetUnitDataAsync(TiptopService.GetUnitDataRequest request);
+        System.Threading.Tasks.Task<GetUnitConversionDataResponse> GetUnitConversionDataAsync(GetUnitConversionDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetReportDataResponse> GetReportDataAsync(TiptopService.GetReportDataRequest request);
+        System.Threading.Tasks.Task<GetUnitDataResponse> GetUnitDataAsync(GetUnitDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CRMGetCustomerDataResponse> CRMGetCustomerDataAsync(TiptopService.CRMGetCustomerDataRequest request);
+        System.Threading.Tasks.Task<GetReportDataResponse> GetReportDataAsync(GetReportDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateCustomerContactDataResponse> CreateCustomerContactDataAsync(TiptopService.CreateCustomerContactDataRequest request);
+        System.Threading.Tasks.Task<CRMGetCustomerDataResponse> CRMGetCustomerDataAsync(CRMGetCustomerDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateDepartmentDataResponse> CreateDepartmentDataAsync(TiptopService.CreateDepartmentDataRequest request);
+        System.Threading.Tasks.Task<CreateCustomerContactDataResponse> CreateCustomerContactDataAsync(CreateCustomerContactDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetAccountTypeDataResponse> GetAccountTypeDataAsync(TiptopService.GetAccountTypeDataRequest request);
+        System.Threading.Tasks.Task<CreateDepartmentDataResponse> CreateDepartmentDataAsync(CreateDepartmentDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetTransactionCategoryResponse> GetTransactionCategoryAsync(TiptopService.GetTransactionCategoryRequest request);
+        System.Threading.Tasks.Task<GetAccountTypeDataResponse> GetAccountTypeDataAsync(GetAccountTypeDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetVoucherDocumentDataResponse> GetVoucherDocumentDataAsync(TiptopService.GetVoucherDocumentDataRequest request);
+        System.Threading.Tasks.Task<GetTransactionCategoryResponse> GetTransactionCategoryAsync(GetTransactionCategoryRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.RollbackVoucherDataResponse> RollbackVoucherDataAsync(TiptopService.RollbackVoucherDataRequest request);
+        System.Threading.Tasks.Task<GetVoucherDocumentDataResponse> GetVoucherDocumentDataAsync(GetVoucherDocumentDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetCardDetailDataResponse> GetCardDetailDataAsync(TiptopService.GetCardDetailDataRequest request);
+        System.Threading.Tasks.Task<RollbackVoucherDataResponse> RollbackVoucherDataAsync(RollbackVoucherDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetOnlineUserResponse> GetOnlineUserAsync(TiptopService.GetOnlineUserRequest request);
+        System.Threading.Tasks.Task<GetCardDetailDataResponse> GetCardDetailDataAsync(GetCardDetailDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetProdInfoResponse> GetProdInfoAsync(TiptopService.GetProdInfoRequest request);
+        System.Threading.Tasks.Task<GetOnlineUserResponse> GetOnlineUserAsync(GetOnlineUserRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMemberDataResponse> GetMemberDataAsync(TiptopService.GetMemberDataRequest request);
+        System.Threading.Tasks.Task<GetProdInfoResponse> GetProdInfoAsync(GetProdInfoRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetMachineDataResponse> GetMachineDataAsync(TiptopService.GetMachineDataRequest request);
+        System.Threading.Tasks.Task<GetMemberDataResponse> GetMemberDataAsync(GetMemberDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetProdRoutingDataResponse> GetProdRoutingDataAsync(TiptopService.GetProdRoutingDataRequest request);
+        System.Threading.Tasks.Task<GetMachineDataResponse> GetMachineDataAsync(GetMachineDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetWorkstationDataResponse> GetWorkstationDataAsync(TiptopService.GetWorkstationDataRequest request);
+        System.Threading.Tasks.Task<GetProdRoutingDataResponse> GetProdRoutingDataAsync(GetProdRoutingDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateRepSubPBOMDataResponse> CreateRepSubPBOMDataAsync(TiptopService.CreateRepSubPBOMDataRequest request);
+        System.Threading.Tasks.Task<GetWorkstationDataResponse> GetWorkstationDataAsync(GetWorkstationDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetBrandDataResponse> GetBrandDataAsync(TiptopService.GetBrandDataRequest request);
+        System.Threading.Tasks.Task<CreateRepSubPBOMDataResponse> CreateRepSubPBOMDataAsync(CreateRepSubPBOMDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreateItemApprovalDataResponse> CreateItemApprovalDataAsync(TiptopService.CreateItemApprovalDataRequest request);
+        System.Threading.Tasks.Task<GetBrandDataResponse> GetBrandDataAsync(GetBrandDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.GetItemOtherGroupDataResponse> GetItemOtherGroupDataAsync(TiptopService.GetItemOtherGroupDataRequest request);
+        System.Threading.Tasks.Task<CreateItemApprovalDataResponse> CreateItemApprovalDataAsync(CreateItemApprovalDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.ERPOpendocResponse> ERPOpendocAsync(TiptopService.ERPOpendocRequest request);
+        System.Threading.Tasks.Task<GetItemOtherGroupDataResponse> GetItemOtherGroupDataAsync(GetItemOtherGroupDataRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.FwChangeAPDateResponse> FwChangeAPDateAsync(TiptopService.FwChangeAPDateRequest request);
+        System.Threading.Tasks.Task<ERPOpendocResponse> ERPOpendocAsync(ERPOpendocRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.CreatechaiDataResponse> CreatechaiDataAsync(TiptopService.CreatechaiDataRequest request);
+        System.Threading.Tasks.Task<FwChangeAPDateResponse> FwChangeAPDateAsync(FwChangeAPDateRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
-        System.Threading.Tasks.Task<TiptopService.UpdateIqcResponse> UpdateIqcAsync(TiptopService.UpdateIqcRequest request);
+        System.Threading.Tasks.Task<CreatechaiDataResponse> CreatechaiDataAsync(CreatechaiDataRequest request);
+
+        [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
+        System.Threading.Tasks.Task<UpdateIqcResponse> UpdateIqcAsync(UpdateIqcRequest request);
 
         [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "*")]
         [System.ServiceModel.DataContractFormatAttribute(Style = System.ServiceModel.OperationFormatStyle.Rpc)]
@@ -855,6 +856,40 @@ namespace TiptopService {
         }
 
         public UpdateAimt324Response(string response) {
+            this.response = response;
+        }
+    }
+
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
+    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+    [System.ServiceModel.MessageContractAttribute(WrapperName = "UpdateFqcRequest", WrapperNamespace = "http://www.dsc.com.tw/tiptop/TIPTOPServiceGateWay", IsWrapped = true)]
+    public partial class UpdateFqcRequest {
+
+        [System.ServiceModel.MessageBodyMemberAttribute(Namespace = "http://www.dsc.com.tw/tiptop/TIPTOPServiceGateWay", Order = 0)]
+        public string request;
+
+        public UpdateFqcRequest() {
+        }
+
+        public UpdateFqcRequest(string request) {
+            this.request = request;
+        }
+    }
+
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
+    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+    [System.ServiceModel.MessageContractAttribute(WrapperName = "UpdateFqcResponse", WrapperNamespace = "http://www.dsc.com.tw/tiptop/TIPTOPServiceGateWay", IsWrapped = true)]
+    public partial class UpdateFqcResponse {
+
+        [System.ServiceModel.MessageBodyMemberAttribute(Namespace = "http://www.dsc.com.tw/tiptop/TIPTOPServiceGateWay", Order = 0)]
+        public string response;
+
+        public UpdateFqcResponse() {
+        }
+
+        public UpdateFqcResponse(string response) {
             this.response = response;
         }
     }
@@ -6844,12 +6879,12 @@ namespace TiptopService {
     }
 
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public interface TIPTOPServiceGateWayPortTypeChannel : TiptopService.TIPTOPServiceGateWayPortType, System.ServiceModel.IClientChannel {
+    public interface TIPTOPServiceGateWayPortTypeChannel : TIPTOPServiceGateWayPortType, System.ServiceModel.IClientChannel {
     }
 
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public partial class TIPTOPServiceGateWayPortTypeClient : System.ServiceModel.ClientBase<TiptopService.TIPTOPServiceGateWayPortType>, TiptopService.TIPTOPServiceGateWayPortType {
+    public partial class TIPTOPServiceGateWayPortTypeClient : System.ServiceModel.ClientBase<TIPTOPServiceGateWayPortType>, TIPTOPServiceGateWayPortType {
 
         /// <summary>
         /// 实现此分部方法，配置服务终结点。
@@ -6887,2027 +6922,2038 @@ namespace TiptopService {
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwOAReturnResultResponse> TiptopService.TIPTOPServiceGateWayPortType.FwOAReturnResultAsync(TiptopService.FwOAReturnResultRequest request) {
+        System.Threading.Tasks.Task<FwOAReturnResultResponse> TIPTOPServiceGateWayPortType.FwOAReturnResultAsync(FwOAReturnResultRequest request) {
             return base.Channel.FwOAReturnResultAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwOAReturnResultResponse> FwOAReturnResultAsync(string request) {
-            TiptopService.FwOAReturnResultRequest inValue = new TiptopService.FwOAReturnResultRequest();
+        public System.Threading.Tasks.Task<FwOAReturnResultResponse> FwOAReturnResultAsync(string request) {
+            FwOAReturnResultRequest inValue = new FwOAReturnResultRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwOAReturnResultAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwOAReturnResultAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwCreateVendorResponse> TiptopService.TIPTOPServiceGateWayPortType.FwCreateVendorAsync(TiptopService.FwCreateVendorRequest request) {
+        System.Threading.Tasks.Task<FwCreateVendorResponse> TIPTOPServiceGateWayPortType.FwCreateVendorAsync(FwCreateVendorRequest request) {
             return base.Channel.FwCreateVendorAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwCreateVendorResponse> FwCreateVendorAsync(string request) {
-            TiptopService.FwCreateVendorRequest inValue = new TiptopService.FwCreateVendorRequest();
+        public System.Threading.Tasks.Task<FwCreateVendorResponse> FwCreateVendorAsync(string request) {
+            FwCreateVendorRequest inValue = new FwCreateVendorRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwCreateVendorAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwCreateVendorAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwCreateCustomerResponse> TiptopService.TIPTOPServiceGateWayPortType.FwCreateCustomerAsync(TiptopService.FwCreateCustomerRequest request) {
+        System.Threading.Tasks.Task<FwCreateCustomerResponse> TIPTOPServiceGateWayPortType.FwCreateCustomerAsync(FwCreateCustomerRequest request) {
             return base.Channel.FwCreateCustomerAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwCreateCustomerResponse> FwCreateCustomerAsync(string request) {
-            TiptopService.FwCreateCustomerRequest inValue = new TiptopService.FwCreateCustomerRequest();
+        public System.Threading.Tasks.Task<FwCreateCustomerResponse> FwCreateCustomerAsync(string request) {
+            FwCreateCustomerRequest inValue = new FwCreateCustomerRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwCreateCustomerAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwCreateCustomerAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwCreateForecastResponse> TiptopService.TIPTOPServiceGateWayPortType.FwCreateForecastAsync(TiptopService.FwCreateForecastRequest request) {
+        System.Threading.Tasks.Task<FwCreateForecastResponse> TIPTOPServiceGateWayPortType.FwCreateForecastAsync(FwCreateForecastRequest request) {
             return base.Channel.FwCreateForecastAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwCreateForecastResponse> FwCreateForecastAsync(string request) {
-            TiptopService.FwCreateForecastRequest inValue = new TiptopService.FwCreateForecastRequest();
+        public System.Threading.Tasks.Task<FwCreateForecastResponse> FwCreateForecastAsync(string request) {
+            FwCreateForecastRequest inValue = new FwCreateForecastRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwCreateForecastAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwCreateForecastAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateTransferNoteResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateTransferNoteAsync(TiptopService.UpdateTransferNoteRequest request) {
+        System.Threading.Tasks.Task<UpdateTransferNoteResponse> TIPTOPServiceGateWayPortType.UpdateTransferNoteAsync(UpdateTransferNoteRequest request) {
             return base.Channel.UpdateTransferNoteAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateTransferNoteResponse> UpdateTransferNoteAsync(string request) {
-            TiptopService.UpdateTransferNoteRequest inValue = new TiptopService.UpdateTransferNoteRequest();
+        public System.Threading.Tasks.Task<UpdateTransferNoteResponse> UpdateTransferNoteAsync(string request) {
+            UpdateTransferNoteRequest inValue = new UpdateTransferNoteRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateTransferNoteAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateTransferNoteAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateShbResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateShbAsync(TiptopService.CreateShbRequest request) {
+        System.Threading.Tasks.Task<CreateShbResponse> TIPTOPServiceGateWayPortType.CreateShbAsync(CreateShbRequest request) {
             return base.Channel.CreateShbAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateShbResponse> CreateShbAsync(string request) {
-            TiptopService.CreateShbRequest inValue = new TiptopService.CreateShbRequest();
+        public System.Threading.Tasks.Task<CreateShbResponse> CreateShbAsync(string request) {
+            CreateShbRequest inValue = new CreateShbRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateShbAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateShbAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateChaiResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateChaiAsync(TiptopService.UpdateChaiRequest request) {
+        System.Threading.Tasks.Task<UpdateChaiResponse> TIPTOPServiceGateWayPortType.UpdateChaiAsync(UpdateChaiRequest request) {
             return base.Channel.UpdateChaiAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateChaiResponse> UpdateChaiAsync(string request) {
-            TiptopService.UpdateChaiRequest inValue = new TiptopService.UpdateChaiRequest();
+        public System.Threading.Tasks.Task<UpdateChaiResponse> UpdateChaiAsync(string request) {
+            UpdateChaiRequest inValue = new UpdateChaiRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateChaiAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateChaiAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateAimt324Response> TiptopService.TIPTOPServiceGateWayPortType.UpdateAimt324Async(TiptopService.UpdateAimt324Request request) {
+        System.Threading.Tasks.Task<UpdateAimt324Response> TIPTOPServiceGateWayPortType.UpdateAimt324Async(UpdateAimt324Request request) {
             return base.Channel.UpdateAimt324Async(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateAimt324Response> UpdateAimt324Async(string request) {
-            TiptopService.UpdateAimt324Request inValue = new TiptopService.UpdateAimt324Request();
+        public System.Threading.Tasks.Task<UpdateAimt324Response> UpdateAimt324Async(string request) {
+            UpdateAimt324Request inValue = new UpdateAimt324Request();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateAimt324Async(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateAimt324Async(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwCreateBillingResponse> TiptopService.TIPTOPServiceGateWayPortType.FwCreateBillingAsync(TiptopService.FwCreateBillingRequest request) {
+        System.Threading.Tasks.Task<UpdateFqcResponse> TIPTOPServiceGateWayPortType.UpdateFqcAsync(UpdateFqcRequest request) {
+            return base.Channel.UpdateFqcAsync(request);
+        }
+
+        public System.Threading.Tasks.Task<UpdateFqcResponse> UpdateFqcAsync(string request) {
+            UpdateFqcRequest inValue = new UpdateFqcRequest();
+            inValue.request = request;
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateFqcAsync(inValue);
+        }
+
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Threading.Tasks.Task<FwCreateBillingResponse> TIPTOPServiceGateWayPortType.FwCreateBillingAsync(FwCreateBillingRequest request) {
             return base.Channel.FwCreateBillingAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwCreateBillingResponse> FwCreateBillingAsync(string request) {
-            TiptopService.FwCreateBillingRequest inValue = new TiptopService.FwCreateBillingRequest();
+        public System.Threading.Tasks.Task<FwCreateBillingResponse> FwCreateBillingAsync(string request) {
+            FwCreateBillingRequest inValue = new FwCreateBillingRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwCreateBillingAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwCreateBillingAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwCreateSalesOrderResponse> TiptopService.TIPTOPServiceGateWayPortType.FwCreateSalesOrderAsync(TiptopService.FwCreateSalesOrderRequest request) {
+        System.Threading.Tasks.Task<FwCreateSalesOrderResponse> TIPTOPServiceGateWayPortType.FwCreateSalesOrderAsync(FwCreateSalesOrderRequest request) {
             return base.Channel.FwCreateSalesOrderAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwCreateSalesOrderResponse> FwCreateSalesOrderAsync(string request) {
-            TiptopService.FwCreateSalesOrderRequest inValue = new TiptopService.FwCreateSalesOrderRequest();
+        public System.Threading.Tasks.Task<FwCreateSalesOrderResponse> FwCreateSalesOrderAsync(string request) {
+            FwCreateSalesOrderRequest inValue = new FwCreateSalesOrderRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwCreateSalesOrderAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwCreateSalesOrderAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateWOCompleteDataResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateWOCompleteDataAsync(TiptopService.UpdateWOCompleteDataRequest request) {
+        System.Threading.Tasks.Task<UpdateWOCompleteDataResponse> TIPTOPServiceGateWayPortType.UpdateWOCompleteDataAsync(UpdateWOCompleteDataRequest request) {
             return base.Channel.UpdateWOCompleteDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateWOCompleteDataResponse> UpdateWOCompleteDataAsync(string request) {
-            TiptopService.UpdateWOCompleteDataRequest inValue = new TiptopService.UpdateWOCompleteDataRequest();
+        public System.Threading.Tasks.Task<UpdateWOCompleteDataResponse> UpdateWOCompleteDataAsync(string request) {
+            UpdateWOCompleteDataRequest inValue = new UpdateWOCompleteDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateWOCompleteDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateWOCompleteDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateShippingDataResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateShippingDataAsync(TiptopService.UpdateShippingDataRequest request) {
+        System.Threading.Tasks.Task<UpdateShippingDataResponse> TIPTOPServiceGateWayPortType.UpdateShippingDataAsync(UpdateShippingDataRequest request) {
             return base.Channel.UpdateShippingDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateShippingDataResponse> UpdateShippingDataAsync(string request) {
-            TiptopService.UpdateShippingDataRequest inValue = new TiptopService.UpdateShippingDataRequest();
+        public System.Threading.Tasks.Task<UpdateShippingDataResponse> UpdateShippingDataAsync(string request) {
+            UpdateShippingDataRequest inValue = new UpdateShippingDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateShippingDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateShippingDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateMixDataResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateMixDataAsync(TiptopService.UpdateMixDataRequest request) {
+        System.Threading.Tasks.Task<UpdateMixDataResponse> TIPTOPServiceGateWayPortType.UpdateMixDataAsync(UpdateMixDataRequest request) {
             return base.Channel.UpdateMixDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateMixDataResponse> UpdateMixDataAsync(string request) {
-            TiptopService.UpdateMixDataRequest inValue = new TiptopService.UpdateMixDataRequest();
+        public System.Threading.Tasks.Task<UpdateMixDataResponse> UpdateMixDataAsync(string request) {
+            UpdateMixDataRequest inValue = new UpdateMixDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateMixDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateMixDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateSupplierItemDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateSupplierItemDataAsync(TiptopService.CreateSupplierItemDataRequest request) {
+        System.Threading.Tasks.Task<CreateSupplierItemDataResponse> TIPTOPServiceGateWayPortType.CreateSupplierItemDataAsync(CreateSupplierItemDataRequest request) {
             return base.Channel.CreateSupplierItemDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateSupplierItemDataResponse> CreateSupplierItemDataAsync(string request) {
-            TiptopService.CreateSupplierItemDataRequest inValue = new TiptopService.CreateSupplierItemDataRequest();
+        public System.Threading.Tasks.Task<CreateSupplierItemDataResponse> CreateSupplierItemDataAsync(string request) {
+            CreateSupplierItemDataRequest inValue = new CreateSupplierItemDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateSupplierItemDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateSupplierItemDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateWOWorkReportDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateWOWorkReportDataAsync(TiptopService.CreateWOWorkReportDataRequest request) {
+        System.Threading.Tasks.Task<CreateWOWorkReportDataResponse> TIPTOPServiceGateWayPortType.CreateWOWorkReportDataAsync(CreateWOWorkReportDataRequest request) {
             return base.Channel.CreateWOWorkReportDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateWOWorkReportDataResponse> CreateWOWorkReportDataAsync(string request) {
-            TiptopService.CreateWOWorkReportDataRequest inValue = new TiptopService.CreateWOWorkReportDataRequest();
+        public System.Threading.Tasks.Task<CreateWOWorkReportDataResponse> CreateWOWorkReportDataAsync(string request) {
+            CreateWOWorkReportDataRequest inValue = new CreateWOWorkReportDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateWOWorkReportDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateWOWorkReportDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateBOMDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateBOMDataAsync(TiptopService.CreateBOMDataRequest request) {
+        System.Threading.Tasks.Task<CreateBOMDataResponse> TIPTOPServiceGateWayPortType.CreateBOMDataAsync(CreateBOMDataRequest request) {
             return base.Channel.CreateBOMDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateBOMDataResponse> CreateBOMDataAsync(string request) {
-            TiptopService.CreateBOMDataRequest inValue = new TiptopService.CreateBOMDataRequest();
+        public System.Threading.Tasks.Task<CreateBOMDataResponse> CreateBOMDataAsync(string request) {
+            CreateBOMDataRequest inValue = new CreateBOMDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateBOMDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateBOMDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateShippingOrdersWithoutOrdersResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateShippingOrdersWithoutOrdersAsync(TiptopService.CreateShippingOrdersWithoutOrdersRequest request) {
+        System.Threading.Tasks.Task<CreateShippingOrdersWithoutOrdersResponse> TIPTOPServiceGateWayPortType.CreateShippingOrdersWithoutOrdersAsync(CreateShippingOrdersWithoutOrdersRequest request) {
             return base.Channel.CreateShippingOrdersWithoutOrdersAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateShippingOrdersWithoutOrdersResponse> CreateShippingOrdersWithoutOrdersAsync(string request) {
-            TiptopService.CreateShippingOrdersWithoutOrdersRequest inValue = new TiptopService.CreateShippingOrdersWithoutOrdersRequest();
+        public System.Threading.Tasks.Task<CreateShippingOrdersWithoutOrdersResponse> CreateShippingOrdersWithoutOrdersAsync(string request) {
+            CreateShippingOrdersWithoutOrdersRequest inValue = new CreateShippingOrdersWithoutOrdersRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateShippingOrdersWithoutOrdersAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateShippingOrdersWithoutOrdersAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetItemGroupDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetItemGroupDataAsync(TiptopService.GetItemGroupDataRequest request) {
+        System.Threading.Tasks.Task<GetItemGroupDataResponse> TIPTOPServiceGateWayPortType.GetItemGroupDataAsync(GetItemGroupDataRequest request) {
             return base.Channel.GetItemGroupDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetItemGroupDataResponse> GetItemGroupDataAsync(string request) {
-            TiptopService.GetItemGroupDataRequest inValue = new TiptopService.GetItemGroupDataRequest();
+        public System.Threading.Tasks.Task<GetItemGroupDataResponse> GetItemGroupDataAsync(string request) {
+            GetItemGroupDataRequest inValue = new GetItemGroupDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetItemGroupDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetItemGroupDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetProdStateResponse> TiptopService.TIPTOPServiceGateWayPortType.GetProdStateAsync(TiptopService.GetProdStateRequest request) {
+        System.Threading.Tasks.Task<GetProdStateResponse> TIPTOPServiceGateWayPortType.GetProdStateAsync(GetProdStateRequest request) {
             return base.Channel.GetProdStateAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetProdStateResponse> GetProdStateAsync(string request) {
-            TiptopService.GetProdStateRequest inValue = new TiptopService.GetProdStateRequest();
+        public System.Threading.Tasks.Task<GetProdStateResponse> GetProdStateAsync(string request) {
+            GetProdStateRequest inValue = new GetProdStateRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetProdStateAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetProdStateAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPaymentTermsDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPaymentTermsDataAsync(TiptopService.GetPaymentTermsDataRequest request) {
+        System.Threading.Tasks.Task<GetPaymentTermsDataResponse> TIPTOPServiceGateWayPortType.GetPaymentTermsDataAsync(GetPaymentTermsDataRequest request) {
             return base.Channel.GetPaymentTermsDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPaymentTermsDataResponse> GetPaymentTermsDataAsync(string request) {
-            TiptopService.GetPaymentTermsDataRequest inValue = new TiptopService.GetPaymentTermsDataRequest();
+        public System.Threading.Tasks.Task<GetPaymentTermsDataResponse> GetPaymentTermsDataAsync(string request) {
+            GetPaymentTermsDataRequest inValue = new GetPaymentTermsDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPaymentTermsDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPaymentTermsDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSSOKeyResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSSOKeyAsync(TiptopService.GetSSOKeyRequest request) {
+        System.Threading.Tasks.Task<GetSSOKeyResponse> TIPTOPServiceGateWayPortType.GetSSOKeyAsync(GetSSOKeyRequest request) {
             return base.Channel.GetSSOKeyAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSSOKeyResponse> GetSSOKeyAsync(string request) {
-            TiptopService.GetSSOKeyRequest inValue = new TiptopService.GetSSOKeyRequest();
+        public System.Threading.Tasks.Task<GetSSOKeyResponse> GetSSOKeyAsync(string request) {
+            GetSSOKeyRequest inValue = new GetSSOKeyRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSSOKeyAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSSOKeyAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateECNDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateECNDataAsync(TiptopService.CreateECNDataRequest request) {
+        System.Threading.Tasks.Task<CreateECNDataResponse> TIPTOPServiceGateWayPortType.CreateECNDataAsync(CreateECNDataRequest request) {
             return base.Channel.CreateECNDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateECNDataResponse> CreateECNDataAsync(string request) {
-            TiptopService.CreateECNDataRequest inValue = new TiptopService.CreateECNDataRequest();
+        public System.Threading.Tasks.Task<CreateECNDataResponse> CreateECNDataAsync(string request) {
+            CreateECNDataRequest inValue = new CreateECNDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateECNDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateECNDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatePLMBOMDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatePLMBOMDataAsync(TiptopService.CreatePLMBOMDataRequest request) {
+        System.Threading.Tasks.Task<CreatePLMBOMDataResponse> TIPTOPServiceGateWayPortType.CreatePLMBOMDataAsync(CreatePLMBOMDataRequest request) {
             return base.Channel.CreatePLMBOMDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatePLMBOMDataResponse> CreatePLMBOMDataAsync(string request) {
-            TiptopService.CreatePLMBOMDataRequest inValue = new TiptopService.CreatePLMBOMDataRequest();
+        public System.Threading.Tasks.Task<CreatePLMBOMDataResponse> CreatePLMBOMDataAsync(string request) {
+            CreatePLMBOMDataRequest inValue = new CreatePLMBOMDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatePLMBOMDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatePLMBOMDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetQuotationDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetQuotationDataAsync(TiptopService.GetQuotationDataRequest request) {
+        System.Threading.Tasks.Task<GetQuotationDataResponse> TIPTOPServiceGateWayPortType.GetQuotationDataAsync(GetQuotationDataRequest request) {
             return base.Channel.GetQuotationDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetQuotationDataResponse> GetQuotationDataAsync(string request) {
-            TiptopService.GetQuotationDataRequest inValue = new TiptopService.GetQuotationDataRequest();
+        public System.Threading.Tasks.Task<GetQuotationDataResponse> GetQuotationDataAsync(string request) {
+            GetQuotationDataRequest inValue = new GetQuotationDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetQuotationDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetQuotationDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustClassificationDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustClassificationDataAsync(TiptopService.GetCustClassificationDataRequest request) {
+        System.Threading.Tasks.Task<GetCustClassificationDataResponse> TIPTOPServiceGateWayPortType.GetCustClassificationDataAsync(GetCustClassificationDataRequest request) {
             return base.Channel.GetCustClassificationDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustClassificationDataResponse> GetCustClassificationDataAsync(string request) {
-            TiptopService.GetCustClassificationDataRequest inValue = new TiptopService.GetCustClassificationDataRequest();
+        public System.Threading.Tasks.Task<GetCustClassificationDataResponse> GetCustClassificationDataAsync(string request) {
+            GetCustClassificationDataRequest inValue = new GetCustClassificationDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustClassificationDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustClassificationDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetInvoiceTypeListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetInvoiceTypeListAsync(TiptopService.GetInvoiceTypeListRequest request) {
+        System.Threading.Tasks.Task<GetInvoiceTypeListResponse> TIPTOPServiceGateWayPortType.GetInvoiceTypeListAsync(GetInvoiceTypeListRequest request) {
             return base.Channel.GetInvoiceTypeListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetInvoiceTypeListResponse> GetInvoiceTypeListAsync(string request) {
-            TiptopService.GetInvoiceTypeListRequest inValue = new TiptopService.GetInvoiceTypeListRequest();
+        public System.Threading.Tasks.Task<GetInvoiceTypeListResponse> GetInvoiceTypeListAsync(string request) {
+            GetInvoiceTypeListRequest inValue = new GetInvoiceTypeListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetInvoiceTypeListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetInvoiceTypeListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetTradeTermDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetTradeTermDataAsync(TiptopService.GetTradeTermDataRequest request) {
+        System.Threading.Tasks.Task<GetTradeTermDataResponse> TIPTOPServiceGateWayPortType.GetTradeTermDataAsync(GetTradeTermDataRequest request) {
             return base.Channel.GetTradeTermDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetTradeTermDataResponse> GetTradeTermDataAsync(string request) {
-            TiptopService.GetTradeTermDataRequest inValue = new TiptopService.GetTradeTermDataRequest();
+        public System.Threading.Tasks.Task<GetTradeTermDataResponse> GetTradeTermDataAsync(string request) {
+            GetTradeTermDataRequest inValue = new GetTradeTermDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetTradeTermDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetTradeTermDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.SyncAccountDataResponse> TiptopService.TIPTOPServiceGateWayPortType.SyncAccountDataAsync(TiptopService.SyncAccountDataRequest request) {
+        System.Threading.Tasks.Task<SyncAccountDataResponse> TIPTOPServiceGateWayPortType.SyncAccountDataAsync(SyncAccountDataRequest request) {
             return base.Channel.SyncAccountDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.SyncAccountDataResponse> SyncAccountDataAsync(string request) {
-            TiptopService.SyncAccountDataRequest inValue = new TiptopService.SyncAccountDataRequest();
+        public System.Threading.Tasks.Task<SyncAccountDataResponse> SyncAccountDataAsync(string request) {
+            SyncAccountDataRequest inValue = new SyncAccountDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).SyncAccountDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).SyncAccountDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerAccAmtDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustomerAccAmtDataAsync(TiptopService.GetCustomerAccAmtDataRequest request) {
+        System.Threading.Tasks.Task<GetCustomerAccAmtDataResponse> TIPTOPServiceGateWayPortType.GetCustomerAccAmtDataAsync(GetCustomerAccAmtDataRequest request) {
             return base.Channel.GetCustomerAccAmtDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustomerAccAmtDataResponse> GetCustomerAccAmtDataAsync(string request) {
-            TiptopService.GetCustomerAccAmtDataRequest inValue = new TiptopService.GetCustomerAccAmtDataRequest();
+        public System.Threading.Tasks.Task<GetCustomerAccAmtDataResponse> GetCustomerAccAmtDataAsync(string request) {
+            GetCustomerAccAmtDataRequest inValue = new GetCustomerAccAmtDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustomerAccAmtDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustomerAccAmtDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetDataCountResponse> TiptopService.TIPTOPServiceGateWayPortType.GetDataCountAsync(TiptopService.GetDataCountRequest request) {
+        System.Threading.Tasks.Task<GetDataCountResponse> TIPTOPServiceGateWayPortType.GetDataCountAsync(GetDataCountRequest request) {
             return base.Channel.GetDataCountAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetDataCountResponse> GetDataCountAsync(string request) {
-            TiptopService.GetDataCountRequest inValue = new TiptopService.GetDataCountRequest();
+        public System.Threading.Tasks.Task<GetDataCountResponse> GetDataCountAsync(string request) {
+            GetDataCountRequest inValue = new GetDataCountRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetDataCountAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetDataCountAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSODataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSODataAsync(TiptopService.GetSODataRequest request) {
+        System.Threading.Tasks.Task<GetSODataResponse> TIPTOPServiceGateWayPortType.GetSODataAsync(GetSODataRequest request) {
             return base.Channel.GetSODataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSODataResponse> GetSODataAsync(string request) {
-            TiptopService.GetSODataRequest inValue = new TiptopService.GetSODataRequest();
+        public System.Threading.Tasks.Task<GetSODataResponse> GetSODataAsync(string request) {
+            GetSODataRequest inValue = new GetSODataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSODataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSODataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetShappingDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetShappingDataAsync(TiptopService.GetShappingDataRequest request) {
+        System.Threading.Tasks.Task<GetShappingDataResponse> TIPTOPServiceGateWayPortType.GetShappingDataAsync(GetShappingDataRequest request) {
             return base.Channel.GetShappingDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetShappingDataResponse> GetShappingDataAsync(string request) {
-            TiptopService.GetShappingDataRequest inValue = new TiptopService.GetShappingDataRequest();
+        public System.Threading.Tasks.Task<GetShappingDataResponse> GetShappingDataAsync(string request) {
+            GetShappingDataRequest inValue = new GetShappingDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetShappingDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetShappingDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetUserDefOrgResponse> TiptopService.TIPTOPServiceGateWayPortType.GetUserDefOrgAsync(TiptopService.GetUserDefOrgRequest request) {
+        System.Threading.Tasks.Task<GetUserDefOrgResponse> TIPTOPServiceGateWayPortType.GetUserDefOrgAsync(GetUserDefOrgRequest request) {
             return base.Channel.GetUserDefOrgAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetUserDefOrgResponse> GetUserDefOrgAsync(string request) {
-            TiptopService.GetUserDefOrgRequest inValue = new TiptopService.GetUserDefOrgRequest();
+        public System.Threading.Tasks.Task<GetUserDefOrgResponse> GetUserDefOrgAsync(string request) {
+            GetUserDefOrgRequest inValue = new GetUserDefOrgRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetUserDefOrgAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetUserDefOrgAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckCardResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckCardAsync(TiptopService.CheckCardRequest request) {
+        System.Threading.Tasks.Task<CheckCardResponse> TIPTOPServiceGateWayPortType.CheckCardAsync(CheckCardRequest request) {
             return base.Channel.CheckCardAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckCardResponse> CheckCardAsync(string request) {
-            TiptopService.CheckCardRequest inValue = new TiptopService.CheckCardRequest();
+        public System.Threading.Tasks.Task<CheckCardResponse> CheckCardAsync(string request) {
+            CheckCardRequest inValue = new CheckCardRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckCardAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckCardAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckCardTypeResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckCardTypeAsync(TiptopService.CheckCardTypeRequest request) {
+        System.Threading.Tasks.Task<CheckCardTypeResponse> TIPTOPServiceGateWayPortType.CheckCardTypeAsync(CheckCardTypeRequest request) {
             return base.Channel.CheckCardTypeAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckCardTypeResponse> CheckCardTypeAsync(string request) {
-            TiptopService.CheckCardTypeRequest inValue = new TiptopService.CheckCardTypeRequest();
+        public System.Threading.Tasks.Task<CheckCardTypeResponse> CheckCardTypeAsync(string request) {
+            CheckCardTypeRequest inValue = new CheckCardTypeRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckCardTypeAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckCardTypeAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckCouponResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckCouponAsync(TiptopService.CheckCouponRequest request) {
+        System.Threading.Tasks.Task<CheckCouponResponse> TIPTOPServiceGateWayPortType.CheckCouponAsync(CheckCouponRequest request) {
             return base.Channel.CheckCouponAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckCouponResponse> CheckCouponAsync(string request) {
-            TiptopService.CheckCouponRequest inValue = new TiptopService.CheckCouponRequest();
+        public System.Threading.Tasks.Task<CheckCouponResponse> CheckCouponAsync(string request) {
+            CheckCouponRequest inValue = new CheckCouponRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckCouponAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckCouponAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckMemberUpgradeResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckMemberUpgradeAsync(TiptopService.CheckMemberUpgradeRequest request) {
+        System.Threading.Tasks.Task<CheckMemberUpgradeResponse> TIPTOPServiceGateWayPortType.CheckMemberUpgradeAsync(CheckMemberUpgradeRequest request) {
             return base.Channel.CheckMemberUpgradeAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckMemberUpgradeResponse> CheckMemberUpgradeAsync(string request) {
-            TiptopService.CheckMemberUpgradeRequest inValue = new TiptopService.CheckMemberUpgradeRequest();
+        public System.Threading.Tasks.Task<CheckMemberUpgradeResponse> CheckMemberUpgradeAsync(string request) {
+            CheckMemberUpgradeRequest inValue = new CheckMemberUpgradeRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckMemberUpgradeAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckMemberUpgradeAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCardScoreResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCardScoreAsync(TiptopService.GetCardScoreRequest request) {
+        System.Threading.Tasks.Task<GetCardScoreResponse> TIPTOPServiceGateWayPortType.GetCardScoreAsync(GetCardScoreRequest request) {
             return base.Channel.GetCardScoreAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCardScoreResponse> GetCardScoreAsync(string request) {
-            TiptopService.GetCardScoreRequest inValue = new TiptopService.GetCardScoreRequest();
+        public System.Threading.Tasks.Task<GetCardScoreResponse> GetCardScoreAsync(string request) {
+            GetCardScoreRequest inValue = new GetCardScoreRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCardScoreAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCardScoreAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCashCardInfoResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCashCardInfoAsync(TiptopService.GetCashCardInfoRequest request) {
+        System.Threading.Tasks.Task<GetCashCardInfoResponse> TIPTOPServiceGateWayPortType.GetCashCardInfoAsync(GetCashCardInfoRequest request) {
             return base.Channel.GetCashCardInfoAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCashCardInfoResponse> GetCashCardInfoAsync(string request) {
-            TiptopService.GetCashCardInfoRequest inValue = new TiptopService.GetCashCardInfoRequest();
+        public System.Threading.Tasks.Task<GetCashCardInfoResponse> GetCashCardInfoAsync(string request) {
+            GetCashCardInfoRequest inValue = new GetCashCardInfoRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCashCardInfoAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCashCardInfoAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.RechargeCardResponse> TiptopService.TIPTOPServiceGateWayPortType.RechargeCardAsync(TiptopService.RechargeCardRequest request) {
+        System.Threading.Tasks.Task<RechargeCardResponse> TIPTOPServiceGateWayPortType.RechargeCardAsync(RechargeCardRequest request) {
             return base.Channel.RechargeCardAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.RechargeCardResponse> RechargeCardAsync(string request) {
-            TiptopService.RechargeCardRequest inValue = new TiptopService.RechargeCardRequest();
+        public System.Threading.Tasks.Task<RechargeCardResponse> RechargeCardAsync(string request) {
+            RechargeCardRequest inValue = new RechargeCardRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).RechargeCardAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).RechargeCardAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.ReturnCardResponse> TiptopService.TIPTOPServiceGateWayPortType.ReturnCardAsync(TiptopService.ReturnCardRequest request) {
+        System.Threading.Tasks.Task<ReturnCardResponse> TIPTOPServiceGateWayPortType.ReturnCardAsync(ReturnCardRequest request) {
             return base.Channel.ReturnCardAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.ReturnCardResponse> ReturnCardAsync(string request) {
-            TiptopService.ReturnCardRequest inValue = new TiptopService.ReturnCardRequest();
+        public System.Threading.Tasks.Task<ReturnCardResponse> ReturnCardAsync(string request) {
+            ReturnCardRequest inValue = new ReturnCardRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).ReturnCardAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).ReturnCardAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.DeductSPaymentResponse> TiptopService.TIPTOPServiceGateWayPortType.DeductSPaymentAsync(TiptopService.DeductSPaymentRequest request) {
+        System.Threading.Tasks.Task<DeductSPaymentResponse> TIPTOPServiceGateWayPortType.DeductSPaymentAsync(DeductSPaymentRequest request) {
             return base.Channel.DeductSPaymentAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.DeductSPaymentResponse> DeductSPaymentAsync(string request) {
-            TiptopService.DeductSPaymentRequest inValue = new TiptopService.DeductSPaymentRequest();
+        public System.Threading.Tasks.Task<DeductSPaymentResponse> DeductSPaymentAsync(string request) {
+            DeductSPaymentRequest inValue = new DeductSPaymentRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).DeductSPaymentAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).DeductSPaymentAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.ReturnOrderBillResponse> TiptopService.TIPTOPServiceGateWayPortType.ReturnOrderBillAsync(TiptopService.ReturnOrderBillRequest request) {
+        System.Threading.Tasks.Task<ReturnOrderBillResponse> TIPTOPServiceGateWayPortType.ReturnOrderBillAsync(ReturnOrderBillRequest request) {
             return base.Channel.ReturnOrderBillAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.ReturnOrderBillResponse> ReturnOrderBillAsync(string request) {
-            TiptopService.ReturnOrderBillRequest inValue = new TiptopService.ReturnOrderBillRequest();
+        public System.Threading.Tasks.Task<ReturnOrderBillResponse> ReturnOrderBillAsync(string request) {
+            ReturnOrderBillRequest inValue = new ReturnOrderBillRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).ReturnOrderBillAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).ReturnOrderBillAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.ChangeCardResponse> TiptopService.TIPTOPServiceGateWayPortType.ChangeCardAsync(TiptopService.ChangeCardRequest request) {
+        System.Threading.Tasks.Task<ChangeCardResponse> TIPTOPServiceGateWayPortType.ChangeCardAsync(ChangeCardRequest request) {
             return base.Channel.ChangeCardAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.ChangeCardResponse> ChangeCardAsync(string request) {
-            TiptopService.ChangeCardRequest inValue = new TiptopService.ChangeCardRequest();
+        public System.Threading.Tasks.Task<ChangeCardResponse> ChangeCardAsync(string request) {
+            ChangeCardRequest inValue = new ChangeCardRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).ChangeCardAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).ChangeCardAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.MemberUpgradeResponse> TiptopService.TIPTOPServiceGateWayPortType.MemberUpgradeAsync(TiptopService.MemberUpgradeRequest request) {
+        System.Threading.Tasks.Task<MemberUpgradeResponse> TIPTOPServiceGateWayPortType.MemberUpgradeAsync(MemberUpgradeRequest request) {
             return base.Channel.MemberUpgradeAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.MemberUpgradeResponse> MemberUpgradeAsync(string request) {
-            TiptopService.MemberUpgradeRequest inValue = new TiptopService.MemberUpgradeRequest();
+        public System.Threading.Tasks.Task<MemberUpgradeResponse> MemberUpgradeAsync(string request) {
+            MemberUpgradeRequest inValue = new MemberUpgradeRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).MemberUpgradeAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).MemberUpgradeAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetOrderInfoResponse> TiptopService.TIPTOPServiceGateWayPortType.GetOrderInfoAsync(TiptopService.GetOrderInfoRequest request) {
+        System.Threading.Tasks.Task<GetOrderInfoResponse> TIPTOPServiceGateWayPortType.GetOrderInfoAsync(GetOrderInfoRequest request) {
             return base.Channel.GetOrderInfoAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetOrderInfoResponse> GetOrderInfoAsync(string request) {
-            TiptopService.GetOrderInfoRequest inValue = new TiptopService.GetOrderInfoRequest();
+        public System.Threading.Tasks.Task<GetOrderInfoResponse> GetOrderInfoAsync(string request) {
+            GetOrderInfoRequest inValue = new GetOrderInfoRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetOrderInfoAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetOrderInfoAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.RollbackBillingAPResponse> TiptopService.TIPTOPServiceGateWayPortType.RollbackBillingAPAsync(TiptopService.RollbackBillingAPRequest request) {
+        System.Threading.Tasks.Task<RollbackBillingAPResponse> TIPTOPServiceGateWayPortType.RollbackBillingAPAsync(RollbackBillingAPRequest request) {
             return base.Channel.RollbackBillingAPAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.RollbackBillingAPResponse> RollbackBillingAPAsync(string request) {
-            TiptopService.RollbackBillingAPRequest inValue = new TiptopService.RollbackBillingAPRequest();
+        public System.Threading.Tasks.Task<RollbackBillingAPResponse> RollbackBillingAPAsync(string request) {
+            RollbackBillingAPRequest inValue = new RollbackBillingAPRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).RollbackBillingAPAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).RollbackBillingAPAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAPCategoryAccountCodeResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAPCategoryAccountCodeAsync(TiptopService.GetAPCategoryAccountCodeRequest request) {
+        System.Threading.Tasks.Task<GetAPCategoryAccountCodeResponse> TIPTOPServiceGateWayPortType.GetAPCategoryAccountCodeAsync(GetAPCategoryAccountCodeRequest request) {
             return base.Channel.GetAPCategoryAccountCodeAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAPCategoryAccountCodeResponse> GetAPCategoryAccountCodeAsync(string request) {
-            TiptopService.GetAPCategoryAccountCodeRequest inValue = new TiptopService.GetAPCategoryAccountCodeRequest();
+        public System.Threading.Tasks.Task<GetAPCategoryAccountCodeResponse> GetAPCategoryAccountCodeAsync(string request) {
+            GetAPCategoryAccountCodeRequest inValue = new GetAPCategoryAccountCodeRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAPCategoryAccountCodeAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAPCategoryAccountCodeAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.DeletePLMTempTableDataResponse> TiptopService.TIPTOPServiceGateWayPortType.DeletePLMTempTableDataAsync(TiptopService.DeletePLMTempTableDataRequest request) {
+        System.Threading.Tasks.Task<DeletePLMTempTableDataResponse> TIPTOPServiceGateWayPortType.DeletePLMTempTableDataAsync(DeletePLMTempTableDataRequest request) {
             return base.Channel.DeletePLMTempTableDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.DeletePLMTempTableDataResponse> DeletePLMTempTableDataAsync(string request) {
-            TiptopService.DeletePLMTempTableDataRequest inValue = new TiptopService.DeletePLMTempTableDataRequest();
+        public System.Threading.Tasks.Task<DeletePLMTempTableDataResponse> DeletePLMTempTableDataAsync(string request) {
+            DeletePLMTempTableDataRequest inValue = new DeletePLMTempTableDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).DeletePLMTempTableDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).DeletePLMTempTableDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPLMTempTableDataStatusResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPLMTempTableDataStatusAsync(TiptopService.GetPLMTempTableDataStatusRequest request) {
+        System.Threading.Tasks.Task<GetPLMTempTableDataStatusResponse> TIPTOPServiceGateWayPortType.GetPLMTempTableDataStatusAsync(GetPLMTempTableDataStatusRequest request) {
             return base.Channel.GetPLMTempTableDataStatusAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPLMTempTableDataStatusResponse> GetPLMTempTableDataStatusAsync(string request) {
-            TiptopService.GetPLMTempTableDataStatusRequest inValue = new TiptopService.GetPLMTempTableDataStatusRequest();
+        public System.Threading.Tasks.Task<GetPLMTempTableDataStatusResponse> GetPLMTempTableDataStatusAsync(string request) {
+            GetPLMTempTableDataStatusRequest inValue = new GetPLMTempTableDataStatusRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPLMTempTableDataStatusAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPLMTempTableDataStatusAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatePLMTempTableDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatePLMTempTableDataAsync(TiptopService.CreatePLMTempTableDataRequest request) {
+        System.Threading.Tasks.Task<CreatePLMTempTableDataResponse> TIPTOPServiceGateWayPortType.CreatePLMTempTableDataAsync(CreatePLMTempTableDataRequest request) {
             return base.Channel.CreatePLMTempTableDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatePLMTempTableDataResponse> CreatePLMTempTableDataAsync(string request) {
-            TiptopService.CreatePLMTempTableDataRequest inValue = new TiptopService.CreatePLMTempTableDataRequest();
+        public System.Threading.Tasks.Task<CreatePLMTempTableDataResponse> CreatePLMTempTableDataAsync(string request) {
+            CreatePLMTempTableDataRequest inValue = new CreatePLMTempTableDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatePLMTempTableDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatePLMTempTableDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.SelCardInfoResponse> TiptopService.TIPTOPServiceGateWayPortType.SelCardInfoAsync(TiptopService.SelCardInfoRequest request) {
+        System.Threading.Tasks.Task<SelCardInfoResponse> TIPTOPServiceGateWayPortType.SelCardInfoAsync(SelCardInfoRequest request) {
             return base.Channel.SelCardInfoAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.SelCardInfoResponse> SelCardInfoAsync(string request) {
-            TiptopService.SelCardInfoRequest inValue = new TiptopService.SelCardInfoRequest();
+        public System.Threading.Tasks.Task<SelCardInfoResponse> SelCardInfoAsync(string request) {
+            SelCardInfoRequest inValue = new SelCardInfoRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).SelCardInfoAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).SelCardInfoAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckGiftNoResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckGiftNoAsync(TiptopService.CheckGiftNoRequest request) {
+        System.Threading.Tasks.Task<CheckGiftNoResponse> TIPTOPServiceGateWayPortType.CheckGiftNoAsync(CheckGiftNoRequest request) {
             return base.Channel.CheckGiftNoAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckGiftNoResponse> CheckGiftNoAsync(string request) {
-            TiptopService.CheckGiftNoRequest inValue = new TiptopService.CheckGiftNoRequest();
+        public System.Threading.Tasks.Task<CheckGiftNoResponse> CheckGiftNoAsync(string request) {
+            CheckGiftNoRequest inValue = new CheckGiftNoRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckGiftNoAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckGiftNoAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.DeductGiftNOResponse> TiptopService.TIPTOPServiceGateWayPortType.DeductGiftNOAsync(TiptopService.DeductGiftNORequest request) {
+        System.Threading.Tasks.Task<DeductGiftNOResponse> TIPTOPServiceGateWayPortType.DeductGiftNOAsync(DeductGiftNORequest request) {
             return base.Channel.DeductGiftNOAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.DeductGiftNOResponse> DeductGiftNOAsync(string request) {
-            TiptopService.DeductGiftNORequest inValue = new TiptopService.DeductGiftNORequest();
+        public System.Threading.Tasks.Task<DeductGiftNOResponse> DeductGiftNOAsync(string request) {
+            DeductGiftNORequest inValue = new DeductGiftNORequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).DeductGiftNOAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).DeductGiftNOAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.DeductMoneyResponse> TiptopService.TIPTOPServiceGateWayPortType.DeductMoneyAsync(TiptopService.DeductMoneyRequest request) {
+        System.Threading.Tasks.Task<DeductMoneyResponse> TIPTOPServiceGateWayPortType.DeductMoneyAsync(DeductMoneyRequest request) {
             return base.Channel.DeductMoneyAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.DeductMoneyResponse> DeductMoneyAsync(string request) {
-            TiptopService.DeductMoneyRequest inValue = new TiptopService.DeductMoneyRequest();
+        public System.Threading.Tasks.Task<DeductMoneyResponse> DeductMoneyAsync(string request) {
+            DeductMoneyRequest inValue = new DeductMoneyRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).DeductMoneyAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).DeductMoneyAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.DeductScoreResponse> TiptopService.TIPTOPServiceGateWayPortType.DeductScoreAsync(TiptopService.DeductScoreRequest request) {
+        System.Threading.Tasks.Task<DeductScoreResponse> TIPTOPServiceGateWayPortType.DeductScoreAsync(DeductScoreRequest request) {
             return base.Channel.DeductScoreAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.DeductScoreResponse> DeductScoreAsync(string request) {
-            TiptopService.DeductScoreRequest inValue = new TiptopService.DeductScoreRequest();
+        public System.Threading.Tasks.Task<DeductScoreResponse> DeductScoreAsync(string request) {
+            DeductScoreRequest inValue = new DeductScoreRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).DeductScoreAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).DeductScoreAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMemberCardInfoResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMemberCardInfoAsync(TiptopService.GetMemberCardInfoRequest request) {
+        System.Threading.Tasks.Task<GetMemberCardInfoResponse> TIPTOPServiceGateWayPortType.GetMemberCardInfoAsync(GetMemberCardInfoRequest request) {
             return base.Channel.GetMemberCardInfoAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMemberCardInfoResponse> GetMemberCardInfoAsync(string request) {
-            TiptopService.GetMemberCardInfoRequest inValue = new TiptopService.GetMemberCardInfoRequest();
+        public System.Threading.Tasks.Task<GetMemberCardInfoResponse> GetMemberCardInfoAsync(string request) {
+            GetMemberCardInfoRequest inValue = new GetMemberCardInfoRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMemberCardInfoAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMemberCardInfoAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetScoreResponse> TiptopService.TIPTOPServiceGateWayPortType.GetScoreAsync(TiptopService.GetScoreRequest request) {
+        System.Threading.Tasks.Task<GetScoreResponse> TIPTOPServiceGateWayPortType.GetScoreAsync(GetScoreRequest request) {
             return base.Channel.GetScoreAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetScoreResponse> GetScoreAsync(string request) {
-            TiptopService.GetScoreRequest inValue = new TiptopService.GetScoreRequest();
+        public System.Threading.Tasks.Task<GetScoreResponse> GetScoreAsync(string request) {
+            GetScoreRequest inValue = new GetScoreRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetScoreAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetScoreAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.ModPassWordResponse> TiptopService.TIPTOPServiceGateWayPortType.ModPassWordAsync(TiptopService.ModPassWordRequest request) {
+        System.Threading.Tasks.Task<ModPassWordResponse> TIPTOPServiceGateWayPortType.ModPassWordAsync(ModPassWordRequest request) {
             return base.Channel.ModPassWordAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.ModPassWordResponse> ModPassWordAsync(string request) {
-            TiptopService.ModPassWordRequest inValue = new TiptopService.ModPassWordRequest();
+        public System.Threading.Tasks.Task<ModPassWordResponse> ModPassWordAsync(string request) {
+            ModPassWordRequest inValue = new ModPassWordRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).ModPassWordAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).ModPassWordAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.WritePointResponse> TiptopService.TIPTOPServiceGateWayPortType.WritePointAsync(TiptopService.WritePointRequest request) {
+        System.Threading.Tasks.Task<WritePointResponse> TIPTOPServiceGateWayPortType.WritePointAsync(WritePointRequest request) {
             return base.Channel.WritePointAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.WritePointResponse> WritePointAsync(string request) {
-            TiptopService.WritePointRequest inValue = new TiptopService.WritePointRequest();
+        public System.Threading.Tasks.Task<WritePointResponse> WritePointAsync(string request) {
+            WritePointRequest inValue = new WritePointRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).WritePointAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).WritePointAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAreaDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAreaDataAsync(TiptopService.GetAreaDataRequest request) {
+        System.Threading.Tasks.Task<GetAreaDataResponse> TIPTOPServiceGateWayPortType.GetAreaDataAsync(GetAreaDataRequest request) {
             return base.Channel.GetAreaDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAreaDataResponse> GetAreaDataAsync(string request) {
-            TiptopService.GetAreaDataRequest inValue = new TiptopService.GetAreaDataRequest();
+        public System.Threading.Tasks.Task<GetAreaDataResponse> GetAreaDataAsync(string request) {
+            GetAreaDataRequest inValue = new GetAreaDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAreaDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAreaDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAreaListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAreaListAsync(TiptopService.GetAreaListRequest request) {
+        System.Threading.Tasks.Task<GetAreaListResponse> TIPTOPServiceGateWayPortType.GetAreaListAsync(GetAreaListRequest request) {
             return base.Channel.GetAreaListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAreaListResponse> GetAreaListAsync(string request) {
-            TiptopService.GetAreaListRequest inValue = new TiptopService.GetAreaListRequest();
+        public System.Threading.Tasks.Task<GetAreaListResponse> GetAreaListAsync(string request) {
+            GetAreaListRequest inValue = new GetAreaListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAreaListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAreaListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAxmDocumentResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAxmDocumentAsync(TiptopService.GetAxmDocumentRequest request) {
+        System.Threading.Tasks.Task<GetAxmDocumentResponse> TIPTOPServiceGateWayPortType.GetAxmDocumentAsync(GetAxmDocumentRequest request) {
             return base.Channel.GetAxmDocumentAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAxmDocumentResponse> GetAxmDocumentAsync(string request) {
-            TiptopService.GetAxmDocumentRequest inValue = new TiptopService.GetAxmDocumentRequest();
+        public System.Threading.Tasks.Task<GetAxmDocumentResponse> GetAxmDocumentAsync(string request) {
+            GetAxmDocumentRequest inValue = new GetAxmDocumentRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAxmDocumentAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAxmDocumentAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPurchaseStockInQtyResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPurchaseStockInQtyAsync(TiptopService.GetPurchaseStockInQtyRequest request) {
+        System.Threading.Tasks.Task<GetPurchaseStockInQtyResponse> TIPTOPServiceGateWayPortType.GetPurchaseStockInQtyAsync(GetPurchaseStockInQtyRequest request) {
             return base.Channel.GetPurchaseStockInQtyAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPurchaseStockInQtyResponse> GetPurchaseStockInQtyAsync(string request) {
-            TiptopService.GetPurchaseStockInQtyRequest inValue = new TiptopService.GetPurchaseStockInQtyRequest();
+        public System.Threading.Tasks.Task<GetPurchaseStockInQtyResponse> GetPurchaseStockInQtyAsync(string request) {
+            GetPurchaseStockInQtyRequest inValue = new GetPurchaseStockInQtyRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPurchaseStockInQtyAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPurchaseStockInQtyAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetBasicCodeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetBasicCodeDataAsync(TiptopService.GetBasicCodeDataRequest request) {
+        System.Threading.Tasks.Task<GetBasicCodeDataResponse> TIPTOPServiceGateWayPortType.GetBasicCodeDataAsync(GetBasicCodeDataRequest request) {
             return base.Channel.GetBasicCodeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetBasicCodeDataResponse> GetBasicCodeDataAsync(string request) {
-            TiptopService.GetBasicCodeDataRequest inValue = new TiptopService.GetBasicCodeDataRequest();
+        public System.Threading.Tasks.Task<GetBasicCodeDataResponse> GetBasicCodeDataAsync(string request) {
+            GetBasicCodeDataRequest inValue = new GetBasicCodeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetBasicCodeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetBasicCodeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetComponentrepsubDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetComponentrepsubDataAsync(TiptopService.GetComponentrepsubDataRequest request) {
+        System.Threading.Tasks.Task<GetComponentrepsubDataResponse> TIPTOPServiceGateWayPortType.GetComponentrepsubDataAsync(GetComponentrepsubDataRequest request) {
             return base.Channel.GetComponentrepsubDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetComponentrepsubDataResponse> GetComponentrepsubDataAsync(string request) {
-            TiptopService.GetComponentrepsubDataRequest inValue = new TiptopService.GetComponentrepsubDataRequest();
+        public System.Threading.Tasks.Task<GetComponentrepsubDataResponse> GetComponentrepsubDataAsync(string request) {
+            GetComponentrepsubDataRequest inValue = new GetComponentrepsubDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetComponentrepsubDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetComponentrepsubDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCostGroupDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCostGroupDataAsync(TiptopService.GetCostGroupDataRequest request) {
+        System.Threading.Tasks.Task<GetCostGroupDataResponse> TIPTOPServiceGateWayPortType.GetCostGroupDataAsync(GetCostGroupDataRequest request) {
             return base.Channel.GetCostGroupDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCostGroupDataResponse> GetCostGroupDataAsync(string request) {
-            TiptopService.GetCostGroupDataRequest inValue = new TiptopService.GetCostGroupDataRequest();
+        public System.Threading.Tasks.Task<GetCostGroupDataResponse> GetCostGroupDataAsync(string request) {
+            GetCostGroupDataRequest inValue = new GetCostGroupDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCostGroupDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCostGroupDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCountryDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCountryDataAsync(TiptopService.GetCountryDataRequest request) {
+        System.Threading.Tasks.Task<GetCountryDataResponse> TIPTOPServiceGateWayPortType.GetCountryDataAsync(GetCountryDataRequest request) {
             return base.Channel.GetCountryDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCountryDataResponse> GetCountryDataAsync(string request) {
-            TiptopService.GetCountryDataRequest inValue = new TiptopService.GetCountryDataRequest();
+        public System.Threading.Tasks.Task<GetCountryDataResponse> GetCountryDataAsync(string request) {
+            GetCountryDataRequest inValue = new GetCountryDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCountryDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCountryDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCountryListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCountryListAsync(TiptopService.GetCountryListRequest request) {
+        System.Threading.Tasks.Task<GetCountryListResponse> TIPTOPServiceGateWayPortType.GetCountryListAsync(GetCountryListRequest request) {
             return base.Channel.GetCountryListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCountryListResponse> GetCountryListAsync(string request) {
-            TiptopService.GetCountryListRequest inValue = new TiptopService.GetCountryListRequest();
+        public System.Threading.Tasks.Task<GetCountryListResponse> GetCountryListAsync(string request) {
+            GetCountryListRequest inValue = new GetCountryListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCountryListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCountryListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCurrencyDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCurrencyDataAsync(TiptopService.GetCurrencyDataRequest request) {
+        System.Threading.Tasks.Task<GetCurrencyDataResponse> TIPTOPServiceGateWayPortType.GetCurrencyDataAsync(GetCurrencyDataRequest request) {
             return base.Channel.GetCurrencyDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCurrencyDataResponse> GetCurrencyDataAsync(string request) {
-            TiptopService.GetCurrencyDataRequest inValue = new TiptopService.GetCurrencyDataRequest();
+        public System.Threading.Tasks.Task<GetCurrencyDataResponse> GetCurrencyDataAsync(string request) {
+            GetCurrencyDataRequest inValue = new GetCurrencyDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCurrencyDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCurrencyDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCurrencyListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCurrencyListAsync(TiptopService.GetCurrencyListRequest request) {
+        System.Threading.Tasks.Task<GetCurrencyListResponse> TIPTOPServiceGateWayPortType.GetCurrencyListAsync(GetCurrencyListRequest request) {
             return base.Channel.GetCurrencyListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCurrencyListResponse> GetCurrencyListAsync(string request) {
-            TiptopService.GetCurrencyListRequest inValue = new TiptopService.GetCurrencyListRequest();
+        public System.Threading.Tasks.Task<GetCurrencyListResponse> GetCurrencyListAsync(string request) {
+            GetCurrencyListRequest inValue = new GetCurrencyListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCurrencyListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCurrencyListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustListAsync(TiptopService.GetCustListRequest request) {
+        System.Threading.Tasks.Task<GetCustListResponse> TIPTOPServiceGateWayPortType.GetCustListAsync(GetCustListRequest request) {
             return base.Channel.GetCustListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustListResponse> GetCustListAsync(string request) {
-            TiptopService.GetCustListRequest inValue = new TiptopService.GetCustListRequest();
+        public System.Threading.Tasks.Task<GetCustListResponse> GetCustListAsync(string request) {
+            GetCustListRequest inValue = new GetCustListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustomerDataAsync(TiptopService.GetCustomerDataRequest request) {
+        System.Threading.Tasks.Task<GetCustomerDataResponse> TIPTOPServiceGateWayPortType.GetCustomerDataAsync(GetCustomerDataRequest request) {
             return base.Channel.GetCustomerDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustomerDataResponse> GetCustomerDataAsync(string request) {
-            TiptopService.GetCustomerDataRequest inValue = new TiptopService.GetCustomerDataRequest();
+        public System.Threading.Tasks.Task<GetCustomerDataResponse> GetCustomerDataAsync(string request) {
+            GetCustomerDataRequest inValue = new GetCustomerDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustomerDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustomerDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerProductDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustomerProductDataAsync(TiptopService.GetCustomerProductDataRequest request) {
+        System.Threading.Tasks.Task<GetCustomerProductDataResponse> TIPTOPServiceGateWayPortType.GetCustomerProductDataAsync(GetCustomerProductDataRequest request) {
             return base.Channel.GetCustomerProductDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustomerProductDataResponse> GetCustomerProductDataAsync(string request) {
-            TiptopService.GetCustomerProductDataRequest inValue = new TiptopService.GetCustomerProductDataRequest();
+        public System.Threading.Tasks.Task<GetCustomerProductDataResponse> GetCustomerProductDataAsync(string request) {
+            GetCustomerProductDataRequest inValue = new GetCustomerProductDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustomerProductDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustomerProductDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetDepartmentDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetDepartmentDataAsync(TiptopService.GetDepartmentDataRequest request) {
+        System.Threading.Tasks.Task<GetDepartmentDataResponse> TIPTOPServiceGateWayPortType.GetDepartmentDataAsync(GetDepartmentDataRequest request) {
             return base.Channel.GetDepartmentDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetDepartmentDataResponse> GetDepartmentDataAsync(string request) {
-            TiptopService.GetDepartmentDataRequest inValue = new TiptopService.GetDepartmentDataRequest();
+        public System.Threading.Tasks.Task<GetDepartmentDataResponse> GetDepartmentDataAsync(string request) {
+            GetDepartmentDataRequest inValue = new GetDepartmentDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetDepartmentDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetDepartmentDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetDepartmentListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetDepartmentListAsync(TiptopService.GetDepartmentListRequest request) {
+        System.Threading.Tasks.Task<GetDepartmentListResponse> TIPTOPServiceGateWayPortType.GetDepartmentListAsync(GetDepartmentListRequest request) {
             return base.Channel.GetDepartmentListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetDepartmentListResponse> GetDepartmentListAsync(string request) {
-            TiptopService.GetDepartmentListRequest inValue = new TiptopService.GetDepartmentListRequest();
+        public System.Threading.Tasks.Task<GetDepartmentListResponse> GetDepartmentListAsync(string request) {
+            GetDepartmentListRequest inValue = new GetDepartmentListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetDepartmentListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetDepartmentListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPOReceivingOutDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPOReceivingOutDataAsync(TiptopService.GetPOReceivingOutDataRequest request) {
+        System.Threading.Tasks.Task<GetPOReceivingOutDataResponse> TIPTOPServiceGateWayPortType.GetPOReceivingOutDataAsync(GetPOReceivingOutDataRequest request) {
             return base.Channel.GetPOReceivingOutDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPOReceivingOutDataResponse> GetPOReceivingOutDataAsync(string request) {
-            TiptopService.GetPOReceivingOutDataRequest inValue = new TiptopService.GetPOReceivingOutDataRequest();
+        public System.Threading.Tasks.Task<GetPOReceivingOutDataResponse> GetPOReceivingOutDataAsync(string request) {
+            GetPOReceivingOutDataRequest inValue = new GetPOReceivingOutDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPOReceivingOutDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPOReceivingOutDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetEmployeeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetEmployeeDataAsync(TiptopService.GetEmployeeDataRequest request) {
+        System.Threading.Tasks.Task<GetEmployeeDataResponse> TIPTOPServiceGateWayPortType.GetEmployeeDataAsync(GetEmployeeDataRequest request) {
             return base.Channel.GetEmployeeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetEmployeeDataResponse> GetEmployeeDataAsync(string request) {
-            TiptopService.GetEmployeeDataRequest inValue = new TiptopService.GetEmployeeDataRequest();
+        public System.Threading.Tasks.Task<GetEmployeeDataResponse> GetEmployeeDataAsync(string request) {
+            GetEmployeeDataRequest inValue = new GetEmployeeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetEmployeeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetEmployeeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetEmployeeListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetEmployeeListAsync(TiptopService.GetEmployeeListRequest request) {
+        System.Threading.Tasks.Task<GetEmployeeListResponse> TIPTOPServiceGateWayPortType.GetEmployeeListAsync(GetEmployeeListRequest request) {
             return base.Channel.GetEmployeeListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetEmployeeListResponse> GetEmployeeListAsync(string request) {
-            TiptopService.GetEmployeeListRequest inValue = new TiptopService.GetEmployeeListRequest();
+        public System.Threading.Tasks.Task<GetEmployeeListResponse> GetEmployeeListAsync(string request) {
+            GetEmployeeListRequest inValue = new GetEmployeeListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetEmployeeListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetEmployeeListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetInspectionDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetInspectionDataAsync(TiptopService.GetInspectionDataRequest request) {
+        System.Threading.Tasks.Task<GetInspectionDataResponse> TIPTOPServiceGateWayPortType.GetInspectionDataAsync(GetInspectionDataRequest request) {
             return base.Channel.GetInspectionDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetInspectionDataResponse> GetInspectionDataAsync(string request) {
-            TiptopService.GetInspectionDataRequest inValue = new TiptopService.GetInspectionDataRequest();
+        public System.Threading.Tasks.Task<GetInspectionDataResponse> GetInspectionDataAsync(string request) {
+            GetInspectionDataRequest inValue = new GetInspectionDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetInspectionDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetInspectionDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatePurchaseStockOutResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatePurchaseStockOutAsync(TiptopService.CreatePurchaseStockOutRequest request) {
+        System.Threading.Tasks.Task<CreatePurchaseStockOutResponse> TIPTOPServiceGateWayPortType.CreatePurchaseStockOutAsync(CreatePurchaseStockOutRequest request) {
             return base.Channel.CreatePurchaseStockOutAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatePurchaseStockOutResponse> CreatePurchaseStockOutAsync(string request) {
-            TiptopService.CreatePurchaseStockOutRequest inValue = new TiptopService.CreatePurchaseStockOutRequest();
+        public System.Threading.Tasks.Task<CreatePurchaseStockOutResponse> CreatePurchaseStockOutAsync(string request) {
+            CreatePurchaseStockOutRequest inValue = new CreatePurchaseStockOutRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatePurchaseStockOutAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatePurchaseStockOutAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetItemListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetItemListAsync(TiptopService.GetItemListRequest request) {
+        System.Threading.Tasks.Task<GetItemListResponse> TIPTOPServiceGateWayPortType.GetItemListAsync(GetItemListRequest request) {
             return base.Channel.GetItemListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetItemListResponse> GetItemListAsync(string request) {
-            TiptopService.GetItemListRequest inValue = new TiptopService.GetItemListRequest();
+        public System.Threading.Tasks.Task<GetItemListResponse> GetItemListAsync(string request) {
+            GetItemListRequest inValue = new GetItemListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetItemListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetItemListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetLocationDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetLocationDataAsync(TiptopService.GetLocationDataRequest request) {
+        System.Threading.Tasks.Task<GetLocationDataResponse> TIPTOPServiceGateWayPortType.GetLocationDataAsync(GetLocationDataRequest request) {
             return base.Channel.GetLocationDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetLocationDataResponse> GetLocationDataAsync(string request) {
-            TiptopService.GetLocationDataRequest inValue = new TiptopService.GetLocationDataRequest();
+        public System.Threading.Tasks.Task<GetLocationDataResponse> GetLocationDataAsync(string request) {
+            GetLocationDataRequest inValue = new GetLocationDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetLocationDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetLocationDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMonthListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMonthListAsync(TiptopService.GetMonthListRequest request) {
+        System.Threading.Tasks.Task<GetMonthListResponse> TIPTOPServiceGateWayPortType.GetMonthListAsync(GetMonthListRequest request) {
             return base.Channel.GetMonthListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMonthListResponse> GetMonthListAsync(string request) {
-            TiptopService.GetMonthListRequest inValue = new TiptopService.GetMonthListRequest();
+        public System.Threading.Tasks.Task<GetMonthListResponse> GetMonthListAsync(string request) {
+            GetMonthListRequest inValue = new GetMonthListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMonthListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMonthListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetOverdueAmtDetailDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetOverdueAmtDetailDataAsync(TiptopService.GetOverdueAmtDetailDataRequest request) {
+        System.Threading.Tasks.Task<GetOverdueAmtDetailDataResponse> TIPTOPServiceGateWayPortType.GetOverdueAmtDetailDataAsync(GetOverdueAmtDetailDataRequest request) {
             return base.Channel.GetOverdueAmtDetailDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetOverdueAmtDetailDataResponse> GetOverdueAmtDetailDataAsync(string request) {
-            TiptopService.GetOverdueAmtDetailDataRequest inValue = new TiptopService.GetOverdueAmtDetailDataRequest();
+        public System.Threading.Tasks.Task<GetOverdueAmtDetailDataResponse> GetOverdueAmtDetailDataAsync(string request) {
+            GetOverdueAmtDetailDataRequest inValue = new GetOverdueAmtDetailDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetOverdueAmtDetailDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetOverdueAmtDetailDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetOverdueAmtRankingDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetOverdueAmtRankingDataAsync(TiptopService.GetOverdueAmtRankingDataRequest request) {
+        System.Threading.Tasks.Task<GetOverdueAmtRankingDataResponse> TIPTOPServiceGateWayPortType.GetOverdueAmtRankingDataAsync(GetOverdueAmtRankingDataRequest request) {
             return base.Channel.GetOverdueAmtRankingDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetOverdueAmtRankingDataResponse> GetOverdueAmtRankingDataAsync(string request) {
-            TiptopService.GetOverdueAmtRankingDataRequest inValue = new TiptopService.GetOverdueAmtRankingDataRequest();
+        public System.Threading.Tasks.Task<GetOverdueAmtRankingDataResponse> GetOverdueAmtRankingDataAsync(string request) {
+            GetOverdueAmtRankingDataRequest inValue = new GetOverdueAmtRankingDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetOverdueAmtRankingDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetOverdueAmtRankingDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetProdClassListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetProdClassListAsync(TiptopService.GetProdClassListRequest request) {
+        System.Threading.Tasks.Task<GetProdClassListResponse> TIPTOPServiceGateWayPortType.GetProdClassListAsync(GetProdClassListRequest request) {
             return base.Channel.GetProdClassListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetProdClassListResponse> GetProdClassListAsync(string request) {
-            TiptopService.GetProdClassListRequest inValue = new TiptopService.GetProdClassListRequest();
+        public System.Threading.Tasks.Task<GetProdClassListResponse> GetProdClassListAsync(string request) {
+            GetProdClassListRequest inValue = new GetProdClassListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetProdClassListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetProdClassListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetProductClassDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetProductClassDataAsync(TiptopService.GetProductClassDataRequest request) {
+        System.Threading.Tasks.Task<GetProductClassDataResponse> TIPTOPServiceGateWayPortType.GetProductClassDataAsync(GetProductClassDataRequest request) {
             return base.Channel.GetProductClassDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetProductClassDataResponse> GetProductClassDataAsync(string request) {
-            TiptopService.GetProductClassDataRequest inValue = new TiptopService.GetProductClassDataRequest();
+        public System.Threading.Tasks.Task<GetProductClassDataResponse> GetProductClassDataAsync(string request) {
+            GetProductClassDataRequest inValue = new GetProductClassDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetProductClassDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetProductClassDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSOInfoDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSOInfoDataAsync(TiptopService.GetSOInfoDataRequest request) {
+        System.Threading.Tasks.Task<GetSOInfoDataResponse> TIPTOPServiceGateWayPortType.GetSOInfoDataAsync(GetSOInfoDataRequest request) {
             return base.Channel.GetSOInfoDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSOInfoDataResponse> GetSOInfoDataAsync(string request) {
-            TiptopService.GetSOInfoDataRequest inValue = new TiptopService.GetSOInfoDataRequest();
+        public System.Threading.Tasks.Task<GetSOInfoDataResponse> GetSOInfoDataAsync(string request) {
+            GetSOInfoDataRequest inValue = new GetSOInfoDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSOInfoDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSOInfoDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSOInfoDetailDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSOInfoDetailDataAsync(TiptopService.GetSOInfoDetailDataRequest request) {
+        System.Threading.Tasks.Task<GetSOInfoDetailDataResponse> TIPTOPServiceGateWayPortType.GetSOInfoDetailDataAsync(GetSOInfoDetailDataRequest request) {
             return base.Channel.GetSOInfoDetailDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSOInfoDetailDataResponse> GetSOInfoDetailDataAsync(string request) {
-            TiptopService.GetSOInfoDetailDataRequest inValue = new TiptopService.GetSOInfoDetailDataRequest();
+        public System.Threading.Tasks.Task<GetSOInfoDetailDataResponse> GetSOInfoDetailDataAsync(string request) {
+            GetSOInfoDetailDataRequest inValue = new GetSOInfoDetailDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSOInfoDetailDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSOInfoDetailDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSalesDetailDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSalesDetailDataAsync(TiptopService.GetSalesDetailDataRequest request) {
+        System.Threading.Tasks.Task<GetSalesDetailDataResponse> TIPTOPServiceGateWayPortType.GetSalesDetailDataAsync(GetSalesDetailDataRequest request) {
             return base.Channel.GetSalesDetailDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSalesDetailDataResponse> GetSalesDetailDataAsync(string request) {
-            TiptopService.GetSalesDetailDataRequest inValue = new TiptopService.GetSalesDetailDataRequest();
+        public System.Threading.Tasks.Task<GetSalesDetailDataResponse> GetSalesDetailDataAsync(string request) {
+            GetSalesDetailDataRequest inValue = new GetSalesDetailDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSalesDetailDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSalesDetailDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSalesStatisticsDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSalesStatisticsDataAsync(TiptopService.GetSalesStatisticsDataRequest request) {
+        System.Threading.Tasks.Task<GetSalesStatisticsDataResponse> TIPTOPServiceGateWayPortType.GetSalesStatisticsDataAsync(GetSalesStatisticsDataRequest request) {
             return base.Channel.GetSalesStatisticsDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSalesStatisticsDataResponse> GetSalesStatisticsDataAsync(string request) {
-            TiptopService.GetSalesStatisticsDataRequest inValue = new TiptopService.GetSalesStatisticsDataRequest();
+        public System.Threading.Tasks.Task<GetSalesStatisticsDataResponse> GetSalesStatisticsDataAsync(string request) {
+            GetSalesStatisticsDataRequest inValue = new GetSalesStatisticsDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSalesStatisticsDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSalesStatisticsDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSupplierDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSupplierDataAsync(TiptopService.GetSupplierDataRequest request) {
+        System.Threading.Tasks.Task<GetSupplierDataResponse> TIPTOPServiceGateWayPortType.GetSupplierDataAsync(GetSupplierDataRequest request) {
             return base.Channel.GetSupplierDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSupplierDataResponse> GetSupplierDataAsync(string request) {
-            TiptopService.GetSupplierDataRequest inValue = new TiptopService.GetSupplierDataRequest();
+        public System.Threading.Tasks.Task<GetSupplierDataResponse> GetSupplierDataAsync(string request) {
+            GetSupplierDataRequest inValue = new GetSupplierDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSupplierDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSupplierDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSupplierItemDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSupplierItemDataAsync(TiptopService.GetSupplierItemDataRequest request) {
+        System.Threading.Tasks.Task<GetSupplierItemDataResponse> TIPTOPServiceGateWayPortType.GetSupplierItemDataAsync(GetSupplierItemDataRequest request) {
             return base.Channel.GetSupplierItemDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSupplierItemDataResponse> GetSupplierItemDataAsync(string request) {
-            TiptopService.GetSupplierItemDataRequest inValue = new TiptopService.GetSupplierItemDataRequest();
+        public System.Threading.Tasks.Task<GetSupplierItemDataResponse> GetSupplierItemDataAsync(string request) {
+            GetSupplierItemDataRequest inValue = new GetSupplierItemDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSupplierItemDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSupplierItemDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetWarehouseDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetWarehouseDataAsync(TiptopService.GetWarehouseDataRequest request) {
+        System.Threading.Tasks.Task<GetWarehouseDataResponse> TIPTOPServiceGateWayPortType.GetWarehouseDataAsync(GetWarehouseDataRequest request) {
             return base.Channel.GetWarehouseDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetWarehouseDataResponse> GetWarehouseDataAsync(string request) {
-            TiptopService.GetWarehouseDataRequest inValue = new TiptopService.GetWarehouseDataRequest();
+        public System.Threading.Tasks.Task<GetWarehouseDataResponse> GetWarehouseDataAsync(string request) {
+            GetWarehouseDataRequest inValue = new GetWarehouseDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetWarehouseDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetWarehouseDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetItemDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetItemDataAsync(TiptopService.GetItemDataRequest request) {
+        System.Threading.Tasks.Task<GetItemDataResponse> TIPTOPServiceGateWayPortType.GetItemDataAsync(GetItemDataRequest request) {
             return base.Channel.GetItemDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetItemDataResponse> GetItemDataAsync(string request) {
-            TiptopService.GetItemDataRequest inValue = new TiptopService.GetItemDataRequest();
+        public System.Threading.Tasks.Task<GetItemDataResponse> GetItemDataAsync(string request) {
+            GetItemDataRequest inValue = new GetItemDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetItemDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetItemDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetBOMDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetBOMDataAsync(TiptopService.GetBOMDataRequest request) {
+        System.Threading.Tasks.Task<GetBOMDataResponse> TIPTOPServiceGateWayPortType.GetBOMDataAsync(GetBOMDataRequest request) {
             return base.Channel.GetBOMDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetBOMDataResponse> GetBOMDataAsync(string request) {
-            TiptopService.GetBOMDataRequest inValue = new TiptopService.GetBOMDataRequest();
+        public System.Threading.Tasks.Task<GetBOMDataResponse> GetBOMDataAsync(string request) {
+            GetBOMDataRequest inValue = new GetBOMDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetBOMDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetBOMDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetDocumentNumberResponse> TiptopService.TIPTOPServiceGateWayPortType.GetDocumentNumberAsync(TiptopService.GetDocumentNumberRequest request) {
+        System.Threading.Tasks.Task<GetDocumentNumberResponse> TIPTOPServiceGateWayPortType.GetDocumentNumberAsync(GetDocumentNumberRequest request) {
             return base.Channel.GetDocumentNumberAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetDocumentNumberResponse> GetDocumentNumberAsync(string request) {
-            TiptopService.GetDocumentNumberRequest inValue = new TiptopService.GetDocumentNumberRequest();
+        public System.Threading.Tasks.Task<GetDocumentNumberResponse> GetDocumentNumberAsync(string request) {
+            GetDocumentNumberRequest inValue = new GetDocumentNumberRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetDocumentNumberAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetDocumentNumberAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateQuotationDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateQuotationDataAsync(TiptopService.CreateQuotationDataRequest request) {
+        System.Threading.Tasks.Task<CreateQuotationDataResponse> TIPTOPServiceGateWayPortType.CreateQuotationDataAsync(CreateQuotationDataRequest request) {
             return base.Channel.CreateQuotationDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateQuotationDataResponse> CreateQuotationDataAsync(string request) {
-            TiptopService.CreateQuotationDataRequest inValue = new TiptopService.CreateQuotationDataRequest();
+        public System.Threading.Tasks.Task<CreateQuotationDataResponse> CreateQuotationDataAsync(string request) {
+            CreateQuotationDataRequest inValue = new CreateQuotationDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateQuotationDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateQuotationDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetStockDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetStockDataAsync(TiptopService.GetStockDataRequest request) {
+        System.Threading.Tasks.Task<GetStockDataResponse> TIPTOPServiceGateWayPortType.GetStockDataAsync(GetStockDataRequest request) {
             return base.Channel.GetStockDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetStockDataResponse> GetStockDataAsync(string request) {
-            TiptopService.GetStockDataRequest inValue = new TiptopService.GetStockDataRequest();
+        public System.Threading.Tasks.Task<GetStockDataResponse> GetStockDataAsync(string request) {
+            GetStockDataRequest inValue = new GetStockDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetStockDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetStockDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetReceivingQtyResponse> TiptopService.TIPTOPServiceGateWayPortType.GetReceivingQtyAsync(TiptopService.GetReceivingQtyRequest request) {
+        System.Threading.Tasks.Task<GetReceivingQtyResponse> TIPTOPServiceGateWayPortType.GetReceivingQtyAsync(GetReceivingQtyRequest request) {
             return base.Channel.GetReceivingQtyAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetReceivingQtyResponse> GetReceivingQtyAsync(string request) {
-            TiptopService.GetReceivingQtyRequest inValue = new TiptopService.GetReceivingQtyRequest();
+        public System.Threading.Tasks.Task<GetReceivingQtyResponse> GetReceivingQtyAsync(string request) {
+            GetReceivingQtyRequest inValue = new GetReceivingQtyRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetReceivingQtyAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetReceivingQtyAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPODataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPODataAsync(TiptopService.GetPODataRequest request) {
+        System.Threading.Tasks.Task<GetPODataResponse> TIPTOPServiceGateWayPortType.GetPODataAsync(GetPODataRequest request) {
             return base.Channel.GetPODataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPODataResponse> GetPODataAsync(string request) {
-            TiptopService.GetPODataRequest inValue = new TiptopService.GetPODataRequest();
+        public System.Threading.Tasks.Task<GetPODataResponse> GetPODataAsync(string request) {
+            GetPODataRequest inValue = new GetPODataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPODataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPODataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMFGDocumentResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMFGDocumentAsync(TiptopService.GetMFGDocumentRequest request) {
+        System.Threading.Tasks.Task<GetMFGDocumentResponse> TIPTOPServiceGateWayPortType.GetMFGDocumentAsync(GetMFGDocumentRequest request) {
             return base.Channel.GetMFGDocumentAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMFGDocumentResponse> GetMFGDocumentAsync(string request) {
-            TiptopService.GetMFGDocumentRequest inValue = new TiptopService.GetMFGDocumentRequest();
+        public System.Threading.Tasks.Task<GetMFGDocumentResponse> GetMFGDocumentAsync(string request) {
+            GetMFGDocumentRequest inValue = new GetMFGDocumentRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMFGDocumentAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMFGDocumentAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatePOReceivingDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatePOReceivingDataAsync(TiptopService.CreatePOReceivingDataRequest request) {
+        System.Threading.Tasks.Task<CreatePOReceivingDataResponse> TIPTOPServiceGateWayPortType.CreatePOReceivingDataAsync(CreatePOReceivingDataRequest request) {
             return base.Channel.CreatePOReceivingDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatePOReceivingDataResponse> CreatePOReceivingDataAsync(string request) {
-            TiptopService.CreatePOReceivingDataRequest inValue = new TiptopService.CreatePOReceivingDataRequest();
+        public System.Threading.Tasks.Task<CreatePOReceivingDataResponse> CreatePOReceivingDataAsync(string request) {
+            CreatePOReceivingDataRequest inValue = new CreatePOReceivingDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatePOReceivingDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatePOReceivingDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateIssueReturnDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateIssueReturnDataAsync(TiptopService.CreateIssueReturnDataRequest request) {
+        System.Threading.Tasks.Task<CreateIssueReturnDataResponse> TIPTOPServiceGateWayPortType.CreateIssueReturnDataAsync(CreateIssueReturnDataRequest request) {
             return base.Channel.CreateIssueReturnDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateIssueReturnDataResponse> CreateIssueReturnDataAsync(string request) {
-            TiptopService.CreateIssueReturnDataRequest inValue = new TiptopService.CreateIssueReturnDataRequest();
+        public System.Threading.Tasks.Task<CreateIssueReturnDataResponse> CreateIssueReturnDataAsync(string request) {
+            CreateIssueReturnDataRequest inValue = new CreateIssueReturnDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateIssueReturnDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateIssueReturnDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPOReceivingInDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPOReceivingInDataAsync(TiptopService.GetPOReceivingInDataRequest request) {
+        System.Threading.Tasks.Task<GetPOReceivingInDataResponse> TIPTOPServiceGateWayPortType.GetPOReceivingInDataAsync(GetPOReceivingInDataRequest request) {
             return base.Channel.GetPOReceivingInDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPOReceivingInDataResponse> GetPOReceivingInDataAsync(string request) {
-            TiptopService.GetPOReceivingInDataRequest inValue = new TiptopService.GetPOReceivingInDataRequest();
+        public System.Threading.Tasks.Task<GetPOReceivingInDataResponse> GetPOReceivingInDataAsync(string request) {
+            GetPOReceivingInDataRequest inValue = new GetPOReceivingInDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPOReceivingInDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPOReceivingInDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateStockInDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateStockInDataAsync(TiptopService.CreateStockInDataRequest request) {
+        System.Threading.Tasks.Task<CreateStockInDataResponse> TIPTOPServiceGateWayPortType.CreateStockInDataAsync(CreateStockInDataRequest request) {
             return base.Channel.CreateStockInDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateStockInDataResponse> CreateStockInDataAsync(string request) {
-            TiptopService.CreateStockInDataRequest inValue = new TiptopService.CreateStockInDataRequest();
+        public System.Threading.Tasks.Task<CreateStockInDataResponse> CreateStockInDataAsync(string request) {
+            CreateStockInDataRequest inValue = new CreateStockInDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateStockInDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateStockInDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAccountSubjectDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAccountSubjectDataAsync(TiptopService.GetAccountSubjectDataRequest request) {
+        System.Threading.Tasks.Task<GetAccountSubjectDataResponse> TIPTOPServiceGateWayPortType.GetAccountSubjectDataAsync(GetAccountSubjectDataRequest request) {
             return base.Channel.GetAccountSubjectDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAccountSubjectDataResponse> GetAccountSubjectDataAsync(string request) {
-            TiptopService.GetAccountSubjectDataRequest inValue = new TiptopService.GetAccountSubjectDataRequest();
+        public System.Threading.Tasks.Task<GetAccountSubjectDataResponse> GetAccountSubjectDataAsync(string request) {
+            GetAccountSubjectDataRequest inValue = new GetAccountSubjectDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAccountSubjectDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAccountSubjectDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatePurchaseStockInResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatePurchaseStockInAsync(TiptopService.CreatePurchaseStockInRequest request) {
+        System.Threading.Tasks.Task<CreatePurchaseStockInResponse> TIPTOPServiceGateWayPortType.CreatePurchaseStockInAsync(CreatePurchaseStockInRequest request) {
             return base.Channel.CreatePurchaseStockInAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatePurchaseStockInResponse> CreatePurchaseStockInAsync(string request) {
-            TiptopService.CreatePurchaseStockInRequest inValue = new TiptopService.CreatePurchaseStockInRequest();
+        public System.Threading.Tasks.Task<CreatePurchaseStockInResponse> CreatePurchaseStockInAsync(string request) {
+            CreatePurchaseStockInRequest inValue = new CreatePurchaseStockInRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatePurchaseStockInAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatePurchaseStockInAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPurchaseStockOutQtyResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPurchaseStockOutQtyAsync(TiptopService.GetPurchaseStockOutQtyRequest request) {
+        System.Threading.Tasks.Task<GetPurchaseStockOutQtyResponse> TIPTOPServiceGateWayPortType.GetPurchaseStockOutQtyAsync(GetPurchaseStockOutQtyRequest request) {
             return base.Channel.GetPurchaseStockOutQtyAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPurchaseStockOutQtyResponse> GetPurchaseStockOutQtyAsync(string request) {
-            TiptopService.GetPurchaseStockOutQtyRequest inValue = new TiptopService.GetPurchaseStockOutQtyRequest();
+        public System.Threading.Tasks.Task<GetPurchaseStockOutQtyResponse> GetPurchaseStockOutQtyAsync(string request) {
+            GetPurchaseStockOutQtyRequest inValue = new GetPurchaseStockOutQtyRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPurchaseStockOutQtyAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPurchaseStockOutQtyAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateTransferNoteResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateTransferNoteAsync(TiptopService.CreateTransferNoteRequest request) {
+        System.Threading.Tasks.Task<CreateTransferNoteResponse> TIPTOPServiceGateWayPortType.CreateTransferNoteAsync(CreateTransferNoteRequest request) {
             return base.Channel.CreateTransferNoteAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateTransferNoteResponse> CreateTransferNoteAsync(string request) {
-            TiptopService.CreateTransferNoteRequest inValue = new TiptopService.CreateTransferNoteRequest();
+        public System.Threading.Tasks.Task<CreateTransferNoteResponse> CreateTransferNoteAsync(string request) {
+            CreateTransferNoteRequest inValue = new CreateTransferNoteRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateTransferNoteAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateTransferNoteAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetQtyConversionResponse> TiptopService.TIPTOPServiceGateWayPortType.GetQtyConversionAsync(TiptopService.GetQtyConversionRequest request) {
+        System.Threading.Tasks.Task<GetQtyConversionResponse> TIPTOPServiceGateWayPortType.GetQtyConversionAsync(GetQtyConversionRequest request) {
             return base.Channel.GetQtyConversionAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetQtyConversionResponse> GetQtyConversionAsync(string request) {
-            TiptopService.GetQtyConversionRequest inValue = new TiptopService.GetQtyConversionRequest();
+        public System.Threading.Tasks.Task<GetQtyConversionResponse> GetQtyConversionAsync(string request) {
+            GetQtyConversionRequest inValue = new GetQtyConversionRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetQtyConversionAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetQtyConversionAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetShippingNoticeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetShippingNoticeDataAsync(TiptopService.GetShippingNoticeDataRequest request) {
+        System.Threading.Tasks.Task<GetShippingNoticeDataResponse> TIPTOPServiceGateWayPortType.GetShippingNoticeDataAsync(GetShippingNoticeDataRequest request) {
             return base.Channel.GetShippingNoticeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetShippingNoticeDataResponse> GetShippingNoticeDataAsync(string request) {
-            TiptopService.GetShippingNoticeDataRequest inValue = new TiptopService.GetShippingNoticeDataRequest();
+        public System.Threading.Tasks.Task<GetShippingNoticeDataResponse> GetShippingNoticeDataAsync(string request) {
+            GetShippingNoticeDataRequest inValue = new GetShippingNoticeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetShippingNoticeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetShippingNoticeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetSalesDocumentResponse> TiptopService.TIPTOPServiceGateWayPortType.GetSalesDocumentAsync(TiptopService.GetSalesDocumentRequest request) {
+        System.Threading.Tasks.Task<GetSalesDocumentResponse> TIPTOPServiceGateWayPortType.GetSalesDocumentAsync(GetSalesDocumentRequest request) {
             return base.Channel.GetSalesDocumentAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetSalesDocumentResponse> GetSalesDocumentAsync(string request) {
-            TiptopService.GetSalesDocumentRequest inValue = new TiptopService.GetSalesDocumentRequest();
+        public System.Threading.Tasks.Task<GetSalesDocumentResponse> GetSalesDocumentAsync(string request) {
+            GetSalesDocumentRequest inValue = new GetSalesDocumentRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetSalesDocumentAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetSalesDocumentAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetShippingOrderDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetShippingOrderDataAsync(TiptopService.GetShippingOrderDataRequest request) {
+        System.Threading.Tasks.Task<GetShippingOrderDataResponse> TIPTOPServiceGateWayPortType.GetShippingOrderDataAsync(GetShippingOrderDataRequest request) {
             return base.Channel.GetShippingOrderDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetShippingOrderDataResponse> GetShippingOrderDataAsync(string request) {
-            TiptopService.GetShippingOrderDataRequest inValue = new TiptopService.GetShippingOrderDataRequest();
+        public System.Threading.Tasks.Task<GetShippingOrderDataResponse> GetShippingOrderDataAsync(string request) {
+            GetShippingOrderDataRequest inValue = new GetShippingOrderDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetShippingOrderDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetShippingOrderDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetFQCDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetFQCDataAsync(TiptopService.GetFQCDataRequest request) {
+        System.Threading.Tasks.Task<GetFQCDataResponse> TIPTOPServiceGateWayPortType.GetFQCDataAsync(GetFQCDataRequest request) {
             return base.Channel.GetFQCDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetFQCDataResponse> GetFQCDataAsync(string request) {
-            TiptopService.GetFQCDataRequest inValue = new TiptopService.GetFQCDataRequest();
+        public System.Threading.Tasks.Task<GetFQCDataResponse> GetFQCDataAsync(string request) {
+            GetFQCDataRequest inValue = new GetFQCDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetFQCDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetFQCDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetWODataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetWODataAsync(TiptopService.GetWODataRequest request) {
+        System.Threading.Tasks.Task<GetWODataResponse> TIPTOPServiceGateWayPortType.GetWODataAsync(GetWODataRequest request) {
             return base.Channel.GetWODataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetWODataResponse> GetWODataAsync(string request) {
-            TiptopService.GetWODataRequest inValue = new TiptopService.GetWODataRequest();
+        public System.Threading.Tasks.Task<GetWODataResponse> GetWODataAsync(string request) {
+            GetWODataRequest inValue = new GetWODataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetWODataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetWODataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetWOStockQtyResponse> TiptopService.TIPTOPServiceGateWayPortType.GetWOStockQtyAsync(TiptopService.GetWOStockQtyRequest request) {
+        System.Threading.Tasks.Task<GetWOStockQtyResponse> TIPTOPServiceGateWayPortType.GetWOStockQtyAsync(GetWOStockQtyRequest request) {
             return base.Channel.GetWOStockQtyAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetWOStockQtyResponse> GetWOStockQtyAsync(string request) {
-            TiptopService.GetWOStockQtyRequest inValue = new TiptopService.GetWOStockQtyRequest();
+        public System.Threading.Tasks.Task<GetWOStockQtyResponse> GetWOStockQtyAsync(string request) {
+            GetWOStockQtyRequest inValue = new GetWOStockQtyRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetWOStockQtyAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetWOStockQtyAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateWOStockinDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateWOStockinDataAsync(TiptopService.CreateWOStockinDataRequest request) {
+        System.Threading.Tasks.Task<CreateWOStockinDataResponse> TIPTOPServiceGateWayPortType.CreateWOStockinDataAsync(CreateWOStockinDataRequest request) {
             return base.Channel.CreateWOStockinDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateWOStockinDataResponse> CreateWOStockinDataAsync(string request) {
-            TiptopService.CreateWOStockinDataRequest inValue = new TiptopService.CreateWOStockinDataRequest();
+        public System.Threading.Tasks.Task<CreateWOStockinDataResponse> CreateWOStockinDataAsync(string request) {
+            CreateWOStockinDataRequest inValue = new CreateWOStockinDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateWOStockinDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateWOStockinDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetWOIssueDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetWOIssueDataAsync(TiptopService.GetWOIssueDataRequest request) {
+        System.Threading.Tasks.Task<GetWOIssueDataResponse> TIPTOPServiceGateWayPortType.GetWOIssueDataAsync(GetWOIssueDataRequest request) {
             return base.Channel.GetWOIssueDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetWOIssueDataResponse> GetWOIssueDataAsync(string request) {
-            TiptopService.GetWOIssueDataRequest inValue = new TiptopService.GetWOIssueDataRequest();
+        public System.Threading.Tasks.Task<GetWOIssueDataResponse> GetWOIssueDataAsync(string request) {
+            GetWOIssueDataRequest inValue = new GetWOIssueDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetWOIssueDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetWOIssueDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateWOIssueDataResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateWOIssueDataAsync(TiptopService.UpdateWOIssueDataRequest request) {
+        System.Threading.Tasks.Task<UpdateWOIssueDataResponse> TIPTOPServiceGateWayPortType.UpdateWOIssueDataAsync(UpdateWOIssueDataRequest request) {
             return base.Channel.UpdateWOIssueDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateWOIssueDataResponse> UpdateWOIssueDataAsync(string request) {
-            TiptopService.UpdateWOIssueDataRequest inValue = new TiptopService.UpdateWOIssueDataRequest();
+        public System.Threading.Tasks.Task<UpdateWOIssueDataResponse> UpdateWOIssueDataAsync(string request) {
+            UpdateWOIssueDataRequest inValue = new UpdateWOIssueDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateWOIssueDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateWOIssueDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateShippingOrderResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateShippingOrderAsync(TiptopService.CreateShippingOrderRequest request) {
+        System.Threading.Tasks.Task<CreateShippingOrderResponse> TIPTOPServiceGateWayPortType.CreateShippingOrderAsync(CreateShippingOrderRequest request) {
             return base.Channel.CreateShippingOrderAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateShippingOrderResponse> CreateShippingOrderAsync(string request) {
-            TiptopService.CreateShippingOrderRequest inValue = new TiptopService.CreateShippingOrderRequest();
+        public System.Threading.Tasks.Task<CreateShippingOrderResponse> CreateShippingOrderAsync(string request) {
+            CreateShippingOrderRequest inValue = new CreateShippingOrderRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateShippingOrderAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateShippingOrderAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetReasonCodeResponse> TiptopService.TIPTOPServiceGateWayPortType.GetReasonCodeAsync(TiptopService.GetReasonCodeRequest request) {
+        System.Threading.Tasks.Task<GetReasonCodeResponse> TIPTOPServiceGateWayPortType.GetReasonCodeAsync(GetReasonCodeRequest request) {
             return base.Channel.GetReasonCodeAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetReasonCodeResponse> GetReasonCodeAsync(string request) {
-            TiptopService.GetReasonCodeRequest inValue = new TiptopService.GetReasonCodeRequest();
+        public System.Threading.Tasks.Task<GetReasonCodeResponse> GetReasonCodeAsync(string request) {
+            GetReasonCodeRequest inValue = new GetReasonCodeRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetReasonCodeAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetReasonCodeAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetLabelTypeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetLabelTypeDataAsync(TiptopService.GetLabelTypeDataRequest request) {
+        System.Threading.Tasks.Task<GetLabelTypeDataResponse> TIPTOPServiceGateWayPortType.GetLabelTypeDataAsync(GetLabelTypeDataRequest request) {
             return base.Channel.GetLabelTypeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetLabelTypeDataResponse> GetLabelTypeDataAsync(string request) {
-            TiptopService.GetLabelTypeDataRequest inValue = new TiptopService.GetLabelTypeDataRequest();
+        public System.Threading.Tasks.Task<GetLabelTypeDataResponse> GetLabelTypeDataAsync(string request) {
+            GetLabelTypeDataRequest inValue = new GetLabelTypeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetLabelTypeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetLabelTypeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCountingLabelDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCountingLabelDataAsync(TiptopService.GetCountingLabelDataRequest request) {
+        System.Threading.Tasks.Task<GetCountingLabelDataResponse> TIPTOPServiceGateWayPortType.GetCountingLabelDataAsync(GetCountingLabelDataRequest request) {
             return base.Channel.GetCountingLabelDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCountingLabelDataResponse> GetCountingLabelDataAsync(string request) {
-            TiptopService.GetCountingLabelDataRequest inValue = new TiptopService.GetCountingLabelDataRequest();
+        public System.Threading.Tasks.Task<GetCountingLabelDataResponse> GetCountingLabelDataAsync(string request) {
+            GetCountingLabelDataRequest inValue = new GetCountingLabelDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCountingLabelDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCountingLabelDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateCountingLabelDataResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateCountingLabelDataAsync(TiptopService.UpdateCountingLabelDataRequest request) {
+        System.Threading.Tasks.Task<UpdateCountingLabelDataResponse> TIPTOPServiceGateWayPortType.UpdateCountingLabelDataAsync(UpdateCountingLabelDataRequest request) {
             return base.Channel.UpdateCountingLabelDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateCountingLabelDataResponse> UpdateCountingLabelDataAsync(string request) {
-            TiptopService.UpdateCountingLabelDataRequest inValue = new TiptopService.UpdateCountingLabelDataRequest();
+        public System.Threading.Tasks.Task<UpdateCountingLabelDataResponse> UpdateCountingLabelDataAsync(string request) {
+            UpdateCountingLabelDataRequest inValue = new UpdateCountingLabelDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateCountingLabelDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateCountingLabelDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateMISCIssueDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateMISCIssueDataAsync(TiptopService.CreateMISCIssueDataRequest request) {
+        System.Threading.Tasks.Task<CreateMISCIssueDataResponse> TIPTOPServiceGateWayPortType.CreateMISCIssueDataAsync(CreateMISCIssueDataRequest request) {
             return base.Channel.CreateMISCIssueDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateMISCIssueDataResponse> CreateMISCIssueDataAsync(string request) {
-            TiptopService.CreateMISCIssueDataRequest inValue = new TiptopService.CreateMISCIssueDataRequest();
+        public System.Threading.Tasks.Task<CreateMISCIssueDataResponse> CreateMISCIssueDataAsync(string request) {
+            CreateMISCIssueDataRequest inValue = new CreateMISCIssueDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateMISCIssueDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateMISCIssueDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckExecAuthorizationResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckExecAuthorizationAsync(TiptopService.CheckExecAuthorizationRequest request) {
+        System.Threading.Tasks.Task<CheckExecAuthorizationResponse> TIPTOPServiceGateWayPortType.CheckExecAuthorizationAsync(CheckExecAuthorizationRequest request) {
             return base.Channel.CheckExecAuthorizationAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckExecAuthorizationResponse> CheckExecAuthorizationAsync(string request) {
-            TiptopService.CheckExecAuthorizationRequest inValue = new TiptopService.CheckExecAuthorizationRequest();
+        public System.Threading.Tasks.Task<CheckExecAuthorizationResponse> CheckExecAuthorizationAsync(string request) {
+            CheckExecAuthorizationRequest inValue = new CheckExecAuthorizationRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckExecAuthorizationAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckExecAuthorizationAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateStockDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateStockDataAsync(TiptopService.CreateStockDataRequest request) {
+        System.Threading.Tasks.Task<CreateStockDataResponse> TIPTOPServiceGateWayPortType.CreateStockDataAsync(CreateStockDataRequest request) {
             return base.Channel.CreateStockDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateStockDataResponse> CreateStockDataAsync(string request) {
-            TiptopService.CreateStockDataRequest inValue = new TiptopService.CreateStockDataRequest();
+        public System.Threading.Tasks.Task<CreateStockDataResponse> CreateStockDataAsync(string request) {
+            CreateStockDataRequest inValue = new CreateStockDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateStockDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateStockDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.EboGetCustDataResponse> TiptopService.TIPTOPServiceGateWayPortType.EboGetCustDataAsync(TiptopService.EboGetCustDataRequest request) {
+        System.Threading.Tasks.Task<EboGetCustDataResponse> TIPTOPServiceGateWayPortType.EboGetCustDataAsync(EboGetCustDataRequest request) {
             return base.Channel.EboGetCustDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.EboGetCustDataResponse> EboGetCustDataAsync(string request) {
-            TiptopService.EboGetCustDataRequest inValue = new TiptopService.EboGetCustDataRequest();
+        public System.Threading.Tasks.Task<EboGetCustDataResponse> EboGetCustDataAsync(string request) {
+            EboGetCustDataRequest inValue = new EboGetCustDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).EboGetCustDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).EboGetCustDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.EboGetProdDataResponse> TiptopService.TIPTOPServiceGateWayPortType.EboGetProdDataAsync(TiptopService.EboGetProdDataRequest request) {
+        System.Threading.Tasks.Task<EboGetProdDataResponse> TIPTOPServiceGateWayPortType.EboGetProdDataAsync(EboGetProdDataRequest request) {
             return base.Channel.EboGetProdDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.EboGetProdDataResponse> EboGetProdDataAsync(string request) {
-            TiptopService.EboGetProdDataRequest inValue = new TiptopService.EboGetProdDataRequest();
+        public System.Threading.Tasks.Task<EboGetProdDataResponse> EboGetProdDataAsync(string request) {
+            EboGetProdDataRequest inValue = new EboGetProdDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).EboGetProdDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).EboGetProdDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.EboGetOrderDataResponse> TiptopService.TIPTOPServiceGateWayPortType.EboGetOrderDataAsync(TiptopService.EboGetOrderDataRequest request) {
+        System.Threading.Tasks.Task<EboGetOrderDataResponse> TIPTOPServiceGateWayPortType.EboGetOrderDataAsync(EboGetOrderDataRequest request) {
             return base.Channel.EboGetOrderDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.EboGetOrderDataResponse> EboGetOrderDataAsync(string request) {
-            TiptopService.EboGetOrderDataRequest inValue = new TiptopService.EboGetOrderDataRequest();
+        public System.Threading.Tasks.Task<EboGetOrderDataResponse> EboGetOrderDataAsync(string request) {
+            EboGetOrderDataRequest inValue = new EboGetOrderDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).EboGetOrderDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).EboGetOrderDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.RunCommandResponse> TiptopService.TIPTOPServiceGateWayPortType.RunCommandAsync(TiptopService.RunCommandRequest request) {
+        System.Threading.Tasks.Task<RunCommandResponse> TIPTOPServiceGateWayPortType.RunCommandAsync(RunCommandRequest request) {
             return base.Channel.RunCommandAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.RunCommandResponse> RunCommandAsync(string request) {
-            TiptopService.RunCommandRequest inValue = new TiptopService.RunCommandRequest();
+        public System.Threading.Tasks.Task<RunCommandResponse> RunCommandAsync(string request) {
+            RunCommandRequest inValue = new RunCommandRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).RunCommandAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).RunCommandAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckApsExecutionResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckApsExecutionAsync(TiptopService.CheckApsExecutionRequest request) {
+        System.Threading.Tasks.Task<CheckApsExecutionResponse> TIPTOPServiceGateWayPortType.CheckApsExecutionAsync(CheckApsExecutionRequest request) {
             return base.Channel.CheckApsExecutionAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckApsExecutionResponse> CheckApsExecutionAsync(string request) {
-            TiptopService.CheckApsExecutionRequest inValue = new TiptopService.CheckApsExecutionRequest();
+        public System.Threading.Tasks.Task<CheckApsExecutionResponse> CheckApsExecutionAsync(string request) {
+            CheckApsExecutionRequest inValue = new CheckApsExecutionRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckApsExecutionAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckApsExecutionAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetOrganizationListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetOrganizationListAsync(TiptopService.GetOrganizationListRequest request) {
+        System.Threading.Tasks.Task<GetOrganizationListResponse> TIPTOPServiceGateWayPortType.GetOrganizationListAsync(GetOrganizationListRequest request) {
             return base.Channel.GetOrganizationListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetOrganizationListResponse> GetOrganizationListAsync(string request) {
-            TiptopService.GetOrganizationListRequest inValue = new TiptopService.GetOrganizationListRequest();
+        public System.Threading.Tasks.Task<GetOrganizationListResponse> GetOrganizationListAsync(string request) {
+            GetOrganizationListRequest inValue = new GetOrganizationListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetOrganizationListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetOrganizationListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetUserTokenResponse> TiptopService.TIPTOPServiceGateWayPortType.GetUserTokenAsync(TiptopService.GetUserTokenRequest request) {
+        System.Threading.Tasks.Task<GetUserTokenResponse> TIPTOPServiceGateWayPortType.GetUserTokenAsync(GetUserTokenRequest request) {
             return base.Channel.GetUserTokenAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetUserTokenResponse> GetUserTokenAsync(string request) {
-            TiptopService.GetUserTokenRequest inValue = new TiptopService.GetUserTokenRequest();
+        public System.Threading.Tasks.Task<GetUserTokenResponse> GetUserTokenAsync(string request) {
+            GetUserTokenRequest inValue = new GetUserTokenRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetUserTokenAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetUserTokenAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CheckUserAuthResponse> TiptopService.TIPTOPServiceGateWayPortType.CheckUserAuthAsync(TiptopService.CheckUserAuthRequest request) {
+        System.Threading.Tasks.Task<CheckUserAuthResponse> TIPTOPServiceGateWayPortType.CheckUserAuthAsync(CheckUserAuthRequest request) {
             return base.Channel.CheckUserAuthAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CheckUserAuthResponse> CheckUserAuthAsync(string request) {
-            TiptopService.CheckUserAuthRequest inValue = new TiptopService.CheckUserAuthRequest();
+        public System.Threading.Tasks.Task<CheckUserAuthResponse> CheckUserAuthAsync(string request) {
+            CheckUserAuthRequest inValue = new CheckUserAuthRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CheckUserAuthAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CheckUserAuthAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMenuDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMenuDataAsync(TiptopService.GetMenuDataRequest request) {
+        System.Threading.Tasks.Task<GetMenuDataResponse> TIPTOPServiceGateWayPortType.GetMenuDataAsync(GetMenuDataRequest request) {
             return base.Channel.GetMenuDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMenuDataResponse> GetMenuDataAsync(string request) {
-            TiptopService.GetMenuDataRequest inValue = new TiptopService.GetMenuDataRequest();
+        public System.Threading.Tasks.Task<GetMenuDataResponse> GetMenuDataAsync(string request) {
+            GetMenuDataRequest inValue = new GetMenuDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMenuDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMenuDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateVendorDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateVendorDataAsync(TiptopService.CreateVendorDataRequest request) {
+        System.Threading.Tasks.Task<CreateVendorDataResponse> TIPTOPServiceGateWayPortType.CreateVendorDataAsync(CreateVendorDataRequest request) {
             return base.Channel.CreateVendorDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateVendorDataResponse> CreateVendorDataAsync(string request) {
-            TiptopService.CreateVendorDataRequest inValue = new TiptopService.CreateVendorDataRequest();
+        public System.Threading.Tasks.Task<CreateVendorDataResponse> CreateVendorDataAsync(string request) {
+            CreateVendorDataRequest inValue = new CreateVendorDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateVendorDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateVendorDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateBOMMasterDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateBOMMasterDataAsync(TiptopService.CreateBOMMasterDataRequest request) {
+        System.Threading.Tasks.Task<CreateBOMMasterDataResponse> TIPTOPServiceGateWayPortType.CreateBOMMasterDataAsync(CreateBOMMasterDataRequest request) {
             return base.Channel.CreateBOMMasterDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateBOMMasterDataResponse> CreateBOMMasterDataAsync(string request) {
-            TiptopService.CreateBOMMasterDataRequest inValue = new TiptopService.CreateBOMMasterDataRequest();
+        public System.Threading.Tasks.Task<CreateBOMMasterDataResponse> CreateBOMMasterDataAsync(string request) {
+            CreateBOMMasterDataRequest inValue = new CreateBOMMasterDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateBOMMasterDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateBOMMasterDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateBOMDetailDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateBOMDetailDataAsync(TiptopService.CreateBOMDetailDataRequest request) {
+        System.Threading.Tasks.Task<CreateBOMDetailDataResponse> TIPTOPServiceGateWayPortType.CreateBOMDetailDataAsync(CreateBOMDetailDataRequest request) {
             return base.Channel.CreateBOMDetailDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateBOMDetailDataResponse> CreateBOMDetailDataAsync(string request) {
-            TiptopService.CreateBOMDetailDataRequest inValue = new TiptopService.CreateBOMDetailDataRequest();
+        public System.Threading.Tasks.Task<CreateBOMDetailDataResponse> CreateBOMDetailDataAsync(string request) {
+            CreateBOMDetailDataRequest inValue = new CreateBOMDetailDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateBOMDetailDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateBOMDetailDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateVoucherDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateVoucherDataAsync(TiptopService.CreateVoucherDataRequest request) {
+        System.Threading.Tasks.Task<CreateVoucherDataResponse> TIPTOPServiceGateWayPortType.CreateVoucherDataAsync(CreateVoucherDataRequest request) {
             return base.Channel.CreateVoucherDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateVoucherDataResponse> CreateVoucherDataAsync(string request) {
-            TiptopService.CreateVoucherDataRequest inValue = new TiptopService.CreateVoucherDataRequest();
+        public System.Threading.Tasks.Task<CreateVoucherDataResponse> CreateVoucherDataAsync(string request) {
+            CreateVoucherDataRequest inValue = new CreateVoucherDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateVoucherDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateVoucherDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAccountDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAccountDataAsync(TiptopService.GetAccountDataRequest request) {
+        System.Threading.Tasks.Task<GetAccountDataResponse> TIPTOPServiceGateWayPortType.GetAccountDataAsync(GetAccountDataRequest request) {
             return base.Channel.GetAccountDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAccountDataResponse> GetAccountDataAsync(string request) {
-            TiptopService.GetAccountDataRequest inValue = new TiptopService.GetAccountDataRequest();
+        public System.Threading.Tasks.Task<GetAccountDataResponse> GetAccountDataAsync(string request) {
+            GetAccountDataRequest inValue = new GetAccountDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAccountDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAccountDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateCustomerDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateCustomerDataAsync(TiptopService.CreateCustomerDataRequest request) {
+        System.Threading.Tasks.Task<CreateCustomerDataResponse> TIPTOPServiceGateWayPortType.CreateCustomerDataAsync(CreateCustomerDataRequest request) {
             return base.Channel.CreateCustomerDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateCustomerDataResponse> CreateCustomerDataAsync(string request) {
-            TiptopService.CreateCustomerDataRequest inValue = new TiptopService.CreateCustomerDataRequest();
+        public System.Threading.Tasks.Task<CreateCustomerDataResponse> CreateCustomerDataAsync(string request) {
+            CreateCustomerDataRequest inValue = new CreateCustomerDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateCustomerDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateCustomerDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateItemMasterDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateItemMasterDataAsync(TiptopService.CreateItemMasterDataRequest request) {
+        System.Threading.Tasks.Task<CreateItemMasterDataResponse> TIPTOPServiceGateWayPortType.CreateItemMasterDataAsync(CreateItemMasterDataRequest request) {
             return base.Channel.CreateItemMasterDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateItemMasterDataResponse> CreateItemMasterDataAsync(string request) {
-            TiptopService.CreateItemMasterDataRequest inValue = new TiptopService.CreateItemMasterDataRequest();
+        public System.Threading.Tasks.Task<CreateItemMasterDataResponse> CreateItemMasterDataAsync(string request) {
+            CreateItemMasterDataRequest inValue = new CreateItemMasterDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateItemMasterDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateItemMasterDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateEmployeeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateEmployeeDataAsync(TiptopService.CreateEmployeeDataRequest request) {
+        System.Threading.Tasks.Task<CreateEmployeeDataResponse> TIPTOPServiceGateWayPortType.CreateEmployeeDataAsync(CreateEmployeeDataRequest request) {
             return base.Channel.CreateEmployeeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateEmployeeDataResponse> CreateEmployeeDataAsync(string request) {
-            TiptopService.CreateEmployeeDataRequest inValue = new TiptopService.CreateEmployeeDataRequest();
+        public System.Threading.Tasks.Task<CreateEmployeeDataResponse> CreateEmployeeDataAsync(string request) {
+            CreateEmployeeDataRequest inValue = new CreateEmployeeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateEmployeeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateEmployeeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateAddressDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateAddressDataAsync(TiptopService.CreateAddressDataRequest request) {
+        System.Threading.Tasks.Task<CreateAddressDataResponse> TIPTOPServiceGateWayPortType.CreateAddressDataAsync(CreateAddressDataRequest request) {
             return base.Channel.CreateAddressDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateAddressDataResponse> CreateAddressDataAsync(string request) {
-            TiptopService.CreateAddressDataRequest inValue = new TiptopService.CreateAddressDataRequest();
+        public System.Threading.Tasks.Task<CreateAddressDataResponse> CreateAddressDataAsync(string request) {
+            CreateAddressDataRequest inValue = new CreateAddressDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateAddressDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateAddressDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.TIPTOPGateWayResponse> TiptopService.TIPTOPServiceGateWayPortType.TIPTOPGateWayAsync(TiptopService.TIPTOPGateWayRequest request) {
+        System.Threading.Tasks.Task<TIPTOPGateWayResponse> TIPTOPServiceGateWayPortType.TIPTOPGateWayAsync(TIPTOPGateWayRequest request) {
             return base.Channel.TIPTOPGateWayAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.TIPTOPGateWayResponse> TIPTOPGateWayAsync(string request) {
-            TiptopService.TIPTOPGateWayRequest inValue = new TiptopService.TIPTOPGateWayRequest();
+        public System.Threading.Tasks.Task<TIPTOPGateWayResponse> TIPTOPGateWayAsync(string request) {
+            TIPTOPGateWayRequest inValue = new TIPTOPGateWayRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).TIPTOPGateWayAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).TIPTOPGateWayAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateBillingAPResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateBillingAPAsync(TiptopService.CreateBillingAPRequest request) {
+        System.Threading.Tasks.Task<CreateBillingAPResponse> TIPTOPServiceGateWayPortType.CreateBillingAPAsync(CreateBillingAPRequest request) {
             return base.Channel.CreateBillingAPAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateBillingAPResponse> CreateBillingAPAsync(string request) {
-            TiptopService.CreateBillingAPRequest inValue = new TiptopService.CreateBillingAPRequest();
+        public System.Threading.Tasks.Task<CreateBillingAPResponse> CreateBillingAPAsync(string request) {
+            CreateBillingAPRequest inValue = new CreateBillingAPRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateBillingAPAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateBillingAPAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateCustomerOtheraddressDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateCustomerOtheraddressDataAsync(TiptopService.CreateCustomerOtheraddressDataRequest request) {
+        System.Threading.Tasks.Task<CreateCustomerOtheraddressDataResponse> TIPTOPServiceGateWayPortType.CreateCustomerOtheraddressDataAsync(CreateCustomerOtheraddressDataRequest request) {
             return base.Channel.CreateCustomerOtheraddressDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateCustomerOtheraddressDataResponse> CreateCustomerOtheraddressDataAsync(string request) {
-            TiptopService.CreateCustomerOtheraddressDataRequest inValue = new TiptopService.CreateCustomerOtheraddressDataRequest();
+        public System.Threading.Tasks.Task<CreateCustomerOtheraddressDataResponse> CreateCustomerOtheraddressDataAsync(string request) {
+            CreateCustomerOtheraddressDataRequest inValue = new CreateCustomerOtheraddressDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateCustomerOtheraddressDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateCustomerOtheraddressDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatePotentialCustomerDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatePotentialCustomerDataAsync(TiptopService.CreatePotentialCustomerDataRequest request) {
+        System.Threading.Tasks.Task<CreatePotentialCustomerDataResponse> TIPTOPServiceGateWayPortType.CreatePotentialCustomerDataAsync(CreatePotentialCustomerDataRequest request) {
             return base.Channel.CreatePotentialCustomerDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatePotentialCustomerDataResponse> CreatePotentialCustomerDataAsync(string request) {
-            TiptopService.CreatePotentialCustomerDataRequest inValue = new TiptopService.CreatePotentialCustomerDataRequest();
+        public System.Threading.Tasks.Task<CreatePotentialCustomerDataResponse> CreatePotentialCustomerDataAsync(string request) {
+            CreatePotentialCustomerDataRequest inValue = new CreatePotentialCustomerDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatePotentialCustomerDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatePotentialCustomerDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerContactDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustomerContactDataAsync(TiptopService.GetCustomerContactDataRequest request) {
+        System.Threading.Tasks.Task<GetCustomerContactDataResponse> TIPTOPServiceGateWayPortType.GetCustomerContactDataAsync(GetCustomerContactDataRequest request) {
             return base.Channel.GetCustomerContactDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustomerContactDataResponse> GetCustomerContactDataAsync(string request) {
-            TiptopService.GetCustomerContactDataRequest inValue = new TiptopService.GetCustomerContactDataRequest();
+        public System.Threading.Tasks.Task<GetCustomerContactDataResponse> GetCustomerContactDataAsync(string request) {
+            GetCustomerContactDataRequest inValue = new GetCustomerContactDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustomerContactDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustomerContactDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCustomerOtheraddressDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCustomerOtheraddressDataAsync(TiptopService.GetCustomerOtheraddressDataRequest request) {
+        System.Threading.Tasks.Task<GetCustomerOtheraddressDataResponse> TIPTOPServiceGateWayPortType.GetCustomerOtheraddressDataAsync(GetCustomerOtheraddressDataRequest request) {
             return base.Channel.GetCustomerOtheraddressDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCustomerOtheraddressDataResponse> GetCustomerOtheraddressDataAsync(string request) {
-            TiptopService.GetCustomerOtheraddressDataRequest inValue = new TiptopService.GetCustomerOtheraddressDataRequest();
+        public System.Threading.Tasks.Task<GetCustomerOtheraddressDataResponse> GetCustomerOtheraddressDataAsync(string request) {
+            GetCustomerOtheraddressDataRequest inValue = new GetCustomerOtheraddressDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCustomerOtheraddressDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCustomerOtheraddressDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetItemStockListResponse> TiptopService.TIPTOPServiceGateWayPortType.GetItemStockListAsync(TiptopService.GetItemStockListRequest request) {
+        System.Threading.Tasks.Task<GetItemStockListResponse> TIPTOPServiceGateWayPortType.GetItemStockListAsync(GetItemStockListRequest request) {
             return base.Channel.GetItemStockListAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetItemStockListResponse> GetItemStockListAsync(string request) {
-            TiptopService.GetItemStockListRequest inValue = new TiptopService.GetItemStockListRequest();
+        public System.Threading.Tasks.Task<GetItemStockListResponse> GetItemStockListAsync(string request) {
+            GetItemStockListRequest inValue = new GetItemStockListRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetItemStockListAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetItemStockListAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMFGSettingSmaDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMFGSettingSmaDataAsync(TiptopService.GetMFGSettingSmaDataRequest request) {
+        System.Threading.Tasks.Task<GetMFGSettingSmaDataResponse> TIPTOPServiceGateWayPortType.GetMFGSettingSmaDataAsync(GetMFGSettingSmaDataRequest request) {
             return base.Channel.GetMFGSettingSmaDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMFGSettingSmaDataResponse> GetMFGSettingSmaDataAsync(string request) {
-            TiptopService.GetMFGSettingSmaDataRequest inValue = new TiptopService.GetMFGSettingSmaDataRequest();
+        public System.Threading.Tasks.Task<GetMFGSettingSmaDataResponse> GetMFGSettingSmaDataAsync(string request) {
+            GetMFGSettingSmaDataRequest inValue = new GetMFGSettingSmaDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMFGSettingSmaDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMFGSettingSmaDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPackingMethodDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPackingMethodDataAsync(TiptopService.GetPackingMethodDataRequest request) {
+        System.Threading.Tasks.Task<GetPackingMethodDataResponse> TIPTOPServiceGateWayPortType.GetPackingMethodDataAsync(GetPackingMethodDataRequest request) {
             return base.Channel.GetPackingMethodDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPackingMethodDataResponse> GetPackingMethodDataAsync(string request) {
-            TiptopService.GetPackingMethodDataRequest inValue = new TiptopService.GetPackingMethodDataRequest();
+        public System.Threading.Tasks.Task<GetPackingMethodDataResponse> GetPackingMethodDataAsync(string request) {
+            GetPackingMethodDataRequest inValue = new GetPackingMethodDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPackingMethodDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPackingMethodDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetPotentialCustomerDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetPotentialCustomerDataAsync(TiptopService.GetPotentialCustomerDataRequest request) {
+        System.Threading.Tasks.Task<GetPotentialCustomerDataResponse> TIPTOPServiceGateWayPortType.GetPotentialCustomerDataAsync(GetPotentialCustomerDataRequest request) {
             return base.Channel.GetPotentialCustomerDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetPotentialCustomerDataResponse> GetPotentialCustomerDataAsync(string request) {
-            TiptopService.GetPotentialCustomerDataRequest inValue = new TiptopService.GetPotentialCustomerDataRequest();
+        public System.Threading.Tasks.Task<GetPotentialCustomerDataResponse> GetPotentialCustomerDataAsync(string request) {
+            GetPotentialCustomerDataRequest inValue = new GetPotentialCustomerDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetPotentialCustomerDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetPotentialCustomerDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetTableAmendmentDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetTableAmendmentDataAsync(TiptopService.GetTableAmendmentDataRequest request) {
+        System.Threading.Tasks.Task<GetTableAmendmentDataResponse> TIPTOPServiceGateWayPortType.GetTableAmendmentDataAsync(GetTableAmendmentDataRequest request) {
             return base.Channel.GetTableAmendmentDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetTableAmendmentDataResponse> GetTableAmendmentDataAsync(string request) {
-            TiptopService.GetTableAmendmentDataRequest inValue = new TiptopService.GetTableAmendmentDataRequest();
+        public System.Threading.Tasks.Task<GetTableAmendmentDataResponse> GetTableAmendmentDataAsync(string request) {
+            GetTableAmendmentDataRequest inValue = new GetTableAmendmentDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetTableAmendmentDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetTableAmendmentDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetTaxTypeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetTaxTypeDataAsync(TiptopService.GetTaxTypeDataRequest request) {
+        System.Threading.Tasks.Task<GetTaxTypeDataResponse> TIPTOPServiceGateWayPortType.GetTaxTypeDataAsync(GetTaxTypeDataRequest request) {
             return base.Channel.GetTaxTypeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetTaxTypeDataResponse> GetTaxTypeDataAsync(string request) {
-            TiptopService.GetTaxTypeDataRequest inValue = new TiptopService.GetTaxTypeDataRequest();
+        public System.Threading.Tasks.Task<GetTaxTypeDataResponse> GetTaxTypeDataAsync(string request) {
+            GetTaxTypeDataRequest inValue = new GetTaxTypeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetTaxTypeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetTaxTypeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetUnitConversionDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetUnitConversionDataAsync(TiptopService.GetUnitConversionDataRequest request) {
+        System.Threading.Tasks.Task<GetUnitConversionDataResponse> TIPTOPServiceGateWayPortType.GetUnitConversionDataAsync(GetUnitConversionDataRequest request) {
             return base.Channel.GetUnitConversionDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetUnitConversionDataResponse> GetUnitConversionDataAsync(string request) {
-            TiptopService.GetUnitConversionDataRequest inValue = new TiptopService.GetUnitConversionDataRequest();
+        public System.Threading.Tasks.Task<GetUnitConversionDataResponse> GetUnitConversionDataAsync(string request) {
+            GetUnitConversionDataRequest inValue = new GetUnitConversionDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetUnitConversionDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetUnitConversionDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetUnitDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetUnitDataAsync(TiptopService.GetUnitDataRequest request) {
+        System.Threading.Tasks.Task<GetUnitDataResponse> TIPTOPServiceGateWayPortType.GetUnitDataAsync(GetUnitDataRequest request) {
             return base.Channel.GetUnitDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetUnitDataResponse> GetUnitDataAsync(string request) {
-            TiptopService.GetUnitDataRequest inValue = new TiptopService.GetUnitDataRequest();
+        public System.Threading.Tasks.Task<GetUnitDataResponse> GetUnitDataAsync(string request) {
+            GetUnitDataRequest inValue = new GetUnitDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetUnitDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetUnitDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetReportDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetReportDataAsync(TiptopService.GetReportDataRequest request) {
+        System.Threading.Tasks.Task<GetReportDataResponse> TIPTOPServiceGateWayPortType.GetReportDataAsync(GetReportDataRequest request) {
             return base.Channel.GetReportDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetReportDataResponse> GetReportDataAsync(string request) {
-            TiptopService.GetReportDataRequest inValue = new TiptopService.GetReportDataRequest();
+        public System.Threading.Tasks.Task<GetReportDataResponse> GetReportDataAsync(string request) {
+            GetReportDataRequest inValue = new GetReportDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetReportDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetReportDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CRMGetCustomerDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CRMGetCustomerDataAsync(TiptopService.CRMGetCustomerDataRequest request) {
+        System.Threading.Tasks.Task<CRMGetCustomerDataResponse> TIPTOPServiceGateWayPortType.CRMGetCustomerDataAsync(CRMGetCustomerDataRequest request) {
             return base.Channel.CRMGetCustomerDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CRMGetCustomerDataResponse> CRMGetCustomerDataAsync(string request) {
-            TiptopService.CRMGetCustomerDataRequest inValue = new TiptopService.CRMGetCustomerDataRequest();
+        public System.Threading.Tasks.Task<CRMGetCustomerDataResponse> CRMGetCustomerDataAsync(string request) {
+            CRMGetCustomerDataRequest inValue = new CRMGetCustomerDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CRMGetCustomerDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CRMGetCustomerDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateCustomerContactDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateCustomerContactDataAsync(TiptopService.CreateCustomerContactDataRequest request) {
+        System.Threading.Tasks.Task<CreateCustomerContactDataResponse> TIPTOPServiceGateWayPortType.CreateCustomerContactDataAsync(CreateCustomerContactDataRequest request) {
             return base.Channel.CreateCustomerContactDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateCustomerContactDataResponse> CreateCustomerContactDataAsync(string request) {
-            TiptopService.CreateCustomerContactDataRequest inValue = new TiptopService.CreateCustomerContactDataRequest();
+        public System.Threading.Tasks.Task<CreateCustomerContactDataResponse> CreateCustomerContactDataAsync(string request) {
+            CreateCustomerContactDataRequest inValue = new CreateCustomerContactDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateCustomerContactDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateCustomerContactDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateDepartmentDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateDepartmentDataAsync(TiptopService.CreateDepartmentDataRequest request) {
+        System.Threading.Tasks.Task<CreateDepartmentDataResponse> TIPTOPServiceGateWayPortType.CreateDepartmentDataAsync(CreateDepartmentDataRequest request) {
             return base.Channel.CreateDepartmentDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateDepartmentDataResponse> CreateDepartmentDataAsync(string request) {
-            TiptopService.CreateDepartmentDataRequest inValue = new TiptopService.CreateDepartmentDataRequest();
+        public System.Threading.Tasks.Task<CreateDepartmentDataResponse> CreateDepartmentDataAsync(string request) {
+            CreateDepartmentDataRequest inValue = new CreateDepartmentDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateDepartmentDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateDepartmentDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetAccountTypeDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetAccountTypeDataAsync(TiptopService.GetAccountTypeDataRequest request) {
+        System.Threading.Tasks.Task<GetAccountTypeDataResponse> TIPTOPServiceGateWayPortType.GetAccountTypeDataAsync(GetAccountTypeDataRequest request) {
             return base.Channel.GetAccountTypeDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetAccountTypeDataResponse> GetAccountTypeDataAsync(string request) {
-            TiptopService.GetAccountTypeDataRequest inValue = new TiptopService.GetAccountTypeDataRequest();
+        public System.Threading.Tasks.Task<GetAccountTypeDataResponse> GetAccountTypeDataAsync(string request) {
+            GetAccountTypeDataRequest inValue = new GetAccountTypeDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetAccountTypeDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetAccountTypeDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetTransactionCategoryResponse> TiptopService.TIPTOPServiceGateWayPortType.GetTransactionCategoryAsync(TiptopService.GetTransactionCategoryRequest request) {
+        System.Threading.Tasks.Task<GetTransactionCategoryResponse> TIPTOPServiceGateWayPortType.GetTransactionCategoryAsync(GetTransactionCategoryRequest request) {
             return base.Channel.GetTransactionCategoryAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetTransactionCategoryResponse> GetTransactionCategoryAsync(string request) {
-            TiptopService.GetTransactionCategoryRequest inValue = new TiptopService.GetTransactionCategoryRequest();
+        public System.Threading.Tasks.Task<GetTransactionCategoryResponse> GetTransactionCategoryAsync(string request) {
+            GetTransactionCategoryRequest inValue = new GetTransactionCategoryRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetTransactionCategoryAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetTransactionCategoryAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetVoucherDocumentDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetVoucherDocumentDataAsync(TiptopService.GetVoucherDocumentDataRequest request) {
+        System.Threading.Tasks.Task<GetVoucherDocumentDataResponse> TIPTOPServiceGateWayPortType.GetVoucherDocumentDataAsync(GetVoucherDocumentDataRequest request) {
             return base.Channel.GetVoucherDocumentDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetVoucherDocumentDataResponse> GetVoucherDocumentDataAsync(string request) {
-            TiptopService.GetVoucherDocumentDataRequest inValue = new TiptopService.GetVoucherDocumentDataRequest();
+        public System.Threading.Tasks.Task<GetVoucherDocumentDataResponse> GetVoucherDocumentDataAsync(string request) {
+            GetVoucherDocumentDataRequest inValue = new GetVoucherDocumentDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetVoucherDocumentDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetVoucherDocumentDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.RollbackVoucherDataResponse> TiptopService.TIPTOPServiceGateWayPortType.RollbackVoucherDataAsync(TiptopService.RollbackVoucherDataRequest request) {
+        System.Threading.Tasks.Task<RollbackVoucherDataResponse> TIPTOPServiceGateWayPortType.RollbackVoucherDataAsync(RollbackVoucherDataRequest request) {
             return base.Channel.RollbackVoucherDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.RollbackVoucherDataResponse> RollbackVoucherDataAsync(string request) {
-            TiptopService.RollbackVoucherDataRequest inValue = new TiptopService.RollbackVoucherDataRequest();
+        public System.Threading.Tasks.Task<RollbackVoucherDataResponse> RollbackVoucherDataAsync(string request) {
+            RollbackVoucherDataRequest inValue = new RollbackVoucherDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).RollbackVoucherDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).RollbackVoucherDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetCardDetailDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetCardDetailDataAsync(TiptopService.GetCardDetailDataRequest request) {
+        System.Threading.Tasks.Task<GetCardDetailDataResponse> TIPTOPServiceGateWayPortType.GetCardDetailDataAsync(GetCardDetailDataRequest request) {
             return base.Channel.GetCardDetailDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetCardDetailDataResponse> GetCardDetailDataAsync(string request) {
-            TiptopService.GetCardDetailDataRequest inValue = new TiptopService.GetCardDetailDataRequest();
+        public System.Threading.Tasks.Task<GetCardDetailDataResponse> GetCardDetailDataAsync(string request) {
+            GetCardDetailDataRequest inValue = new GetCardDetailDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetCardDetailDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetCardDetailDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetOnlineUserResponse> TiptopService.TIPTOPServiceGateWayPortType.GetOnlineUserAsync(TiptopService.GetOnlineUserRequest request) {
+        System.Threading.Tasks.Task<GetOnlineUserResponse> TIPTOPServiceGateWayPortType.GetOnlineUserAsync(GetOnlineUserRequest request) {
             return base.Channel.GetOnlineUserAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetOnlineUserResponse> GetOnlineUserAsync(string request) {
-            TiptopService.GetOnlineUserRequest inValue = new TiptopService.GetOnlineUserRequest();
+        public System.Threading.Tasks.Task<GetOnlineUserResponse> GetOnlineUserAsync(string request) {
+            GetOnlineUserRequest inValue = new GetOnlineUserRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetOnlineUserAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetOnlineUserAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetProdInfoResponse> TiptopService.TIPTOPServiceGateWayPortType.GetProdInfoAsync(TiptopService.GetProdInfoRequest request) {
+        System.Threading.Tasks.Task<GetProdInfoResponse> TIPTOPServiceGateWayPortType.GetProdInfoAsync(GetProdInfoRequest request) {
             return base.Channel.GetProdInfoAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetProdInfoResponse> GetProdInfoAsync(string request) {
-            TiptopService.GetProdInfoRequest inValue = new TiptopService.GetProdInfoRequest();
+        public System.Threading.Tasks.Task<GetProdInfoResponse> GetProdInfoAsync(string request) {
+            GetProdInfoRequest inValue = new GetProdInfoRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetProdInfoAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetProdInfoAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMemberDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMemberDataAsync(TiptopService.GetMemberDataRequest request) {
+        System.Threading.Tasks.Task<GetMemberDataResponse> TIPTOPServiceGateWayPortType.GetMemberDataAsync(GetMemberDataRequest request) {
             return base.Channel.GetMemberDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMemberDataResponse> GetMemberDataAsync(string request) {
-            TiptopService.GetMemberDataRequest inValue = new TiptopService.GetMemberDataRequest();
+        public System.Threading.Tasks.Task<GetMemberDataResponse> GetMemberDataAsync(string request) {
+            GetMemberDataRequest inValue = new GetMemberDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMemberDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMemberDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetMachineDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetMachineDataAsync(TiptopService.GetMachineDataRequest request) {
+        System.Threading.Tasks.Task<GetMachineDataResponse> TIPTOPServiceGateWayPortType.GetMachineDataAsync(GetMachineDataRequest request) {
             return base.Channel.GetMachineDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetMachineDataResponse> GetMachineDataAsync(string request) {
-            TiptopService.GetMachineDataRequest inValue = new TiptopService.GetMachineDataRequest();
+        public System.Threading.Tasks.Task<GetMachineDataResponse> GetMachineDataAsync(string request) {
+            GetMachineDataRequest inValue = new GetMachineDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetMachineDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetMachineDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetProdRoutingDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetProdRoutingDataAsync(TiptopService.GetProdRoutingDataRequest request) {
+        System.Threading.Tasks.Task<GetProdRoutingDataResponse> TIPTOPServiceGateWayPortType.GetProdRoutingDataAsync(GetProdRoutingDataRequest request) {
             return base.Channel.GetProdRoutingDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetProdRoutingDataResponse> GetProdRoutingDataAsync(string request) {
-            TiptopService.GetProdRoutingDataRequest inValue = new TiptopService.GetProdRoutingDataRequest();
+        public System.Threading.Tasks.Task<GetProdRoutingDataResponse> GetProdRoutingDataAsync(string request) {
+            GetProdRoutingDataRequest inValue = new GetProdRoutingDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetProdRoutingDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetProdRoutingDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetWorkstationDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetWorkstationDataAsync(TiptopService.GetWorkstationDataRequest request) {
+        System.Threading.Tasks.Task<GetWorkstationDataResponse> TIPTOPServiceGateWayPortType.GetWorkstationDataAsync(GetWorkstationDataRequest request) {
             return base.Channel.GetWorkstationDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetWorkstationDataResponse> GetWorkstationDataAsync(string request) {
-            TiptopService.GetWorkstationDataRequest inValue = new TiptopService.GetWorkstationDataRequest();
+        public System.Threading.Tasks.Task<GetWorkstationDataResponse> GetWorkstationDataAsync(string request) {
+            GetWorkstationDataRequest inValue = new GetWorkstationDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetWorkstationDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetWorkstationDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateRepSubPBOMDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateRepSubPBOMDataAsync(TiptopService.CreateRepSubPBOMDataRequest request) {
+        System.Threading.Tasks.Task<CreateRepSubPBOMDataResponse> TIPTOPServiceGateWayPortType.CreateRepSubPBOMDataAsync(CreateRepSubPBOMDataRequest request) {
             return base.Channel.CreateRepSubPBOMDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateRepSubPBOMDataResponse> CreateRepSubPBOMDataAsync(string request) {
-            TiptopService.CreateRepSubPBOMDataRequest inValue = new TiptopService.CreateRepSubPBOMDataRequest();
+        public System.Threading.Tasks.Task<CreateRepSubPBOMDataResponse> CreateRepSubPBOMDataAsync(string request) {
+            CreateRepSubPBOMDataRequest inValue = new CreateRepSubPBOMDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateRepSubPBOMDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateRepSubPBOMDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetBrandDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetBrandDataAsync(TiptopService.GetBrandDataRequest request) {
+        System.Threading.Tasks.Task<GetBrandDataResponse> TIPTOPServiceGateWayPortType.GetBrandDataAsync(GetBrandDataRequest request) {
             return base.Channel.GetBrandDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetBrandDataResponse> GetBrandDataAsync(string request) {
-            TiptopService.GetBrandDataRequest inValue = new TiptopService.GetBrandDataRequest();
+        public System.Threading.Tasks.Task<GetBrandDataResponse> GetBrandDataAsync(string request) {
+            GetBrandDataRequest inValue = new GetBrandDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetBrandDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetBrandDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreateItemApprovalDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreateItemApprovalDataAsync(TiptopService.CreateItemApprovalDataRequest request) {
+        System.Threading.Tasks.Task<CreateItemApprovalDataResponse> TIPTOPServiceGateWayPortType.CreateItemApprovalDataAsync(CreateItemApprovalDataRequest request) {
             return base.Channel.CreateItemApprovalDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreateItemApprovalDataResponse> CreateItemApprovalDataAsync(string request) {
-            TiptopService.CreateItemApprovalDataRequest inValue = new TiptopService.CreateItemApprovalDataRequest();
+        public System.Threading.Tasks.Task<CreateItemApprovalDataResponse> CreateItemApprovalDataAsync(string request) {
+            CreateItemApprovalDataRequest inValue = new CreateItemApprovalDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreateItemApprovalDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreateItemApprovalDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.GetItemOtherGroupDataResponse> TiptopService.TIPTOPServiceGateWayPortType.GetItemOtherGroupDataAsync(TiptopService.GetItemOtherGroupDataRequest request) {
+        System.Threading.Tasks.Task<GetItemOtherGroupDataResponse> TIPTOPServiceGateWayPortType.GetItemOtherGroupDataAsync(GetItemOtherGroupDataRequest request) {
             return base.Channel.GetItemOtherGroupDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.GetItemOtherGroupDataResponse> GetItemOtherGroupDataAsync(string request) {
-            TiptopService.GetItemOtherGroupDataRequest inValue = new TiptopService.GetItemOtherGroupDataRequest();
+        public System.Threading.Tasks.Task<GetItemOtherGroupDataResponse> GetItemOtherGroupDataAsync(string request) {
+            GetItemOtherGroupDataRequest inValue = new GetItemOtherGroupDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).GetItemOtherGroupDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).GetItemOtherGroupDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.ERPOpendocResponse> TiptopService.TIPTOPServiceGateWayPortType.ERPOpendocAsync(TiptopService.ERPOpendocRequest request) {
+        System.Threading.Tasks.Task<ERPOpendocResponse> TIPTOPServiceGateWayPortType.ERPOpendocAsync(ERPOpendocRequest request) {
             return base.Channel.ERPOpendocAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.ERPOpendocResponse> ERPOpendocAsync(string request) {
-            TiptopService.ERPOpendocRequest inValue = new TiptopService.ERPOpendocRequest();
+        public System.Threading.Tasks.Task<ERPOpendocResponse> ERPOpendocAsync(string request) {
+            ERPOpendocRequest inValue = new ERPOpendocRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).ERPOpendocAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).ERPOpendocAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.FwChangeAPDateResponse> TiptopService.TIPTOPServiceGateWayPortType.FwChangeAPDateAsync(TiptopService.FwChangeAPDateRequest request) {
+        System.Threading.Tasks.Task<FwChangeAPDateResponse> TIPTOPServiceGateWayPortType.FwChangeAPDateAsync(FwChangeAPDateRequest request) {
             return base.Channel.FwChangeAPDateAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.FwChangeAPDateResponse> FwChangeAPDateAsync(string request) {
-            TiptopService.FwChangeAPDateRequest inValue = new TiptopService.FwChangeAPDateRequest();
+        public System.Threading.Tasks.Task<FwChangeAPDateResponse> FwChangeAPDateAsync(string request) {
+            FwChangeAPDateRequest inValue = new FwChangeAPDateRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).FwChangeAPDateAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).FwChangeAPDateAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.CreatechaiDataResponse> TiptopService.TIPTOPServiceGateWayPortType.CreatechaiDataAsync(TiptopService.CreatechaiDataRequest request) {
+        System.Threading.Tasks.Task<CreatechaiDataResponse> TIPTOPServiceGateWayPortType.CreatechaiDataAsync(CreatechaiDataRequest request) {
             return base.Channel.CreatechaiDataAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.CreatechaiDataResponse> CreatechaiDataAsync(string request) {
-            TiptopService.CreatechaiDataRequest inValue = new TiptopService.CreatechaiDataRequest();
+        public System.Threading.Tasks.Task<CreatechaiDataResponse> CreatechaiDataAsync(string request) {
+            CreatechaiDataRequest inValue = new CreatechaiDataRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).CreatechaiDataAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).CreatechaiDataAsync(inValue);
         }
 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<TiptopService.UpdateIqcResponse> TiptopService.TIPTOPServiceGateWayPortType.UpdateIqcAsync(TiptopService.UpdateIqcRequest request) {
+        System.Threading.Tasks.Task<UpdateIqcResponse> TIPTOPServiceGateWayPortType.UpdateIqcAsync(UpdateIqcRequest request) {
             return base.Channel.UpdateIqcAsync(request);
         }
 
-        public System.Threading.Tasks.Task<TiptopService.UpdateIqcResponse> UpdateIqcAsync(string request) {
-            TiptopService.UpdateIqcRequest inValue = new TiptopService.UpdateIqcRequest();
+        public System.Threading.Tasks.Task<UpdateIqcResponse> UpdateIqcAsync(string request) {
+            UpdateIqcRequest inValue = new UpdateIqcRequest();
             inValue.request = request;
-            return ((TiptopService.TIPTOPServiceGateWayPortType)(this)).UpdateIqcAsync(inValue);
+            return ((TIPTOPServiceGateWayPortType)(this)).UpdateIqcAsync(inValue);
         }
 
         public System.Threading.Tasks.Task<string> invokeSrvAsync(string request) {
@@ -8931,10 +8977,10 @@ namespace TiptopService {
         }
 
 #if !NET6_0_OR_GREATER
-        public virtual System.Threading.Tasks.Task CloseAsync()
-        {
-            return System.Threading.Tasks.Task.Factory.FromAsync(((System.ServiceModel.ICommunicationObject)(this)).BeginClose(null, null), new System.Action<System.IAsyncResult>(((System.ServiceModel.ICommunicationObject)(this)).EndClose));
-        }
+    public virtual System.Threading.Tasks.Task CloseAsync()
+    {
+        return System.Threading.Tasks.Task.Factory.FromAsync(((System.ServiceModel.ICommunicationObject)(this)).BeginClose(null, null), new System.Action<System.IAsyncResult>(((System.ServiceModel.ICommunicationObject)(this)).EndClose));
+    }
 #endif
 
         private static System.ServiceModel.Channels.Binding GetBindingForEndpoint(EndpointConfiguration endpointConfiguration) {

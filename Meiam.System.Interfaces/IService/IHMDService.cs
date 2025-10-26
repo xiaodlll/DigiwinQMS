@@ -62,5 +62,7 @@ namespace Meiam.System.Interfaces
 
         Task UpdateReceiveInspectResult();
         Task TestUpdateReceiveInspectResult(string requestXml);
+
+        Task UpdateFqcResult();
     }
 }

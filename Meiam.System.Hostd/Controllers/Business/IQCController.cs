@@ -222,16 +222,19 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
             string filePath = @"C:\Users\Administrator\Desktop\Temp\22.xlsx";
             string filePath2 = @"C:\Users\Administrator\Desktop\Temp\22.doc";
-            string[] sourceExcelPaths = new string[] { @"C:\Users\Administrator\Desktop\Temp\2.xls" };
+            string[] sourceExcelPaths = new string[] {
+                @"C:\Users\Administrator\Desktop\Temp\111\19d72b88-abe9-4f3e-af95-132965ffa092.doc",
+                @"C:\Users\Administrator\Desktop\Temp\111\a7bc14db-ec5a-4f27-8ab8-e7d1eb09020d.doc", };
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
 
                     //excelHelper.CopyColumnsCells("CPK", "C21:D30", 5);
                     //excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
                     //excelHelper.CopyRows("出货报告", new int[] { 39 }, 40);
-                    //excelHelper.CopyRows("出货报告", "B39:R39", 2);
-                    string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
-                    string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
+                    //excelHelper.CopyRows("原材料COC", "A5:O5", 0);
+                    //string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
+                    //string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
+                    excelHelper.AddAttachsToCell("Peeling Force", "D7", sourceExcelPaths, true);
                     //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {

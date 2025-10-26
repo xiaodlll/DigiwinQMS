@@ -12,6 +12,7 @@ using Meiam.System.Interfaces.Extensions;
 using Meiam.System.Model;
 using Meiam.System.Model.Dto;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Logging;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using OxyPlot;
@@ -35,7 +36,9 @@ using VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment;
 namespace Meiam.System.Interfaces {
     public class IQCService : BaseService<INSPECT_TENSILE>, IIQCService {
 
-        public IQCService(IUnitOfWork unitOfWork) : base(unitOfWork) {
+        private readonly ILogger<IQCService> _logger;
+        public IQCService(IUnitOfWork unitOfWork, ILogger<IQCService> logger) : base(unitOfWork) {
+            _logger = logger;
         }
         #region xujie
         public void INSPECT_VIEW_RANK(string ID)
@@ -2964,20 +2967,6 @@ ORDER BY
                                 string CELLS = drZONE_D["CELLS"].ToString();
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
-                                    if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                        if (dtSource.Columns.Contains(byName)) {
-                                            if (byName == "REPORT_URL") {
-                                                string textValue = drData[byName].ToString();
-                                                string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
-                                            }
-                                            else {
-                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
-                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                            }
-                                        }
-                                    }
                                     if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
@@ -2995,6 +2984,20 @@ ORDER BY
                                             }
                                         }
                                     }
+                                    else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        if (dtSource.Columns.Contains(byName)) {
+                                            if (byName != null && byName.Contains("REPORT_URL")) {
+                                                string textValue = drData[byName].ToString();
+                                                string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
+                                            }
+                                            else {
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
+                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                            }
+                                        }
+                                    }
                                 }
                                 catch (Exception ex) {
                                     throw new Exception($"单元格[{CELLS}]填值异常:" + ex.ToString());
@@ -3003,7 +3006,7 @@ ORDER BY
                         }
                     }
                     catch (Exception ex) {
-                        throw new Exception($"区域[{SHEETNAME}]:" + ex.Message);
+                        throw new Exception($"区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]" + ex.ToString());
                     }
                 }
                 //再向右边循环
@@ -3038,13 +3041,7 @@ ORDER BY
                                 string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
-                                    if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                        if (dtSource.Columns.Contains(byName)) {
-                                            string textValue = F_FIX + drData[byName].ToString() + E_FIX;
-                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                        }
-                                    }
+
                                     if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
@@ -3061,6 +3058,12 @@ ORDER BY
                                                 excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
                                             }
                                         }
+                                    }else  if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        if (dtSource.Columns.Contains(byName)) {
+                                            string textValue = F_FIX + drData[byName].ToString() + E_FIX;
+                                            excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                        }
                                     }
                                 }
                                 catch (Exception ex) {
@@ -3070,7 +3073,7 @@ ORDER BY
                         }
                     }
                     catch (Exception ex) {
-                        throw new Exception($"区域[{SHEETNAME}]:" + ex.Message);
+                        throw new Exception($"区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]" + ex.ToString());
                     }
                 }
                 //最后向下循环
@@ -3108,20 +3111,6 @@ ORDER BY
                                     if (ISSQ == "1") {
                                         excelHelper.AddTextToCell(SHEETNAME, CELLS, (i + 1).ToString());
                                     }
-                                    else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
-                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                        if (dtSource.Columns.Contains(byName)) {
-                                            if (byName == "REPORT_URL") {
-                                                string textValue = drData[byName].ToString();
-                                                string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
-                                            }
-                                            else {
-                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
-                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
-                                            }
-                                        }
-                                    }
                                     else if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
@@ -3139,6 +3128,20 @@ ORDER BY
                                             }
                                         }
                                     }
+                                    else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
+                                        string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        if (dtSource.Columns.Contains(byName)) {
+                                            if (byName != null && byName.Contains("REPORT_URL")) {
+                                                string textValue = drData[byName].ToString();
+                                                string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, attachs, attMode);
+                                            }
+                                            else {
+                                                string textValue = F_FIX + drData[byName].ToString() + E_FIX;
+                                                excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
+                                            }
+                                        }
+                                    }
                                 }
                                 catch (Exception ex) {
                                     throw new Exception($"单元格[{CELLS}]填值异常:" + ex.ToString());
@@ -3147,7 +3150,7 @@ ORDER BY
                         }
                     }
                     catch (Exception ex) {
-                        throw new Exception($"区域[{SHEETNAME}]:" + ex.Message);
+                        throw new Exception($"区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]" + ex.ToString());
                     }
                 }
 
@@ -3520,7 +3523,7 @@ ORDER BY
                     if (groupByColumns.Contains(column.ColumnName))
                         continue; // 跳过分组列
 
-                    if (column.ColumnName == "Report_Url" || column.ColumnName.Contains("合并值")) {
+                    if (column.ColumnName == "REPORT_URL" || column.ColumnName.Contains("合并值")) {
                         // 合并值列：使用;连接所有值
                         var nonNullValues = group.Select(row => row[column.ColumnName])
                                                  .Where(val => val != DBNull.Value)
@@ -3716,14 +3719,16 @@ ORDER BY
                         continue;
                     }
                 }
+                string name = Db.Ado.GetString($@"select TOP 1 COC_VLOOKNAME from COC_VLOOK WHERE COC_VLOOKID='{VLOOKID}'");
                 try {
-                    DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID, parm.FIX_VALUE);
+                    _logger.LogInformation($"GetCOCDataSource正在查询数据源[{name}].");
+                     DataTable dtCOCVLOOK = GetCOCVLOOK(VLOOKID, parm.FIX_VALUE);
                     dtCOCVLOOK.TableName = VLOOKID;
                     ds.Tables.Add(dtCOCVLOOK);
+                    _logger.LogInformation($"GetCOCDataSource数据源[{name}]查询完成!");
                 }
                 catch (Exception ex) {
-                    string name = Db.Ado.GetString($@"select TOP 1 COC_VLOOKNAME from COC_VLOOK WHERE COC_VLOOKID='{VLOOKID}'");
-                    throw new Exception($"数据源[{name}]获取异常:{ex.ToString()}");
+                    throw new Exception($"GetCOCDataSource数据源[{name}]获取异常:{ex.ToString()}");
                 }
             }
 
