@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 public class ExcelHelper : IDisposable {
@@ -225,13 +226,15 @@ public class ExcelHelper : IDisposable {
         var cell = worksheet.Cells[cellAddress];
         var startRow = cell.Start.Row;
         var startCol = cell.Start.Column;
-        double cellHeight = GetMergedCellHeight(worksheet, startRow, startCol);
+        var cellSize = GetMergedCellSize(worksheet, startRow, startCol);
+        double cellHeight = cellSize.Height;
         double startLeft = 5;
 
         // 设置基础样式
         cell.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Top;
         worksheet.Row(startRow).CustomHeight = true;
-
+        ExcelDrawing tempExcelDrawing = null;
+        int countOnject = 0;
         foreach (var filePath in fullFilePaths.Where(File.Exists)) {
             try {
                 var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, filePath, cellHeight, attMode);
@@ -245,22 +248,23 @@ public class ExcelHelper : IDisposable {
                         (int)(actStartLeft)
                     );
                     startLeft += width + 5;
+                    countOnject++;
+                    tempExcelDrawing = embedObject;
                 }
             }
             catch (Exception ex) {
                 throw new Exception($"文件[{filePath}]嵌入失败: {ex.ToString()}");
             }
         }
-    }
-    private (int rowHeightTwips, int colWidthTwips) GetCellDimensions(ExcelWorksheet worksheet, int row, int col) {
-        // 行高：Excel行高单位是“点”，1点=20缇（1点=1/72英寸，1缇=1/1440英寸 → 1点=20缇）
-        int rowHeightTwips = (int)(worksheet.Row(row).Height * 20);
 
-        // 列宽：Excel列宽单位是“字符宽度”，1字符宽≈256缇（动态计算更精准）
-        double colWidthChars = worksheet.Column(col).Width;
-        int colWidthTwips = (int)(colWidthChars * 256); // 1字符宽≈256缇（基于默认字体）
-
-        return (rowHeightTwips, colWidthTwips);
+        if (countOnject == 1) {//特殊处理单文件图片
+            tempExcelDrawing.SetPosition(
+                        startRow - 1,
+                        10,
+                        startCol - 1,
+                        10 );
+            tempExcelDrawing.SetSize((int)cellSize.Width, (int)cellSize.Height);
+        }
     }
 
     private (int, double) GetMergedCellLeft(ExcelWorksheet worksheet, ExcelRange cell, double startLeft) {
@@ -312,35 +316,62 @@ public class ExcelHelper : IDisposable {
     }
 
     /// <summary>
-    /// 获取指定单元格的高度（如果是合并单元格，则返回合并区域的总高度）
+    /// 存储单元格或合并区域的高度和宽度
+    /// </summary>
+    public class CellSize {
+        /// <summary>
+        /// 总高度（磅）
+        /// </summary>
+        public double Height { get; set; }
+
+        /// <summary>
+        /// 总宽度（磅）
+        /// </summary>
+        public double Width { get; set; }
+    }
+
+    /// <summary>
+    /// 获取指定单元格的高度和宽度（如果是合并单元格，则返回合并区域的总高度和总宽度）
     /// </summary>
     /// <param name="worksheet">工作表</param>
-    /// <param name="row">行索引</param>
-    /// <param name="column">列索引</param>
-    /// <returns>单元格或合并区域的总高度（以磅为单位）</returns>
-    private double GetMergedCellHeight(ExcelWorksheet worksheet, int row, int column) {
+    /// <param name="row">行索引（1-based）</param>
+    /// <param name="column">列索引（1-based）</param>
+    /// <returns>包含总高度和总宽度的CellSize对象（以磅为单位）</returns>
+    private CellSize GetMergedCellSize(ExcelWorksheet worksheet, int row, int column) {
         // 检查单元格是否属于合并区域
         ExcelRangeBase mergedRange = null;
-        foreach (var range in worksheet.MergedCells) {
-            var merged = worksheet.Cells[range];
-            if (merged.Start.Row <= row && merged.End.Row >= row &&
-                merged.Start.Column <= column && merged.End.Column >= column) {
+        foreach (var rangeAddress in worksheet.MergedCells) {
+            var merged = worksheet.Cells[rangeAddress];
+            // 判断指定单元格是否在当前合并区域内
+            if (merged.Start.Row <= row && merged.End.Row >= row
+                && merged.Start.Column <= column && merged.End.Column >= column) {
                 mergedRange = merged;
                 break;
             }
         }
 
-        // 如果是合并单元格，计算合并区域的总高度
+        // 如果是合并单元格，计算合并区域的总高度和总宽度
         if (mergedRange != null) {
             double totalHeight = 0;
+            // 累加合并区域内所有行的高度
             for (int r = mergedRange.Start.Row; r <= mergedRange.End.Row; r++) {
-                totalHeight += worksheet.Row(r).Height; // 使用默认行高（如果未设置）
+                totalHeight += worksheet.Row(r).Height * 1.2; // 行高默认值会自动处理未设置的情况
             }
-            return totalHeight;
+
+            double totalWidth = 0;
+            // 累加合并区域内所有列的宽度
+            for (int c = mergedRange.Start.Column; c <= mergedRange.End.Column; c++) {
+                totalWidth += worksheet.Column(c).Width * 7.7; // 列宽默认值会自动处理未设置的情况
+            }
+
+            return new CellSize { Height = totalHeight, Width = totalWidth };
         }
 
-        // 如果不是合并单元格，返回当前行的高度
-        return worksheet.Row(row).Height;
+        // 如果不是合并单元格，返回当前行高和列宽
+        return new CellSize {
+            Height = worksheet.Row(row).Height,
+            Width = worksheet.Column(column).Width * 7.7
+        };
     }
 
     public void InsertRows(string sheetName, int rowCount, int targetRow) {
@@ -352,20 +383,35 @@ public class ExcelHelper : IDisposable {
 
     #region CopyRows
     /// <summary>
-    /// 简化版本 - 只复制非合并单元格，包含行高复制
+    /// 安全版本 - 处理包含合并单元格的情况
     /// </summary>
     public void CopyRows(string sheetName, string cellsZone, int copyRows) {
-        if (copyRows <= 0)
-            return;
-        var worksheet = GetOrCreateWorksheet(sheetName);
+        if (copyRows <= 0) return;
 
-        // 解析区域
+        var worksheet = GetOrCreateWorksheet(sheetName);
         var address = new ExcelAddress(cellsZone);
+
         int startRow = address.Start.Row;
         int startCol = address.Start.Column;
         int endRow = address.End.Row;
         int endCol = address.End.Column;
 
+        int sourceRowCount = endRow - startRow + 1;
+
+        try {
+            //优先使用快速复制方法
+            CopyRowsSimple(worksheet, startRow, endRow, startCol, endCol, copyRows);
+        }
+        catch {
+            //使用安全的逐行复制方法
+            CopyRowsWithMergedCells(worksheet, startRow, endRow, startCol, endCol, copyRows);
+        }
+    }
+
+    /// <summary>
+    /// 简单复制
+    /// </summary>
+    private void CopyRowsSimple(ExcelWorksheet worksheet, int startRow, int endRow, int startCol, int endCol, int copyRows) {
         int sourceRowCount = endRow - startRow + 1;
         int totalRowsToCopy = sourceRowCount * copyRows;
 
@@ -373,106 +419,148 @@ public class ExcelHelper : IDisposable {
         int targetStartRow = endRow + 1;
         worksheet.InsertRow(targetStartRow, totalRowsToCopy);
 
-        // 逐行逐列复制，跳过合并单元格
-        for (int copyIndex = 0; copyIndex < copyRows; copyIndex++) {
+        // 一次性复制所有行到目标区域
+        var sourceRange = worksheet.Cells[startRow, startCol, endRow, endCol];
+        var targetRange = worksheet.Cells[targetStartRow, startCol, targetStartRow + totalRowsToCopy - 1, endCol];
+
+        // 使用 Copy 方法复制整个区域
+        sourceRange.Copy(targetRange);
+
+        // 复制行高
+        for (int i = 0; i < totalRowsToCopy; i++) {
+            int sourceRow = startRow + (i % sourceRowCount);
+            int targetRow = targetStartRow + i;
+
+            worksheet.Row(targetRow).Height = worksheet.Row(sourceRow).Height;
+        }
+    }
+
+    /// <summary>
+    /// 安全复制 - 用于包含垂直合并单元格的情况 (适配新版 EPPlus)
+    /// </summary>
+    private void CopyRowsWithMergedCells(ExcelWorksheet worksheet, int startRow, int endRow, int startCol, int endCol, int copyRows) {
+        int sourceRowCount = endRow - startRow + 1;
+
+        // 预先收集源区域中的所有合并单元格 [citation:6]
+        var mergedRanges = new List<ExcelRangeBase>();
+        foreach (var mergedRange in worksheet.MergedCells) {
+            ExcelAddressBase address = new ExcelAddressBase(mergedRange);
+            // 检查合并区域是否与源区域相交
+            if (address.Start.Row <= endRow && address.End.Row >= startRow &&
+                address.Start.Column <= endCol && address.End.Column >= startCol) {
+                mergedRanges.Add(worksheet.Cells[mergedRange]);
+            }
+        }
+
+        // 逐批次复制
+        for (int i = 0; i < copyRows; i++) {
+            int targetStartRow = endRow + 1 + (i * sourceRowCount);
+
+            // 插入目标行 [citation:3]
+            worksheet.InsertRow(targetStartRow, sourceRowCount);
+
+            // 复制单元格内容、样式和公式
             for (int rowOffset = 0; rowOffset < sourceRowCount; rowOffset++) {
                 int sourceRow = startRow + rowOffset;
-                int targetRow = targetStartRow + (copyIndex * sourceRowCount) + rowOffset;
+                int targetRow = targetStartRow + rowOffset;
 
-                // 复制行高（在复制单元格内容之前设置行高）
+                // 复制行高和隐藏状态
                 worksheet.Row(targetRow).Height = worksheet.Row(sourceRow).Height;
-
-                // 复制行隐藏状态
                 worksheet.Row(targetRow).Hidden = worksheet.Row(sourceRow).Hidden;
 
+                // 逐列复制单元格
                 for (int col = startCol; col <= endCol; col++) {
                     var sourceCell = worksheet.Cells[sourceRow, col];
-
-                    // 检查是否是合并单元格的一部分
-                    if (sourceCell.Merge) {
-                        // 获取合并区域
-                        var mergedRange = worksheet.MergedCells[sourceRow, col];
-                        if (mergedRange != null) {
-                            var mergedAddress = new ExcelAddress(mergedRange);
-                            // 只复制合并区域的第一个单元格
-                            if (sourceRow != mergedAddress.Start.Row || col != mergedAddress.Start.Column) {
-                                continue; // 跳过非第一个单元格
-                            }
-                        }
-                    }
-
-                    // 复制到目标单元格
                     var targetCell = worksheet.Cells[targetRow, col];
-                    sourceCell.Copy(targetCell);
+
+                    // 只复制非合并单元格或合并区域的第一个单元格 [citation:6]
+                    if (!sourceCell.Merge || IsFirstCellInMerge(worksheet, sourceRow, col)) {
+                        // 使用 Copy 方法复制单元格，但需要注意其在新版 EPPlus 中的行为 [citation:5]
+                        sourceCell.Copy(targetCell);
+
+                        // 显式复制一些关键样式属性以确保兼容性 [citation:2][citation:5]
+                        CopyCellStyle(sourceCell, targetCell);
+                    }
                 }
             }
-        }
 
-        // 额外处理：复制自定义行高（如果存在）
-        CopyCustomRowProperties(worksheet, startRow, endRow, targetStartRow, copyRows, sourceRowCount);
-    }
+            // 在目标区域重新创建合并单元格 [citation:3]
+            foreach (var mergedRange in mergedRanges) {
+                // 计算源合并区域在目标工作表中的新位置
+                int newStartRow = mergedRange.Start.Row - startRow + targetStartRow;
+                int newEndRow = mergedRange.End.Row - startRow + targetStartRow;
+                int newStartCol = mergedRange.Start.Column;
+                int newEndCol = mergedRange.End.Column;
 
-    /// <summary>
-    /// 复制自定义行属性
-    /// </summary>
-    private void CopyCustomRowProperties(ExcelWorksheet worksheet, int sourceStartRow, int sourceEndRow,
-                                       int targetStartRow, int copyRows, int sourceRowCount) {
-        for (int copyIndex = 0; copyIndex < copyRows; copyIndex++) {
-            for (int rowOffset = 0; rowOffset < sourceRowCount; rowOffset++) {
-                int sourceRow = sourceStartRow + rowOffset;
-                int targetRow = targetStartRow + (copyIndex * sourceRowCount) + rowOffset;
+                // 确保新位置在目标行范围内
+                if (newStartRow >= targetStartRow && newEndRow < targetStartRow + sourceRowCount) {
+                    // 创建新的合并单元格 [citation:8]
+                    worksheet.Cells[newStartRow, newStartCol, newEndRow, newEndCol].Merge = true;
 
-                var sourceRowObj = worksheet.Row(sourceRow);
-                var targetRowObj = worksheet.Row(targetRow);
-
-                // 复制行高（确保已设置）
-                if (sourceRowObj.Height >= 0) // 检查是否是自定义行高
-                {
-                    targetRowObj.Height = sourceRowObj.Height;
+                    // 确保合并区域的样式与源区域第一个单元格一致 [citation:4]
+                    CopyCellStyle(mergedRange, worksheet.Cells[newStartRow, newStartCol, newEndRow, newEndCol]);
                 }
-
-                // 复制其他行属性
-                targetRowObj.Hidden = sourceRowObj.Hidden;
-                targetRowObj.OutlineLevel = sourceRowObj.OutlineLevel;
-                targetRowObj.Collapsed = sourceRowObj.Collapsed;
-
-                // 复制行样式（如果存在）
-                if (sourceRowObj.StyleName != null) {
-                    targetRowObj.StyleName = sourceRowObj.StyleName;
-                }
-
-                // 复制自定义行样式
-                //CopyRowStyle(sourceRowObj, targetRowObj);
             }
         }
     }
 
     /// <summary>
-    /// 复制行样式
+    /// 检查单元格是否是合并区域的第一个单元格 [citation:6]
     /// </summary>
-    private void CopyRowStyle(ExcelRow sourceRow, ExcelRow targetRow) {
-        try {
-            // 复制行样式设置
-            targetRow.Style.Fill.PatternType = sourceRow.Style.Fill.PatternType;
-            if (sourceRow.Style.Fill.BackgroundColor.Rgb != null) {
-                //targetRow.Style.Fill.BackgroundColor.SetColor(sourceRow.Style.Fill.BackgroundColor.Rgb);
-            }
+    private bool IsFirstCellInMerge(ExcelWorksheet worksheet, int row, int col) {
+        var cell = worksheet.Cells[row, col];
+        if (!cell.Merge) return false;
 
-            targetRow.Style.Font.Bold = sourceRow.Style.Font.Bold;
-            targetRow.Style.Font.Italic = sourceRow.Style.Font.Italic;
-            targetRow.Style.Font.Size = sourceRow.Style.Font.Size;
-            //targetRow.Style.Font.Color.SetColor(sourceRow.Style.Font.Color.Rgb);
-            targetRow.Style.Font.Name = sourceRow.Style.Font.Name;
+        var mergeAddress = worksheet.MergedCells[row, col];
+        if (mergeAddress == null) return false;
 
-            targetRow.Style.HorizontalAlignment = sourceRow.Style.HorizontalAlignment;
-            targetRow.Style.VerticalAlignment = sourceRow.Style.VerticalAlignment;
+        ExcelAddress address = new ExcelAddress(mergeAddress);
+        return address.Start.Row == row && address.Start.Column == col;
+    }
 
-            targetRow.Style.Numberformat.Format = sourceRow.Style.Numberformat.Format;
-        }
-        catch (Exception ex) {
-            // 记录错误但不中断流程
-            System.Diagnostics.Debug.WriteLine($"复制行样式时出错: {ex.Message}");
-        }
+    /// <summary>
+    /// 复制单元格样式 [citation:2][citation:5]
+    /// </summary>
+    private void CopyCellStyle(ExcelRangeBase source, ExcelRangeBase target) {
+        // 复制字体样式
+        target.Style.Font.Size = source.Style.Font.Size;
+        target.Style.Font.Bold = source.Style.Font.Bold;
+        target.Style.Font.Italic = source.Style.Font.Italic;
+
+        // 复制填充样式
+        target.Style.Fill.PatternType = source.Style.Fill.PatternType;
+        target.Style.Border = source.Style.Border;
+        CopyBorderStyle(source.Style.Border, target.Style.Border);
+
+        // 复制对齐方式
+        target.Style.HorizontalAlignment = source.Style.HorizontalAlignment;
+        target.Style.VerticalAlignment = source.Style.VerticalAlignment;
+        target.Style.WrapText = source.Style.WrapText;
+
+        // 复制数字格式
+        target.Style.Numberformat.Format = source.Style.Numberformat.Format;
+    }
+
+    /// <summary>
+    /// 复制边框样式 - 完整版本
+    /// </summary>
+    private void CopyBorderStyle(OfficeOpenXml.Style.Border sourceBorder, OfficeOpenXml.Style.Border targetBorder) {
+        // 复制边框（样式+颜色）
+        targetBorder.Left.Style = sourceBorder.Left.Style;
+        if(sourceBorder.Left.Color.Theme!=null)
+            targetBorder.Left.Color.SetColor(sourceBorder.Left.Color.Theme.Value);
+
+        targetBorder.Right.Style = sourceBorder.Right.Style;
+        if (sourceBorder.Right.Color.Theme != null)
+            targetBorder.Right.Color.SetColor(sourceBorder.Right.Color.Theme.Value);
+
+        targetBorder.Top.Style = sourceBorder.Top.Style;
+        if (sourceBorder.Top.Color.Theme != null)
+            targetBorder.Top.Color.SetColor(sourceBorder.Top.Color.Theme.Value);
+
+        targetBorder.Bottom.Style = sourceBorder.Bottom.Style;
+        if (sourceBorder.Bottom.Color.Theme != null)
+            targetBorder.Bottom.Color.SetColor(sourceBorder.Bottom.Color.Theme.Value);
     }
     #endregion
 

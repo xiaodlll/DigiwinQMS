@@ -2862,6 +2862,7 @@ LEFT JOIN INSPECT_NOR ON INSPECT_PROGRESS.INSPECT_NORID=INSPECT_NOR.INSPECT_NORI
             string COCID = parm.COCID;
             string[] FIX_VALUE = parm.FIX_VALUE;
             string ID = parm.ID;
+            _logger.LogInformation($"开始GetCOCfile COCID[{COCID}]");
             //通过COCID获取模版
             string fileName = Db.Ado.GetString($@"select FILENAME from COC where COCID='{COCID}'");
             string cocName = Db.Ado.GetString($@"select COCNAME from COC where COCID='{COCID}'");
@@ -2872,6 +2873,7 @@ LEFT JOIN INSPECT_NOR ON INSPECT_PROGRESS.INSPECT_NORID=INSPECT_NOR.INSPECT_NORI
             if (!File.Exists(filePath)) {
                 throw new Exception($"COCID[{parm.COCID}]在数据库中模版文件不存在!FILENAME:[{filePath}]");
             }
+            _logger.LogInformation($"GetCOCfile正在获取数据源...");
             DataSet ds = GetCOCDataSource(parm);
             Dictionary<string,DataTable> dicDataSource = new Dictionary<string,DataTable>();
             foreach (DataTable dt in ds.Tables) {
@@ -2879,6 +2881,7 @@ LEFT JOIN INSPECT_NOR ON INSPECT_PROGRESS.INSPECT_NORID=INSPECT_NOR.INSPECT_NORI
                     dicDataSource.Add(dt.TableName, dt);
                 }
             }
+            _logger.LogInformation($"GetCOCfile数据源获取完成!");
 
             DataTable dtZoneIDs = Db.Ado.GetDataTable($@"SELECT COC_ZONE.COC_ZONEID, CELLS
 FROM COC_ZONE_D
@@ -2916,6 +2919,7 @@ ORDER BY
                 fi.Directory.Create();
             }
             File.Copy(tempFilePath, filePath, true);
+            _logger.LogInformation($"GetCOCfile准备生成COC文件【{filePath}】...");
 
             bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
             using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
@@ -2948,6 +2952,7 @@ ORDER BY
                     string COC_VLOOKID = dtZONE.Rows[0]["COC_VLOOKID"].ToString();
                     string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString();
                     try {
+                        _logger.LogInformation($"GetCOCfile正在生成COC文件 通用区域[{SHEETNAME}]:VLOOK[{VLOOK}]");
                         DataTable dtSource = dicDataSource[COC_VLOOKID];
                         DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{COC_ZONEID}'
 ORDER BY 
@@ -3004,9 +3009,10 @@ ORDER BY
                                 }
                             }
                         }
+                        _logger.LogInformation($"GetCOCfile生成COC文件 通用区域[{SHEETNAME}]:VLOOK[{VLOOK}]完成.");
                     }
                     catch (Exception ex) {
-                        throw new Exception($"区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]" + ex.ToString());
+                        throw new Exception($"区域[{SHEETNAME}]:VLOOK[{VLOOK}]" + ex.ToString());
                     }
                 }
                 //再向右边循环
@@ -3018,6 +3024,7 @@ ORDER BY
                     string COC_VLOOKID = dtZONE.Rows[0]["COC_VLOOKID"].ToString();
                     string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString();
                     try {
+                        _logger.LogInformation($"GetCOCfile正在生成COC文件 右边循环区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]");
                         DataTable dtSource = dicDataSource[COC_VLOOKID];
                         DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{COC_ZONEID}'
 ORDER BY 
@@ -3071,6 +3078,7 @@ ORDER BY
                                 }
                             }
                         }
+                        _logger.LogInformation($"GetCOCfile生成COC文件 右边循环区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]完成.");
                     }
                     catch (Exception ex) {
                         throw new Exception($"区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]" + ex.ToString());
@@ -3085,6 +3093,7 @@ ORDER BY
                     string COC_VLOOKID = dtZONE.Rows[0]["COC_VLOOKID"].ToString();
                     string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString();
                     try {
+                        _logger.LogInformation($"GetCOCfile正在生成COC文件 向下循环区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]");
                         DataTable dtSource = dicDataSource[COC_VLOOKID];
                         DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{COC_ZONEID}'
 ORDER BY 
@@ -3148,6 +3157,7 @@ ORDER BY
                                 }
                             }
                         }
+                        _logger.LogInformation($"GetCOCfile生成COC文件 向下循环区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]完成.");
                     }
                     catch (Exception ex) {
                         throw new Exception($"区域[{SHEETNAME}]:CELLS_ZONE[{CELLS_ZONE}]" + ex.ToString());
