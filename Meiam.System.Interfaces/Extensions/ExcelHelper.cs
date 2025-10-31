@@ -394,7 +394,9 @@ public class ExcelHelper : IDisposable {
         int startRow = address.Start.Row;
         int startCol = address.Start.Column;
         int endRow = address.End.Row;
-        int endCol = address.End.Column;
+        //int endCol = address.End.Column;
+        int maxColumn = worksheet.Dimension.End.Column;
+        int endCol = maxColumn;
 
         int sourceRowCount = endRow - startRow + 1;
 
@@ -409,29 +411,32 @@ public class ExcelHelper : IDisposable {
     }
 
     /// <summary>
-    /// 简单复制
+    /// 逐行复制（保留格式）
     /// </summary>
     private void CopyRowsSimple(ExcelWorksheet worksheet, int startRow, int endRow, int startCol, int endCol, int copyRows) {
-        int sourceRowCount = endRow - startRow + 1;
-        int totalRowsToCopy = sourceRowCount * copyRows;
+        int sourceRowCount = endRow - startRow + 1; // 源区域行数
+        int totalRowsToCopy = sourceRowCount * copyRows; // 总需复制的行数
 
-        // 插入目标行
+        // 先在目标位置插入空白行（为复制内容预留空间）
         int targetStartRow = endRow + 1;
         worksheet.InsertRow(targetStartRow, totalRowsToCopy);
 
-        // 一次性复制所有行到目标区域
-        var sourceRange = worksheet.Cells[startRow, startCol, endRow, endCol];
-        var targetRange = worksheet.Cells[targetStartRow, startCol, targetStartRow + totalRowsToCopy - 1, endCol];
+        // 逐行复制（避免批量复制导致的格式丢失）
+        for (int copyIndex = 0; copyIndex < copyRows; copyIndex++) {
+            // 循环复制源区域的每一行
+            for (int rowIndex = 0; rowIndex < sourceRowCount; rowIndex++) {
+                int sourceRow = startRow + rowIndex; // 当前源行
+                                                     // 计算当前目标行（按复制次数和源行索引偏移）
+                int targetRow = targetStartRow + copyIndex * sourceRowCount + rowIndex;
 
-        // 使用 Copy 方法复制整个区域
-        sourceRange.Copy(targetRange);
+                // 复制当前行的单元格内容和格式（精确到列范围）
+                var sourceCellRange = worksheet.Cells[sourceRow, startCol, sourceRow, endCol];
+                var targetCellRange = worksheet.Cells[targetRow, startCol, targetRow, endCol];
+                sourceCellRange.Copy(targetCellRange);
 
-        // 复制行高
-        for (int i = 0; i < totalRowsToCopy; i++) {
-            int sourceRow = startRow + (i % sourceRowCount);
-            int targetRow = targetStartRow + i;
-
-            worksheet.Row(targetRow).Height = worksheet.Row(sourceRow).Height;
+                // 复制行高（保持与源行一致）
+                worksheet.Row(targetRow).Height = worksheet.Row(sourceRow).Height;
+            }
         }
     }
 
