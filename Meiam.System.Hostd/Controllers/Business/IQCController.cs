@@ -224,16 +224,19 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             string filePath2 = @"C:\Users\Administrator\Desktop\Temp\22.doc";
             string[] sourceExcelPaths = new string[] {
                 @"C:/Users/Administrator/Desktop/Temp/3.pdf" };
+            List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
+            excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[0] });
+
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
 
                     //excelHelper.CopyColumnsCells("CPK", "C21:D30", 5);
                     //excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
                     //excelHelper.CopyRows("出货报告", new int[] { 39 }, 40);
-                    excelHelper.CopyRows("原材料COC", "A6:O6", 3);
+                    //excelHelper.CopyRows("原材料COC", "A6:O6", 3);
                     //string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
                     //string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
-                    //excelHelper.AddAttachsToCell("Peeling Force", "D7", sourceExcelPaths, false);
+                    //excelHelper.AddAttachsToCell("Peeling Force", "D7", excelAttechFilesList.ToArray(), true);
                     //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {

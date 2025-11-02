@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using iText.Barcodes.Dmcode;
 using Meiam.System.Common;
+using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
 using OfficeOpenXml.Drawing.OleObject;
@@ -204,21 +205,22 @@ public class ExcelHelper : IDisposable {
         return format.Contains("0") || format.Contains("#") || format.Contains("?");
     }
 
-    public void AddAttachsToCell(string sheetName, string cellAddress, string[] filePaths, bool attMode = false) {
+    public void AddAttachsToCell(string sheetName, string cellAddress, ExcelAttechFile[] excelAttechFiles, bool attMode = false) {
 
-        if (filePaths.Length == 0)
+        if (excelAttechFiles.Length == 0)
             return;
 
         // 定义完整路径数组并初始化
-        string[] fullFilePaths = new string[filePaths.Length];
-
         // 填充完整路径
-        for (int i = 0; i < filePaths.Length; i++) {
-            fullFilePaths[i] = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], filePaths[i].TrimStart('\\'));
+        for (int i = 0; i < excelAttechFiles.Length; i++) {
+            excelAttechFiles[i].FilePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], excelAttechFiles[i].FilePath.TrimStart('\\'));
+            if (string.IsNullOrEmpty(excelAttechFiles[i].FileName)) {
+                excelAttechFiles[i].FileName = Path.GetFileName(excelAttechFiles[i].FilePath);
+            }
         }
 
-        if ((filePaths[0].EndsWith(".xlsx") || filePaths[0].EndsWith(".xls")) && !attMode) {
-            CopySheet(fullFilePaths, sheetName, cellAddress);
+        if ((excelAttechFiles[0].FilePath.EndsWith(".xlsx") || excelAttechFiles[0].FilePath.EndsWith(".xls")) && !attMode) {
+            CopySheet(excelAttechFiles, sheetName, cellAddress);
             return;
         }
 
@@ -226,8 +228,7 @@ public class ExcelHelper : IDisposable {
         var cell = worksheet.Cells[cellAddress];
         var startRow = cell.Start.Row;
         var startCol = cell.Start.Column;
-        var cellSize = GetMergedCellSize(worksheet, startRow, startCol);
-        double cellHeight = cellSize.Height;
+        double cellHeight = GetMergedCellHeight(worksheet, startRow, startCol);
         double startLeft = 5;
 
         // 设置基础样式
@@ -235,9 +236,9 @@ public class ExcelHelper : IDisposable {
         worksheet.Row(startRow).CustomHeight = true;
         ExcelDrawing tempExcelDrawing = null;
         int countOnject = 0;
-        foreach (var filePath in fullFilePaths.Where(File.Exists)) {
+        foreach (var excelAttechFile in excelAttechFiles) {
             try {
-                var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, filePath, cellHeight, attMode);
+                var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, excelAttechFile, cellHeight, attMode);
                 foreach (var embedObject in embedObjects) {
                     var (actColumn, actStartLeft) = GetMergedCellLeft(worksheet, cell, startLeft);
                     // 设置对象位置
@@ -253,17 +254,8 @@ public class ExcelHelper : IDisposable {
                 }
             }
             catch (Exception ex) {
-                throw new Exception($"文件[{filePath}]嵌入失败: {ex.ToString()}");
+                throw new Exception($"文件[{excelAttechFile.FilePath}]嵌入失败: {ex.ToString()}");
             }
-        }
-
-        if (countOnject == 1) {//特殊处理单文件图片
-            tempExcelDrawing.SetPosition(
-                        startRow - 1,
-                        10,
-                        startCol - 1,
-                        10 );
-            tempExcelDrawing.SetSize((int)cellSize.Width, (int)cellSize.Height);
         }
     }
 
@@ -316,62 +308,35 @@ public class ExcelHelper : IDisposable {
     }
 
     /// <summary>
-    /// 存储单元格或合并区域的高度和宽度
-    /// </summary>
-    public class CellSize {
-        /// <summary>
-        /// 总高度（磅）
-        /// </summary>
-        public double Height { get; set; }
-
-        /// <summary>
-        /// 总宽度（磅）
-        /// </summary>
-        public double Width { get; set; }
-    }
-
-    /// <summary>
-    /// 获取指定单元格的高度和宽度（如果是合并单元格，则返回合并区域的总高度和总宽度）
+    /// 获取指定单元格的高度（如果是合并单元格，则返回合并区域的总高度）
     /// </summary>
     /// <param name="worksheet">工作表</param>
-    /// <param name="row">行索引（1-based）</param>
-    /// <param name="column">列索引（1-based）</param>
-    /// <returns>包含总高度和总宽度的CellSize对象（以磅为单位）</returns>
-    private CellSize GetMergedCellSize(ExcelWorksheet worksheet, int row, int column) {
+    /// <param name="row">行索引</param>
+    /// <param name="column">列索引</param>
+    /// <returns>单元格或合并区域的总高度（以磅为单位）</returns>
+    private double GetMergedCellHeight(ExcelWorksheet worksheet, int row, int column) {
         // 检查单元格是否属于合并区域
         ExcelRangeBase mergedRange = null;
-        foreach (var rangeAddress in worksheet.MergedCells) {
-            var merged = worksheet.Cells[rangeAddress];
-            // 判断指定单元格是否在当前合并区域内
-            if (merged.Start.Row <= row && merged.End.Row >= row
-                && merged.Start.Column <= column && merged.End.Column >= column) {
+        foreach (var range in worksheet.MergedCells) {
+            var merged = worksheet.Cells[range];
+            if (merged.Start.Row <= row && merged.End.Row >= row &&
+                merged.Start.Column <= column && merged.End.Column >= column) {
                 mergedRange = merged;
                 break;
             }
         }
 
-        // 如果是合并单元格，计算合并区域的总高度和总宽度
+        // 如果是合并单元格，计算合并区域的总高度
         if (mergedRange != null) {
             double totalHeight = 0;
-            // 累加合并区域内所有行的高度
             for (int r = mergedRange.Start.Row; r <= mergedRange.End.Row; r++) {
-                totalHeight += worksheet.Row(r).Height * 1.2; // 行高默认值会自动处理未设置的情况
+                totalHeight += worksheet.Row(r).Height; // 使用默认行高（如果未设置）
             }
-
-            double totalWidth = 0;
-            // 累加合并区域内所有列的宽度
-            for (int c = mergedRange.Start.Column; c <= mergedRange.End.Column; c++) {
-                totalWidth += worksheet.Column(c).Width * 7.7; // 列宽默认值会自动处理未设置的情况
-            }
-
-            return new CellSize { Height = totalHeight, Width = totalWidth };
+            return totalHeight;
         }
 
-        // 如果不是合并单元格，返回当前行高和列宽
-        return new CellSize {
-            Height = worksheet.Row(row).Height,
-            Width = worksheet.Column(column).Width * 7.7
-        };
+        // 如果不是合并单元格，返回当前行的高度
+        return worksheet.Row(row).Height;
     }
 
     public void InsertRows(string sheetName, int rowCount, int targetRow) {
@@ -650,7 +615,7 @@ public class ExcelHelper : IDisposable {
         }
     }
 
-    public void CopySheet(string[] sourceExcelPaths, string targetSheetName, string targetStartCell) {
+    public void CopySheet(ExcelAttechFile[] excelAttechFiles, string targetSheetName, string targetStartCell) {
 
         var targetWorksheet = _excelPackage.Workbook.Worksheets[targetSheetName]
                             ?? _excelPackage.Workbook.Worksheets.Add(targetSheetName);
@@ -658,7 +623,8 @@ public class ExcelHelper : IDisposable {
         var startCell = new ExcelCellAddress(targetStartCell);
         int currentCol = startCell.Column;
 
-        foreach (var sourcePath in sourceExcelPaths) {
+        foreach (var excelAttechFile in excelAttechFiles) {
+            string sourcePath = excelAttechFile.FilePath;
             if (!File.Exists(sourcePath)) {
                 throw new Exception($"文件不存在: {sourcePath}");
             }
@@ -1032,28 +998,33 @@ public class ExcelHelper : IDisposable {
 
     private (ExcelDrawing[] embedObjects, bool isImage, int width) CreateEmbedObject(
         ExcelWorksheet worksheet,
-        string filePath ,double targetRowHeight,bool attMode = false) {
+        ExcelAttechFile excelAttechFile, double targetRowHeight, bool attMode = false) {
+        string fileName = excelAttechFile.FileName;
+        string filePath = excelAttechFile.FilePath;
+
         var extension = Path.GetExtension(filePath).ToLower();
         var imageTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf" };
         int width = (int)(targetRowHeight);
         //word
         if (new string[] { ".doc", ".docx" }.Contains(extension)) {
             if (attMode) {
-                var oleObject = worksheet.Drawings.AddOleObject(
-                    Guid.NewGuid().ToString(),
-                    filePath,
-                    parameters =>
-                    {
-                       // 在这里设置参数
-                       parameters.ProgId = "Word.Document";
-                    }
-                );
-                oleObject.SetSize(width, width);
-                return (new ExcelDrawing[] { oleObject }, false, width);
+                using (var fileStream = new FileStream(filePath, FileMode.Open)) {
+                    var oleObject = worksheet.Drawings.AddOleObject(
+                        Guid.NewGuid().ToString(),
+                        fileStream,
+                        fileName,
+                        parameters => {
+                            // 在这里设置参数
+                            parameters.ProgId = "Word.Document";
+                        }
+                    );
+                    oleObject.SetSize(width, width);
+                    return (new ExcelDrawing[] { oleObject }, false, width);
+                }
             }
             else {
                 //1.转pdf
-                string pdfPath  = ConvertWordToPdf(filePath);
+                string pdfPath = ConvertWordToPdf(filePath);
                 var listStream = FileToImageHelper.ConvertAllPagesToImageStreams(pdfPath);
                 List<ExcelPicture> list = new List<ExcelPicture>();
                 foreach (var stream in listStream) {
@@ -1076,16 +1047,19 @@ public class ExcelHelper : IDisposable {
         //excel
         else if (new string[] { ".xls", ".xlsx" }.Contains(extension)) {
             if (attMode) {
-                var oleObject = worksheet.Drawings.AddOleObject(
-                    Guid.NewGuid().ToString(),
-                    filePath,
+                using (var fileStream = new FileStream(filePath, FileMode.Open)) {
+                    var oleObject = worksheet.Drawings.AddOleObject(
+                        Guid.NewGuid().ToString(),
+                        fileStream,
+                        fileName,
                     parameters => {
                         // 在这里设置参数
                         parameters.ProgId = "Excel.Sheet";
                     }
-                );
-                oleObject.SetSize(width, width);
-                return (new ExcelDrawing[] { oleObject }, false, width);
+                    );
+                    oleObject.SetSize(width, width);
+                    return (new ExcelDrawing[] { oleObject }, false, width);
+                }
             }
             else {
                 //1.转pdf
@@ -1113,16 +1087,18 @@ public class ExcelHelper : IDisposable {
             //pdf
             if (extension.Contains(".pdf")) {
                 if (attMode) {
-                    var oleObject = worksheet.Drawings.AddOleObject(
+                    using (var fileStream = new FileStream(filePath, FileMode.Open)) {
+                        var oleObject = worksheet.Drawings.AddOleObject(
                         Guid.NewGuid().ToString(),
-                        filePath,
+                        fileStream, fileName,
                         parameters => {
                             // 在这里设置参数
                             parameters.ProgId = "AcroExch.Document";
                         }
                     );
-                    oleObject.SetSize(width, width);
-                    return (new ExcelDrawing[] { oleObject }, false, width);
+                        oleObject.SetSize(width, width);
+                        return (new ExcelDrawing[] { oleObject }, false, width);
+                    }
                 }
                 else {
                     //using (var stream = FileToImageHelper.ConvertFirstPageToImageStream(filePath)) {
@@ -1170,16 +1146,18 @@ public class ExcelHelper : IDisposable {
             }
         }
         else {
-            var oleObject = worksheet.Drawings.AddOleObject(
-                Guid.NewGuid().ToString(),
-                filePath,
-                parameters => {
-                    // 在这里设置参数
-                    parameters.ProgId = "Package";
-                }
-            );
-            oleObject.SetSize(width, width);
-            return (new ExcelDrawing[] { oleObject }, false, width);
+            using (var fileStream = new FileStream(filePath, FileMode.Open)) {
+                var oleObject = worksheet.Drawings.AddOleObject(
+                    Guid.NewGuid().ToString(),
+                    fileStream, fileName,
+                    parameters => {
+                        // 在这里设置参数
+                        parameters.ProgId = "Package";
+                    }
+                );
+                oleObject.SetSize(width, width);
+                return (new ExcelDrawing[] { oleObject }, false, width);
+            }
         }
     }
     private int ScaleImageToCell(ExcelPicture picture, double cellHeightPoints) {
@@ -1194,4 +1172,9 @@ public class ExcelHelper : IDisposable {
         picture.SetSize(newWidth, (int)cellHeightPixels);
         return newWidth;
     }
+}
+
+public class ExcelAttechFile {
+    public string FileName {  get; set; }
+    public string FilePath { get; set; }
 }

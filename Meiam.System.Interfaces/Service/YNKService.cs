@@ -383,7 +383,7 @@ namespace Meiam.System.Interfaces.Service
                             FID AS FID,
                             KEEID AS FEntryID,
                             CASE 
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008') THEN '合格'
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
                                 ELSE '不合格'
@@ -392,7 +392,7 @@ namespace Meiam.System.Interfaces.Service
                             ISNULL(TRY_CAST(FQC_NOT_CNT AS DECIMAL), 0) AS FRefuseQty     -- 不可转换时返回0
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
-                            AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010')
+                            AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
