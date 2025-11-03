@@ -2981,8 +2981,10 @@ ORDER BY
                                             }
                                         }
                                         if (ANI == "ANI_002") {//附件合并值
-                                            //string byName = "附件合并值";
-                                            string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            string byName = "附件合并值";
+                                            if (!string.IsNullOrEmpty(COLUM001ID)) {
+                                                byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            }
                                             string fileNameColumn = "INSPECT_PROGRESSNAME";
                                             if (dtSource.Columns.Contains(byName)) {
                                                 List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
@@ -3117,8 +3119,10 @@ ORDER BY
                                             }
                                         }
                                         if (ANI == "ANI_002") {//附件合并值
-                                            //string byName = "附件合并值";
-                                            string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            string byName = "附件合并值";
+                                            if (!string.IsNullOrEmpty(COLUM001ID)) {
+                                                byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            }
                                             string fileNameColumn = "INSPECT_PROGRESSNAME";
                                             if (dtSource.Columns.Contains(byName)) {
                                                 List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
@@ -3219,8 +3223,10 @@ ORDER BY
                                             }
                                         }
                                         if (ANI == "ANI_002") {//附件合并值
-                                            //string byName = "附件合并值";
-                                            string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            string byName = "附件合并值";
+                                            if (!string.IsNullOrEmpty(COLUM001ID)) {
+                                                byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                            }
                                             string fileNameColumn = "INSPECT_PROGRESSNAME";
                                             if (dtSource.Columns.Contains(byName)) {
                                                 List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
