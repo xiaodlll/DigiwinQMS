@@ -2999,16 +2999,31 @@ ORDER BY
                                                             excelAttechFilesList.Add(new ExcelAttechFile() { FileName = attechNameValue, FilePath = attachs[0] });
                                                         }
                                                         else {
-                                                            // 获取文件名和扩展名
-                                                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attechNameValue);
-                                                            string fileExtension = Path.GetExtension(attechNameValue);
+                                                            string[] attachNames = attechNameValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                            if (attachNames.Length == 1 || attachNames.Length != attachs.Length) {
+                                                                // 获取文件名和扩展名
+                                                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[0]);
+                                                                string fileExtension = Path.GetExtension(attachNames[0]);
 
-                                                            for (int i = 0; i < attachs.Length; i++) {
-                                                                string indexedFileName = $"{fileNameWithoutExtension}_{i + 1}{fileExtension}";
-                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
-                                                                    FileName = indexedFileName,
-                                                                    FilePath = attachs[i]
-                                                                });
+                                                                for (int k = 0; k < attachs.Length; k++) {
+                                                                    string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                    excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                        FileName = indexedFileName,
+                                                                        FilePath = attachs[k]
+                                                                    });
+                                                                }
+                                                            }
+                                                            else {
+                                                                for (int k = 0; k < attachs.Length; k++) {
+                                                                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[k]);
+                                                                    string fileExtension = Path.GetExtension(attachNames[k]);
+
+                                                                    string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                    excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                        FileName = indexedFileName,
+                                                                        FilePath = attachs[k]
+                                                                    });
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -3038,16 +3053,31 @@ ORDER BY
                                                         excelAttechFilesList.Add(new ExcelAttechFile() { FileName = attechNameValue, FilePath = attachs[0] });
                                                     }
                                                     else {
-                                                        // 获取文件名和扩展名
-                                                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attechNameValue);
-                                                        string fileExtension = Path.GetExtension(attechNameValue);
+                                                        string[] attachNames = attechNameValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                        if (attachNames.Length == 1 || attachNames.Length != attachs.Length) {
+                                                            // 获取文件名和扩展名
+                                                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[0]);
+                                                            string fileExtension = Path.GetExtension(attachNames[0]);
 
-                                                        for (int k = 0; k < attachs.Length; k++) {
-                                                            string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
-                                                            excelAttechFilesList.Add(new ExcelAttechFile() {
-                                                                FileName = indexedFileName,
-                                                                FilePath = attachs[k]
-                                                            });
+                                                            for (int k = 0; k < attachs.Length; k++) {
+                                                                string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                    FileName = indexedFileName,
+                                                                    FilePath = attachs[k]
+                                                                });
+                                                            }
+                                                        }
+                                                        else {
+                                                            for (int k = 0; k < attachs.Length; k++) {
+                                                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[k]);
+                                                                string fileExtension = Path.GetExtension(attachNames[k]);
+
+                                                                string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                    FileName = indexedFileName,
+                                                                    FilePath = attachs[k]
+                                                                });
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -3137,16 +3167,31 @@ ORDER BY
                                                             excelAttechFilesList.Add(new ExcelAttechFile() { FileName = attechNameValue, FilePath = attachs[0] });
                                                         }
                                                         else {
-                                                            // 获取文件名和扩展名
-                                                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attechNameValue);
-                                                            string fileExtension = Path.GetExtension(attechNameValue);
+                                                            string[] attachNames = attechNameValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                            if (attachNames.Length == 1 || attachNames.Length != attachs.Length) {
+                                                                // 获取文件名和扩展名
+                                                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[0]);
+                                                                string fileExtension = Path.GetExtension(attachNames[0]);
 
-                                                            for (int k = 0; k < attachs.Length; k++) {
-                                                                string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
-                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
-                                                                    FileName = indexedFileName,
-                                                                    FilePath = attachs[k]
-                                                                });
+                                                                for (int k = 0; k < attachs.Length; k++) {
+                                                                    string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                    excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                        FileName = indexedFileName,
+                                                                        FilePath = attachs[k]
+                                                                    });
+                                                                }
+                                                            }
+                                                            else {
+                                                                for (int k = 0; k < attachs.Length; k++) {
+                                                                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[k]);
+                                                                    string fileExtension = Path.GetExtension(attachNames[k]);
+
+                                                                    string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                    excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                        FileName = indexedFileName,
+                                                                        FilePath = attachs[k]
+                                                                    });
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -3161,7 +3206,55 @@ ORDER BY
                                         }
                                     }else  if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
-                                        if (dtSource.Columns.Contains(byName)) {
+                                        if (byName != null && byName.Contains("REPORT_URL")) {
+                                            string textValue = drData[byName].ToString();
+                                            string[] attachs = textValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+
+                                            List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
+                                            string fileNameColumn = byName.Replace("REPORT_URL", "INSPECT_PROGRESSNAME");
+                                            string fileNameHead = string.Empty;
+                                            if (dtSource.Columns.Contains(fileNameColumn)) {
+                                                string attechNameValue = drData[fileNameColumn].ToString();
+                                                if (attachs.Length == 1) {
+                                                    excelAttechFilesList.Add(new ExcelAttechFile() { FileName = attechNameValue, FilePath = attachs[0] });
+                                                }
+                                                else {
+                                                    string[] attachNames = attechNameValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                    if (attachNames.Length == 1 || attachNames.Length != attachs.Length) {
+                                                        // 获取文件名和扩展名
+                                                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[0]);
+                                                        string fileExtension = Path.GetExtension(attachNames[0]);
+
+                                                        for (int k = 0; k < attachs.Length; k++) {
+                                                            string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                            excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                FileName = indexedFileName,
+                                                                FilePath = attachs[k]
+                                                            });
+                                                        }
+                                                    }
+                                                    else {
+                                                        for (int k = 0; k < attachs.Length; k++) {
+                                                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[k]);
+                                                            string fileExtension = Path.GetExtension(attachNames[k]);
+
+                                                            string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                            excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                FileName = indexedFileName,
+                                                                FilePath = attachs[k]
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else {
+                                                foreach (var attach in attachs) {
+                                                    excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = attach });
+                                                }
+                                            }
+                                            excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                        }
+                                        else if (dtSource.Columns.Contains(byName)) {
                                             string textValue = F_FIX + drData[byName].ToString() + E_FIX;
                                             excelHelper.AddTextToCell(SHEETNAME, CELLS, textValue);
                                         }
@@ -3241,16 +3334,31 @@ ORDER BY
                                                             excelAttechFilesList.Add(new ExcelAttechFile() { FileName = attechNameValue, FilePath = attachs[0] });
                                                         }
                                                         else {
-                                                            // 获取文件名和扩展名
-                                                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attechNameValue);
-                                                            string fileExtension = Path.GetExtension(attechNameValue);
+                                                            string[] attachNames = attechNameValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                            if (attachNames.Length == 1 || attachNames.Length != attachs.Length) {
+                                                                // 获取文件名和扩展名
+                                                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[0]);
+                                                                string fileExtension = Path.GetExtension(attachNames[0]);
 
-                                                            for (int k = 0; k < attachs.Length; k++) {
-                                                                string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
-                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
-                                                                    FileName = indexedFileName,
-                                                                    FilePath = attachs[k]
-                                                                });
+                                                                for (int k = 0; k < attachs.Length; k++) {
+                                                                    string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                    excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                        FileName = indexedFileName,
+                                                                        FilePath = attachs[k]
+                                                                    });
+                                                                }
+                                                            }
+                                                            else {
+                                                                for (int k = 0; k < attachs.Length; k++) {
+                                                                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[k]);
+                                                                    string fileExtension = Path.GetExtension(attachNames[k]);
+
+                                                                    string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                    excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                        FileName = indexedFileName,
+                                                                        FilePath = attachs[k]
+                                                                    });
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -3280,16 +3388,31 @@ ORDER BY
                                                         excelAttechFilesList.Add(new ExcelAttechFile() { FileName = attechNameValue, FilePath = attachs[0] });
                                                     }
                                                     else {
-                                                        // 获取文件名和扩展名
-                                                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attechNameValue);
-                                                        string fileExtension = Path.GetExtension(attechNameValue);
+                                                        string[] attachNames = attechNameValue.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+                                                        if (attachNames.Length == 1 || attachNames.Length != attachs.Length) {
+                                                            // 获取文件名和扩展名
+                                                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[0]);
+                                                            string fileExtension = Path.GetExtension(attachNames[0]);
 
-                                                        for (int k = 0; k < attachs.Length; k++) {
-                                                            string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
-                                                            excelAttechFilesList.Add(new ExcelAttechFile() {
-                                                                FileName = indexedFileName,
-                                                                FilePath = attachs[k]
-                                                            });
+                                                            for (int k = 0; k < attachs.Length; k++) {
+                                                                string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                    FileName = indexedFileName,
+                                                                    FilePath = attachs[k]
+                                                                });
+                                                            }
+                                                        }
+                                                        else {
+                                                            for (int k = 0; k < attachs.Length; k++) {
+                                                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachNames[k]);
+                                                                string fileExtension = Path.GetExtension(attachNames[k]);
+
+                                                                string indexedFileName = $"{fileNameWithoutExtension}_{k + 1}{fileExtension}";
+                                                                excelAttechFilesList.Add(new ExcelAttechFile() {
+                                                                    FileName = indexedFileName,
+                                                                    FilePath = attachs[k]
+                                                                });
+                                                            }
                                                         }
                                                     }
                                                 }

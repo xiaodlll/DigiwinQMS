@@ -220,7 +220,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
         public IActionResult TestCPKExcel()
         {
             bool.TryParse(AppSettings.Configuration["AppSettings:IQCReplaceFormula"], out bool isReplaceFormula);
-            string filePath = @"C:\Users\Administrator\Desktop\Temp\22.xlsx";
+            string filePath = @"C:\Users\Administrator\Desktop\Temp\222.xlsx";
             string filePath2 = @"C:\Users\Administrator\Desktop\Temp\22.doc";
             string[] sourceExcelPaths = new string[] {
                 @"C:/Users/Administrator/Desktop/Temp/3.pdf" };
@@ -229,6 +229,11 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
 
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
+                    excelHelper.AddTextToCell("尺寸数据", "J255", "11.5");
+                    excelHelper.AddTextToCell("尺寸数据", "J256", "11.6");
+                    excelHelper.AddTextToCell("尺寸数据", "J257", "11.7");
+                    excelHelper.AddTextToCell("尺寸数据", "J258", "11.8");
+                    excelHelper.AddTextToCell("尺寸数据", "J259", "11.9");
 
                     //excelHelper.CopyColumnsCells("CPK", "C21:D30", 5);
                     //excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
@@ -240,7 +245,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                     //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {
-                    //    excelHelper.ReplaceFormula();
+                        excelHelper.ReplaceFormula();
                     //}
                     #endregion
                 }

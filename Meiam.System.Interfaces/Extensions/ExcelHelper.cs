@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using iText.Barcodes.Dmcode;
+using iText.Layout.Font;
 using Meiam.System.Common;
 using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
@@ -263,6 +264,8 @@ public class ExcelHelper : IDisposable {
         // 检查单元格是否属于合并区域
         ExcelRangeBase mergedRange = null;
         foreach (var range in worksheet.MergedCells) {
+            if (string.IsNullOrEmpty(range))
+                continue;
             var merged = worksheet.Cells[range];
             if (merged.Start.Row <= cell.Start.Row && merged.End.Row >= cell.Start.Row &&
                 merged.Start.Column <= cell.Start.Column && merged.End.Column >= cell.Start.Column) {
@@ -318,6 +321,8 @@ public class ExcelHelper : IDisposable {
         // 检查单元格是否属于合并区域
         ExcelRangeBase mergedRange = null;
         foreach (var range in worksheet.MergedCells) {
+            if (string.IsNullOrEmpty(range))
+                continue;
             var merged = worksheet.Cells[range];
             if (merged.Start.Row <= row && merged.End.Row >= row &&
                 merged.Start.Column <= column && merged.End.Column >= column) {
@@ -414,6 +419,8 @@ public class ExcelHelper : IDisposable {
         // 预先收集源区域中的所有合并单元格 [citation:6]
         var mergedRanges = new List<ExcelRangeBase>();
         foreach (var mergedRange in worksheet.MergedCells) {
+            if (string.IsNullOrEmpty(mergedRange))
+                continue;
             ExcelAddressBase address = new ExcelAddressBase(mergedRange);
             // 检查合并区域是否与源区域相交
             if (address.Start.Row <= endRow && address.End.Row >= startRow &&
