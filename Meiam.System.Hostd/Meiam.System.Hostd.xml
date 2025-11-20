@@ -282,6 +282,19 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.AttachUploadResultYNKSync">
+            <summary>
+            检验附件回传ERP(YNK)
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.SplitFileToBase64List(System.Byte[])">
+            <summary>
+            将byte数组按4M分割，每块转Base64字符串，组成List
+            </summary>
+            <param name="fileContent">原始文件字节数组</param>
+            <returns>分割后的Base64字符串列表</returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetAOIInspectInfoByDocCode(Meiam.System.Model.Dto.INSPECT_REQCODE)">
             <summary>
             获取检验项目信息

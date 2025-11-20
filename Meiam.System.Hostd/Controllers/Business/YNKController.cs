@@ -1,4 +1,6 @@
-﻿using Meiam.System.Common;
+﻿using DocumentFormat.OpenXml.Office.CustomUI;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Meiam.System.Common;
 using Meiam.System.Hostd.Controllers.Bisuness;
 using Meiam.System.Interfaces;
 using Meiam.System.Interfaces.Extensions;
@@ -319,6 +321,209 @@ namespace Meiam.System.Hostd.Controllers.Business
         }
         #endregion
 
+        #region 检验附件回传ERP
+        /// <summary>
+        /// 检验附件回传ERP(YNK)
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("AttachUploadResultYNK")]
+        public async Task<IActionResult> AttachUploadResultYNKSync() {
+            List<AttachmentResultRequestYNK> requests = _ynkService.GetAttachmentResultRequest();
+
+            string erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AttachUploadUrl"];
+
+            try {
+                // 1. 首先获取KDSVCSessionId
+                var loginResult = await _ynkService.LoginAsync();
+
+                if (!loginResult.IsSuccess || string.IsNullOrEmpty(loginResult.KDSVCSessionId)) {
+                    _logger.LogError($"获取KDSVCSessionId失败: {loginResult.ErrorMessage}");
+                    return BadRequest(new ApiResponse {
+                        Success = false,
+                        Message = $"登录ERP系统失败: {loginResult.ErrorMessage}"
+                    });
+                }
+
+                string sessionId = loginResult.KDSVCSessionId;
+                _logger.LogInformation($"成功获取KDSVCSessionId: {sessionId}");
+
+                int successCount = 0;
+                int failCount = 0;
+
+                foreach (var item in requests) {
+                    try {
+                        string sendByte = string.Empty;
+                        //判断如果fileContent>4M则分批发送
+                        List<string> base64List = SplitFileToBase64List(item.SendBytes);
+
+                        if (base64List.Count == 1) {//无需分批发送
+                            // 封装成金蝶ERP需要的格式
+                            var erpRequestData = new {
+                                FormId = "PUR_ReceiveBill",
+                                FileName = item.FileName,
+                                IsLast = true,
+                                InterId = item.InterId,
+                                Entrykey = item.Entrykey,
+                                EntryinterId = item.EntryinterId,
+                                BillNO = item.BillNO,
+                                SendByte = base64List[0]
+                            };
+
+                            string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
+                            _logger.LogInformation(@$"请求URL: {erpApiUrl}");
+                            _logger.LogInformation(@$"请求数据: {jsonRequest}");
+
+                            // 使用带有SessionId的HTTP请求
+                            string postResult = await HttpHelper.PostJsonWithSessionAsync(
+                                erpApiUrl,
+                                jsonRequest,
+                                sessionId
+                            );
+
+                            _logger.LogInformation(@$"金蝶ERP接口响应 - FileName: {item.FileName}, 结果: {postResult}");
+
+                            // 解析响应结果
+                            if (postResult.Contains("false")) {
+                                failCount++;
+                                _logger.LogError($"单据 {item.BillNO}-{item.FileName} 回传失败: {postResult}");
+                            }
+                            else {
+                                _ynkService.CallBackAttachmentResult(item);
+                                successCount++;
+                                _logger.LogInformation($"单据 {item.BillNO}-{item.FileName} 回传成功");
+                            }
+                        }
+                        else {//分批发送
+                            string fileId = string.Empty;
+                            bool result = true;
+                            for (int i = 0; i < base64List.Count; i++) {
+                                bool isLast = (i == base64List.Count - 1);
+                                // 封装成金蝶ERP需要的格式
+                                var erpRequestData = new {
+                                    FormId = "PUR_ReceiveBill",
+                                    FileName = item.FileName,
+                                    IsLast = isLast,
+                                    InterId = item.InterId,
+                                    Entrykey = item.Entrykey,
+                                    EntryinterId = item.EntryinterId,
+                                    BillNO = item.BillNO,
+                                    FileId = fileId,
+                                    SendByte = base64List[0]
+                                };
+
+                                string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
+                                _logger.LogInformation(@$"请求URL: {erpApiUrl}");
+                                _logger.LogInformation(@$"请求数据: {jsonRequest}");
+
+                                // 使用带有SessionId的HTTP请求
+                                string postResult = await HttpHelper.PostJsonWithSessionAsync(
+                                    erpApiUrl,
+                                    jsonRequest,
+                                    sessionId
+                                );
+
+                                _logger.LogInformation(@$"金蝶ERP接口响应 - FileName: {item.FileName}, 结果: {postResult}");
+
+                                // 解析响应结果
+                                if (postResult.Contains("false")) {
+                                    _logger.LogError($"单据 {item.BillNO}-{item.FileName}-{i} 回传失败: {postResult}");
+                                    result = false;
+                                    break;
+                                }
+                                else {
+                                    if(i == 0) {//解析结果
+                                        fileId = string.Empty;
+                                    }
+                                }
+                            }
+
+                            // 解析响应结果
+                            if (!result) {
+                                failCount++;
+                            }
+                            else {
+                                _ynkService.CallBackAttachmentResult(item);
+                                successCount++;
+                                _logger.LogInformation($"单据 {item.BillNO}-{item.FileName} 回传成功");
+                            }
+                        }
+                    }
+                    catch (Exception ex) {
+                        failCount++;
+                        _logger.LogError(ex, $"处理单据 {item.BillNO}-{item.FileName} 时发生异常:" + ex.ToString());
+                        // 继续处理其他单据
+                        continue;
+                    }
+                }
+
+                return Ok(new ApiResponse {
+                    Success = true,
+                    Message = $"处理完成！成功: {successCount} 个单据, 失败: {failCount} 个单据, 总计: {requests.Count} 个单据"
+                });
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "调用 ERP 接口异常");
+
+                return StatusCode(500, new ApiResponse {
+                    Success = false,
+                    Message = $"系统异常：{erpApiUrl} : {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// 将byte数组按4M分割，每块转Base64字符串，组成List
+        /// </summary>
+        /// <param name="fileContent">原始文件字节数组</param>
+        /// <returns>分割后的Base64字符串列表</returns>
+        private List<string> SplitFileToBase64List(byte[] fileContent) {
+            int ChunkSize = 4 * 1024 * 1024; // 4194304 字节
+            // 初始化结果列表
+            List<string> base64List = new List<string>();
+
+            // 处理空值（避免空引用异常）
+            if (fileContent == null || fileContent.Length == 0) {
+                return base64List;
+            }
+
+            // 情况1：文件小于等于4M，直接转Base64添加到列表
+            if (fileContent.Length <= ChunkSize) {
+                string base64Str = Convert.ToBase64String(fileContent);
+                base64List.Add(base64Str);
+                return base64List;
+            }
+
+            // 情况2：文件大于4M，按4M分割
+            int totalLength = fileContent.Length;
+            int currentIndex = 0; // 当前分割起始位置
+
+            // 循环分割，直到处理完所有字节
+            while (currentIndex < totalLength) {
+                // 计算当前块的实际长度（最后一块可能不足4M）
+                int currentChunkLength = Math.Min(ChunkSize, totalLength - currentIndex);
+
+                // 截取当前块的字节数组
+                byte[] currentChunk = new byte[currentChunkLength];
+                Array.Copy(
+                    sourceArray: fileContent,    // 源数组
+                    sourceIndex: currentIndex,    // 源数组起始位置
+                    destinationArray: currentChunk, // 目标数组（当前块）
+                    destinationIndex: 0,          // 目标数组起始位置
+                    length: currentChunkLength    // 复制长度
+                );
+
+                // 转Base64字符串并添加到列表
+                string base64Chunk = Convert.ToBase64String(currentChunk);
+                base64List.Add(base64Chunk);
+
+                // 更新下一块的起始位置
+                currentIndex += currentChunkLength;
+            }
+
+            return base64List;
+        }
+        #endregion
+
         #region 工具API
         /// <summary>
         /// 获取检验项目信息
@@ -429,6 +634,31 @@ namespace Meiam.System.Hostd.Controllers.Business
             }
 
             var result = await _ynkService.ProcessYNKInpectProcessDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        #endregion
+
+        #region 报表相关
+        /// <summary>
+        /// 获取来料检验记录表数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetInspectionRecordReportData")]
+        public async Task<IActionResult> GetInspectionRecordReportData([FromBody] INSPECT_REQCODE input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetInspectionRecordReportDataAsync(input);
 
             if (result.Success) {
                 return Ok(result);

@@ -421,6 +421,37 @@ namespace Meiam.System.Interfaces.Service
             var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' ", request.FEntryID);
             Db.Ado.ExecuteCommand(sql);
         }
+
+        public List<AttachmentResultRequestYNK> GetAttachmentResultRequest() {
+            var sql = @"SELECT TOP 10 SCANDOC.SCANDOCID,
+                            ERP_ARRIVEDID AS ERP_ARRIVEDID,
+                            INSPECT_IQCCODE AS INSPECT_IQCCODE,
+                            FID AS FID,
+                            KEEID AS FEntryID
+                        FROM SCANDOC 
+                            LEFT JOIN INSPECT_IQC IQC ON INSPECT_IQCID=SCANDOC.PEOPLEID
+                            WHERE (SCANDOC.ISSY <> '1' OR SCANDOC.ISSY IS NULL) 
+                            AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
+                        ORDER BY INSPECT_IQCCREATEDATE DESC;";
+
+            var list = Db.Ado.SqlQuery<AttachmentResultRequestYNK>(sql);
+            foreach (var item in list) {
+                string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], item.FilePath.TrimStart('\\'));
+                if (File.Exists(filePath)) {
+                    item.SendBytes = File.ReadAllBytes(filePath);
+                }
+                else {
+                    throw new Exception("找不到文件:"+ filePath);
+                }
+            }
+            return list;
+        }
+
+        public void CallBackAttachmentResult(AttachmentResultRequestYNK request) {
+            var sql = string.Format(@"update SCANDOC set ISSY='1' where SCANDOC='{0}' ", request.SCANDOCID);
+            Db.Ado.ExecuteCommand(sql);
+        }
+
         #endregion
 
         #region 工具API
@@ -934,6 +965,36 @@ namespace Meiam.System.Interfaces.Service
             parameterCache[cacheKey] = newParamName;
 
             return newParamName;
+        }
+        #endregion
+
+        #region 报表相关
+        public async Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input) {
+            try {
+                var parameters = new SugarParameter[] {
+                  new SugarParameter("@DOC_CODE", input.DOC_CODE) };
+
+                //var data = await Db.Ado.SqlQueryAsync<INSPECT_INFO_BYCODE>(
+                //    "select TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY from INSPECT_VIEW where INSPECT_CODE = @DOC_CODE",
+                //    parameters
+                //);
+
+                object data = null;
+
+
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = JsonConvert.SerializeObject(data)
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
         }
         #endregion
     }

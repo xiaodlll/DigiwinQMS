@@ -993,12 +993,13 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                         else {
                             // 生成检验单号
                             var inspectionSiId = GenerateInspectionSiId(entity.APPLY_DATE);
-                            _logger.LogInformation("生成检验单号: {InspectionSiId}", inspectionSiId);
+                            _logger.LogInformation($"生成检验单号: {inspectionSiId}");
 
                             // 保存到数据库
-                            _logger.LogDebug("正在保存FQC到数据库...");
+                            _logger.LogInformation($"正在保存{inspectionSiId}到数据库...");
                             try {
                                 SaveFqcDataToDatabase(entity, inspectionSiId);
+                                _logger.LogInformation($"保存{inspectionSiId}到数据库完毕");
                                 insertCount++;
                             }
                             catch (Exception ex) {

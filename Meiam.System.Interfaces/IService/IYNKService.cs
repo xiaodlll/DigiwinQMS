@@ -30,5 +30,8 @@ namespace Meiam.System.Interfaces.IService
         Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input);
         Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input);
         Task<ApiResponse> ProcessYNKInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input);
+        List<AttachmentResultRequestYNK> GetAttachmentResultRequest();
+        void CallBackAttachmentResult(AttachmentResultRequestYNK item);
+        Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input);
     }
 }

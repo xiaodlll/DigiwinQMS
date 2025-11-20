@@ -583,4 +583,29 @@ namespace Meiam.System.Model
         public string INSPECT_SICODE { get; set; }
 
     }
+
+
+    /// <summary>
+    /// 检验结果附件回传ERP
+    /// </summary>
+    public class AttachmentResultRequestYNK {
+        public string SCANDOCID { get; set; }
+
+        public string FileName { get; set; }
+
+        public string InterId { get; set; }
+
+        public string Entrykey { get; set; }
+
+        public string EntryinterId { get; set; }
+
+        public string BillNO { get; set; }
+
+        public string FileId { get; set; }
+
+        public string FilePath { get; set; }
+
+        public byte[] SendBytes { get; set; }
+    }
+
 }

@@ -34,7 +34,8 @@ namespace Meiam.System.Hostd.Middleware {
 
             // 4. 记录响应信息（Status + Body）
             string responseBody = await ReadResponseBody(context.Response);
-            _logger.Info($"Response | Status: {context.Response.StatusCode} | Body: {responseBody}");
+            var logBody = responseBody?.Length > 200 ? responseBody.Substring(0, 200) + "..." : responseBody;
+            _logger.Info($"Response | Status: {context.Response.StatusCode} | Body: {logBody}");
 
             // 5. 回写响应到客户端
             responseStream.Position = 0;
