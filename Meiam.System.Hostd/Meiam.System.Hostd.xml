@@ -325,6 +325,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetInspectionRecordReportData(Meiam.System.Model.Dto.INSPECT_REQCODE)">
+            <summary>
+            获取来料检验记录表数据
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
