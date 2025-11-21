@@ -4,9 +4,25 @@
     <meta charset="utf-8" />
     <title>来料检验记录表</title>
     <style>
+        /* 表格样式 */
+        table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+
+            table td, table th {
+                border: 1px solid #000;
+                padding: 4px 6px;
+                /*font-size: 13px;*/
+                /*height: 28px;*/
+                width: 60px;
+                min-width: 60px;
+                max-width: 60px;
+                word-break: break-word;
+            }
+
         td:not(.except) {
-            height: 40px;
-            width: 100px;
             text-align: center;
         }
 
@@ -14,6 +30,7 @@
             vertical-align: top;
         }
 
+        /* 四栏表头样式 */
         .classify {
             position: relative;
         }
@@ -47,22 +64,23 @@
         }
 
         .w1 {
-            top: 5px;
+            top: 2px;
         }
 
         .w2 {
-            top: 40px;
+            top: 35px;
         }
 
         .w3 {
-            top: 75px;
+            top: 60px;
         }
 
         .w4 {
-            top: 90px;
-            right: 50px;
+            top: 70px;
+            right: 65px;
         }
 
+        /* 标题 */
         .title {
             display: flex;
             justify-content: center;
@@ -76,47 +94,41 @@
             position: fixed;
             top: 5px;
             left: 10px;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .header-right {
             position: fixed;
             top: 5px;
             right: 10px;
-            font-size: 12px;
+            font-size: 10px;
+            text-align: right;
         }
 
         .footer-left {
             position: fixed;
-            bottom: 10px;
+            bottom: 5px;
             left: 10px;
-            font-size: 12px;
-            width: 50%;
+            font-size: 10px;
+            width: 48%;
         }
 
         .footer-right {
             position: fixed;
-            bottom: 10px;
+            bottom: 5px;
             right: 10px;
-            font-size: 12px;
+            font-size: 10px;
+            text-align: right;
+            width: 48%;
         }
 
+        /* 页面内容 */
         body {
             position: relative;
-            margin: 100px 20px 80px 20px;
+            margin: 60px 20px 60px 20px;
         }
 
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-            table td, table th {
-                border: 1px solid #000;
-                padding: 4px 6px;
-                font-size: 13px;
-            }
-
+        /* 工具栏 */
         .toolbar {
             margin: 8px 0 16px 0;
             display: flex;
@@ -159,6 +171,31 @@
             color: #666;
             font-style: italic;
         }
+
+        /* 打印优化 */
+        @media print {
+            body {
+                margin: 0;
+            }
+            /* 每个报表 wrapper 打印时从新页开始 */
+            .report-wrapper {
+                page-break-before: always; /* 从新页开始 */
+                page-break-inside: avoid; /* 避免分页断在中间 */
+                position: relative;
+                transform-origin: top left;
+            }
+
+            /* 打印时隐藏工具栏等不必要元素 */
+            .toolbar, .link-box {
+                display: none;
+            }
+
+            table td, table th {
+                padding: 2px 4px;
+                font-size: 11px;
+                height: 28px;
+            }
+        }
     </style>
 </head>
 
@@ -176,15 +213,8 @@
 
         <div class="form-group">
             <label>数据API：</label>
-            <input id="fetchUrl" type="text" class="small api-input" value="/api/inspection/GetInspectionRecord?docCode=" />
+            <input id="fetchUrl" type="text" class="small api-input" value="/api/erp/GetInspectionRecordReportData" />
             <button id="btnFetch" class="small">加载数据</button>
-        </div>
-
-        <div class="form-group">
-            <label>回写API：</label>
-            <input id="callbackUrl" type="text" class="small api-input" value="/api/erp/UpdateReceiveInspectResultYNK" />
-            <button id="btnGenLink" class="small">生成链接</button>
-            <button id="btnCallApi" class="small">调用API</button>
         </div>
 
         <button id="btnPrint" class="small">打印</button>
@@ -195,19 +225,6 @@
 
     <!-- 主要内容区域 -->
     <div id="recordContainer">
-        <div class="title">来料检验记录表</div>
-
-        <div style="width: 100%; display: flex; justify-content: end;">
-            编号：<span id="recNoServer"></span>
-        </div>
-
-        <div style="width: 100%; display: flex; justify-content: space-between; flex-wrap: wrap;">
-            <div>物料名称：<span id="materialNameServer"></span></div>
-            <div>物料编号：<span id="materialCodeServer"></span></div>
-            <div>来料批次：<span id="batchNoServer"></span></div>
-            <div>来料数量：<span id="qtyServer"></span></div>
-        </div>
-
         <!-- 表格区域 -->
         <div id="tableArea" style="margin-top: 12px;">
             <div id="emptyPlaceholder">请填写 DocCode 并点击"加载数据"来显示检验记录。</div>
@@ -224,14 +241,73 @@
     </div>
 
     <script>
+        const totalCols = 13; // 固定列数
+
+        // 创建单元格
         function createCell(tag, text, attrs = {}) {
             const el = document.createElement(tag);
-            el.innerText = text || "";
+            el.innerText = text ?? "";
             Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
             return el;
         }
 
+        function padOrTruncate(array, length) {
+            const result = array.slice(0, length);
+            while (result.length < length) result.push('');
+            return result;
+        }
+
         // 构建表格
+        /* ============================================================
+        ★★★★★   把 DataValues[x] 转成表格所需的数据结构   ★★★★★
+        ============================================================ */
+        function buildReportDataSet(groupData, publicInfo) {
+            const columnKeys = Object.keys(groupData); // Column1 ~ Column13
+            const sampleNos = [];
+            const items = [];
+            const deviceIds = [];
+            let rowCount = 0;
+
+            // 提取列头（SampleNos / Item / DeviceID）
+            for (let i = 0; i < totalCols; i++) {
+                const key = columnKeys[i];
+                const col = groupData[key] || []; // 不够列就用空数组
+                sampleNos.push(col[0] ?? '');
+                items.push(col[1] ?? '');
+                deviceIds.push(col[2] ?? '');
+                rowCount = Math.max(rowCount, (col.length - 3) || 0);
+            }
+
+            // 创建纵向行数据
+            const tableRows = [];
+            for (let i = 0; i < rowCount; i++) {
+                const row = { RowIndex: i + 1, Cells: [] };
+                for (let j = 0; j < totalCols; j++) {
+                    const key = columnKeys[j];
+                    const col = groupData[key] || [];
+                    row.Cells.push(col[3 + i] ?? '');
+                }
+                tableRows.push(row);
+            }
+
+            // 返回渲染所需格式
+            return {
+                SampleNos: padOrTruncate(sampleNos, totalCols),
+                Item: padOrTruncate(items, totalCols),
+                DeviceID: padOrTruncate(deviceIds, totalCols),
+                TableRows: tableRows,
+                InspectionResult: publicInfo.InspectionResult,
+                Remark: publicInfo.Remark,
+                Inspector: publicInfo.Inspector,
+                InspectorDate: publicInfo.InspectorDate,
+                Reviewer: publicInfo.Reviewer,
+                ReviewerDate: publicInfo.ReviewerDate
+            };
+        }
+
+        /* ============================================================
+        ★★★★★   为单份报表生成 table HTML   ★★★★★
+        ============================================================ */
         function buildTableFromData(data) {
             const table = document.createElement('table');
             table.border = "1";
@@ -244,83 +320,88 @@
                 'rowspan': '3'
             });
             tdClassify.innerHTML = `
-                <div class="classify">
-                    <div class="c1"></div>
-                    <div class="c2"></div>
-                    <div class="c3"></div>
-                    <div class="w1">序号</div>
-                    <div class="w2">项目</div>
-                    <div class="w3">设备<br>编号</div>
-                    <div class="w4">样本号</div>
-                </div>
-            `;
+                            <div class="classify">
+                                <div class="c1"></div>
+                                <div class="c2"></div>
+                                <div class="c3"></div>
+                                <div class="w1">序号</div>
+                                <div class="w2">项目</div>
+                                <div class="w3">设备<br>编号</div>
+                                <div class="w4">样本号</div>
+                            </div>
+                        `;
             tr1.appendChild(tdClassify);
 
             // 添加样本号单元格
-            data.SampleNos.forEach(sampleNo => {
-                tr1.appendChild(createCell('td', sampleNo));
-            });
-            tr1.appendChild(createCell('td', '评判', { 'rowspan': '3' }));
+            data.SampleNos.forEach(s => tr1.appendChild(createCell('td', s)));
+            tr1.appendChild(createCell('td', '评判', { rowspan: '3' }));
             table.appendChild(tr1);
 
             // 第二行 - 项目
             const tr2 = document.createElement('tr');
-            data.Item.forEach(item => {
-                tr2.appendChild(createCell('td', item));
-            });
+            data.Item.forEach(it => tr2.appendChild(createCell('td', it)));
             table.appendChild(tr2);
 
             // 第三行 - 设备编号
             const tr3 = document.createElement('tr');
-            data.DeviceID.forEach(deviceId => {
-                tr3.appendChild(createCell('td', `ME ${deviceId}`));
+            data.DeviceID.forEach(dev => {
+                const text = dev ? `ME ${dev}` : '';
+                tr3.appendChild(createCell('td', text));
             });
             table.appendChild(tr3);
 
             // 数据行
-            data.TableRows.forEach(row => {
+            const totalRows = data.DefaultRowCount ?? 11; // 从后端读取配置
+            for (let i = 0; i < totalRows; i++) {
                 const tr = document.createElement('tr');
-                tr.appendChild(createCell('td', row.RowIndex));
+                tr.appendChild(createCell('td', i + 1)); 
 
-                row.Cells.forEach(cell => {
-                    tr.appendChild(createCell('td', cell));
-                });
+                // 数据不足用空值补齐
+                const rowData = data.TableRows[i]?.Cells ?? [];
+                const paddedRow = padOrTruncate(rowData, totalCols); // 保证列数固定
+                paddedRow.forEach(c => tr.appendChild(createCell('td', c)));
 
+                tr.appendChild(createCell('td', '')); // 评判列空白
                 table.appendChild(tr);
-            });
+            }
 
             // 检验结果行
             const trResult = document.createElement('tr');
             trResult.appendChild(createCell('td', '检验结果'));
-            const tdResult = createCell('td', data.InspectionResult, { 'colspan': '14' });
-            trResult.appendChild(tdResult);
+            trResult.appendChild(
+                createCell('td', data.InspectionResult || '', { colspan: totalCols + 1 })
+            );
             table.appendChild(trResult);
 
             // 备注行
             const trRemark = document.createElement('tr');
             trRemark.appendChild(createCell('td', '备注'));
-            const tdRemark = createCell('td', data.Remark, { 'colspan': '14' });
-            trRemark.appendChild(tdRemark);
+            trRemark.appendChild(
+                createCell('td', data.Remark || '', { colspan: totalCols + 1 })
+            );
             table.appendChild(trRemark);
 
             // 签名行
             const trSign = document.createElement('tr');
             const tdSign = createCell('td', '', {
-                'colspan': '15',
-                'style': 'text-align: left;'
+                colspan: totalCols + 2,
+                style: "text-align: left;"
             });
             tdSign.innerHTML = `
-                <span style="margin-right: 100px;">检验人员：${data.Inspector}</span>
-                <span style="margin-right: 500px;">日期：${data.InspectorDate}</span>
-                <span style="margin-right: 100px;">复核人员：${data.Reviewer}</span>
-                <span>日期：${data.ReviewerDate}</span>
-            `;
+                            <span style="margin-right: 10%;">检验人员：${data.Inspector || ''}</span>
+                            <span style="margin-right: 40%;">日期：${data.InspectorDate || ''}</span>
+                            <span style="margin-right: 10%;">复核人员：${data.Reviewer || ''}</span>
+                            <span>日期：${data.ReviewerDate || ''}</span>
+                        `;
             trSign.appendChild(tdSign);
             table.appendChild(trSign);
 
             return table;
         }
 
+        /* ============================================================
+           ★★★★★   加载 API 数据   ★★★★★
+           ============================================================ */
         // 加载数据
         async function loadData() {
             const docCode = document.getElementById('docCode').value.trim();
@@ -329,107 +410,110 @@
                 return;
             }
 
-            let fetchUrl = document.getElementById('fetchUrl').value.trim();
-            if (!fetchUrl.includes('?')) {
-                fetchUrl += '?docCode=' + encodeURIComponent(docCode);
-            } else {
-                fetchUrl += '&docCode=' + encodeURIComponent(docCode);
+            const fetchUrl = document.getElementById('fetchUrl').value.trim();
+            if (!fetchUrl) {
+                alert('请填写数据 API 地址');
+                return;
             }
+            const urlBase = fetchUrl.split('?')[0];
 
             try {
-                const response = await fetch(fetchUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                const data = result.data || result; // 适应不同的API响应格式
-
-                renderData(data);
-            } catch (error) {
-                console.error('加载数据失败:', error);
-                alert('加载数据失败: ' + error.message);
-            }
-        }
-
-        // 渲染数据到页面
-        function renderData(data) {
-            // 更新基本信息
-            document.getElementById('headerRight').textContent = data.FormCode || '';
-            document.getElementById('recNoServer').textContent = data.RecordNo || '';
-            document.getElementById('materialNameServer').textContent = data.MaterialName || '';
-            document.getElementById('materialCodeServer').textContent = data.MaterialCode || '';
-            document.getElementById('batchNoServer').textContent = data.BatchNo || '';
-            document.getElementById('qtyServer').textContent = data.Qty || '';
-            document.getElementById('effectiveDateServer').textContent = data.EffectiveDate || '';
-
-            // 构建并显示表格
-            const tableArea = document.getElementById('tableArea');
-            tableArea.innerHTML = '';
-            const table = buildTableFromData(data);
-            tableArea.appendChild(table);
-
-            // 保存数据用于后续API调用
-            window.currentData = data;
-        }
-
-        // 生成API链接
-        function generateApiLink() {
-            const callbackUrl = document.getElementById('callbackUrl').value.trim();
-            if (!callbackUrl) {
-                alert('请输入回写API地址');
-                return;
-            }
-
-            if (!window.currentData) {
-                alert('请先加载数据');
-                return;
-            }
-
-            const docCode = document.getElementById('docCode').value.trim();
-            const separator = callbackUrl.includes('?') ? '&' : '?';
-            const apiLink = `${callbackUrl}${separator}docCode=${encodeURIComponent(docCode)}`;
-
-            const linkBox = document.getElementById('generatedLink');
-            linkBox.style.display = 'block';
-            linkBox.innerHTML = `
-                <strong>API调用链接：</strong><br>
-                <a href="${apiLink}" target="_blank">${apiLink}</a>
-                <button onclick="copyToClipboard('${apiLink}')" class="small" style="margin-left: 10px;">复制链接</button>
-            `;
-        }
-
-        // 直接调用API
-        async function callApiDirectly() {
-            const callbackUrl = document.getElementById('callbackUrl').value.trim();
-            if (!callbackUrl) {
-                alert('请输入回写API地址');
-                return;
-            }
-
-            if (!window.currentData) {
-                alert('请先加载数据');
-                return;
-            }
-
-            try {
-                const response = await fetch(callbackUrl, {
+                const response = await fetch(urlBase, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(window.currentData)
+                    body: JSON.stringify({ DOC_CODE: docCode }),
+                    credentials: 'same-origin'
                 });
 
-                if (response.ok) {
-                    alert('API调用成功');
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    // 提示并尝试显示后端返回的错误信息
+                    let txt = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}  ${txt}`);
                 }
+
+                let result = await response.json();
+
+                // 后端返回 ApiResponse { Success, Message, Data }
+                // 兼容不同命名：Data / data
+                let payload = result.Data ?? result.data ?? result;
+                // 如果 Data 是字符串（JSON 字符串），尝试解析
+                if (typeof payload === 'string') {
+                    try { payload = JSON.parse(payload); } catch { /* ignore */ }
+                }
+
+                if (!payload) {
+                    alert('接口返回为空数据');
+                    return;
+                }
+
+                renderData(payload);
             } catch (error) {
-                console.error('API调用失败:', error);
-                alert('API调用失败: ' + error.message);
+                console.error('加载数据失败:', error);
+                alert('加载数据失败: ' + (error.message || error));
             }
+        }
+
+        /* ============================================================
+           ★★★★★   渲染 -> 多份报表   ★★★★★
+           ============================================================ */
+        // 渲染数据到页面
+        function renderData(data) {
+            const container = document.getElementById('tableArea');
+            container.innerHTML = ""; // 清空
+
+            // 绑定页眉页脚
+            document.getElementById('headerRight').innerText = data.FormCode || '';
+            document.getElementById('effectiveDateServer').innerText = data.EffectiveDate || '';
+
+            const groups = data.DataValues || [];
+            if (!groups.length) {
+                container.innerHTML = "<div>无数据</div>";
+                return;
+            }
+
+            groups.forEach((group) => {
+                const reportData = buildReportDataSet(group, data);
+
+                // 包裹 div，每份报表单独分页
+                const wrapper = document.createElement("div");
+                wrapper.className = "report-wrapper";
+
+                // 标题
+                const title = document.createElement("div");
+                title.className = "title";
+                title.innerText = "来料检验记录表";
+                wrapper.appendChild(title);
+
+                // 编号
+                const recNoDiv = document.createElement("div");
+                recNoDiv.style.display = "flex";
+                recNoDiv.style.justifyContent = "end";
+                recNoDiv.innerHTML = `编号：${data.RecordNo || ''}`;
+                wrapper.appendChild(recNoDiv);
+
+                // 物料信息
+                const infoDiv = document.createElement("div");
+                infoDiv.style.display = "flex";
+                infoDiv.style.justifyContent = "space-between";
+                infoDiv.style.flexWrap = "wrap";
+                infoDiv.innerHTML = `
+            <div>物料名称：${data.MaterialName || ''}</div>
+            <div>物料编号：${data.MaterialCode || ''}</div>
+            <div>来料批次：${data.BatchNo || ''}</div>
+            <div>来料数量：${data.Qty || ''}</div>
+        `;
+                wrapper.appendChild(infoDiv);
+
+                // 表格
+                const table = buildTableFromData(reportData);
+                wrapper.appendChild(table);
+
+                container.appendChild(wrapper);
+            });
+
+            window.currentData = data;
         }
 
         // 复制到剪贴板
@@ -437,7 +521,6 @@
             navigator.clipboard.writeText(text).then(() => {
                 alert('已复制到剪贴板');
             }).catch(() => {
-                // 降级方案
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 document.body.appendChild(textArea);
@@ -448,32 +531,45 @@
             });
         }
 
+        // 打印前缩放
+        function scaleReportForPrint() {
+            const wrappers = document.querySelectorAll('.report-wrapper');
+            const pageHeight = 1122; // A4纸纵向打印约1122px
+            wrappers.forEach(wrapper => {
+                wrapper.style.transform = 'scale(1)';
+                const contentHeight = wrapper.offsetHeight;
+                if (contentHeight > pageHeight) {
+                    const scale = pageHeight / contentHeight;
+                    wrapper.style.transform = `scale(${scale})`;
+                }
+            });
+        }
+
         // 打印功能
         function printPage() {
-            window.print();
+            scaleReportForPrint();
+            setTimeout(() => window.print(), 300);
         }
 
         // 事件监听
         document.getElementById('btnFetch').addEventListener('click', loadData);
-        document.getElementById('btnGenLink').addEventListener('click', generateApiLink);
-        document.getElementById('btnCallApi').addEventListener('click', callApiDirectly);
         document.getElementById('btnPrint').addEventListener('click', printPage);
 
         // 支持按Enter键加载数据
-        document.getElementById('docCode').addEventListener('keypress', function(e) {
+        document.getElementById('docCode').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 loadData();
             }
         });
 
         // 页面加载时尝试从URL参数获取docCode
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
-            const docCodeFromUrl = urlParams.get('docCode');
+            const docCodeFromUrl = urlParams.get('DOC_CODE');
             if (docCodeFromUrl) {
                 document.getElementById('docCode').value = docCodeFromUrl;
-                // 可选：自动加载数据
-                // loadData();
+                // 自动加载数据
+                loadData();
             }
         });
     </script>
