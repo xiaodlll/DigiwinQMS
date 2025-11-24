@@ -15,6 +15,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -975,66 +976,93 @@ namespace Meiam.System.Interfaces.Service
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
-                //var data = await Db.Ado.SqlQueryAsync<INSPECT_INFO_BYCODE>(
-                //    "select TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY from INSPECT_VIEW where INSPECT_CODE = @DOC_CODE",
-                //    parameters
-                //);
+                string docNo = string.Empty;
+                string docCreateDate = string.Empty;
+                string orgMoa02 = string.Empty;
+                var data1 = await Db.Ado.GetDataTableAsync("select TOP 1 DOC_NO,DOC_CREATEDATE from INSPECT_DOC_INFO where IS_NEW='1' and DOC_TYPE='图纸尺寸文件'" );
+                if (data1 != null && data1.Rows.Count>0) {
+                    docNo = data1.Rows[0]["DOC_NO"].ToString();
+                    docCreateDate = data1.Rows[0]["DOC_CREATEDATE"].ToString();
+                }
+                var data2 = await Db.Ado.GetDataTableAsync("select TOP 1 ORGM0A02 from ORGM001 where ORGM0A01='001'");
+                if (data2 != null && data2.Rows.Count > 0) {
+                    orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
+                }
+                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,
+        CASE 
+            WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
+            WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
+            WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
+            ELSE OQC_STATE
+        END AS OQC_STATE
+    FROM INSPECT_IQC
+    WHERE INSPECT_IQCCODE=@DOC_CODE", parameters);
+                string ITEMID = string.Empty;
+                string ITEMNAME = string.Empty;
+                string LOTNO = string.Empty;
+                string LOT_QTY = string.Empty;
+                string OQC_STATE = string.Empty;
+                if (dataMain != null && dataMain.Rows.Count > 0) {
+                    ITEMID = dataMain.Rows[0]["ITEMID"].ToString();
+                    ITEMNAME = dataMain.Rows[0]["ITEMNAME"].ToString();
+                    LOTNO = dataMain.Rows[0]["LOTNO"].ToString();
+                    LOT_QTY = dataMain.Rows[0]["LOT_QTY"].ToString();
+                    OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
+                }
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, INSPECT02CODE,
+            A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, 
+            A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32, 
+            A33, A34, A35, A36, A37, A38, A39, A40, A41, A42, A43, A44, A45, A46, A47, A48, 
+            A49, A50, A51, A52, A53, A54, A55, A56, A57, A58, A59, A60, A61, A62, A63, A64
+            FROM INSPECT_PROGRESS
+            WHERE DOC_CODE = @DOC_CODE and COC_ATTR='COC_ATTR_001'"
+                , parameters);
 
-                string dataJson = @"{
-  'FormCode': 'QC-001',
-  'RecordNo': 'INSP-20230715-001',
-  'MaterialName': '不锈钢螺丝',
-  'MaterialCode': 'MAT-SS-2023001',
-  'BatchNo': 'BATCH-20230715-A',
-  'Qty': 5000,
-  'EffectiveDate': '2023-07-15',
-  'InspectionResult': '合格',
-  'Remark': '无异常',
-  'Inspector': '张三',
-  'InspectorDate': '2023-07-15',
-  'Reviewer': '李四',
-  'ReviewerDate': '2023-07-16',
-  'DataValues': [
-    {
-      'Column1': ['1', '尺寸检测', 'DEV-001', 10.2, 10.1, 10.3, 10.2, 10.1, 10.2, 10.3, 10.2, 10.1, 10.2, 10.3],
-      'Column2': ['2', '硬度测试', 'DEV-002', 85, 86, 84, 85, 86, 85, 84, 85, 86, 85, 84],
-      'Column3': ['3', '表面检查', 'DEV-003', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column4': ['4', '螺纹检测', 'DEV-004', 0.8, 0.9, 0.8, 0.7, 0.8, 0.9, 0.8, 0.7, 0.8, 0.9, 0.8],
-      'Column5': ['5', '材质分析', 'DEV-005', 304, 304, 304, 304, 304, 304, 304, 304, 304, 304, 304],
-      'Column6': ['6', '盐雾测试', 'DEV-006', 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72],
-      'Column7': ['7', '拉力测试', 'DEV-007', 450, 455, 448, 452, 449, 451, 453, 447, 450, 454, 449],
-      'Column8': ['8', '扭矩测试', 'DEV-008', 2.5, 2.6, 2.4, 2.5, 2.5, 2.6, 2.4, 2.5, 2.5, 2.6, 2.4],
-      'Column9': ['9', '外观检查', 'DEV-009', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column10': ['10', '包装检查', 'DEV-010', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column11': ['11', '重量检测', 'DEV-011', 2.1, 2.0, 2.1, 2.0, 2.1, 2.0, 2.1, 2.0, 2.1, 2.0, 2.1],
-      'Column12': ['12', '标识检查', 'DEV-012', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column13': ['13', '清洁度', 'DEV-013', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    },
-    {
-      'Column1': ['1', '尺寸检测', 'DEV-001', 10.2, 10.1, 10.3],
-      'Column2': ['2', '硬度测试', 'DEV-002', 85, 86, 84],
-      'Column3': ['3', '表面检查', 'DEV-003', 1, 1, 1],
-      'Column4': ['4', '螺纹检测', 'DEV-004', 0.8, 0.9, 0.8],
-      'Column5': ['5', '材质分析', 'DEV-005', 304, 304, 304]
-    },
-    {
-      'Column1': ['14', '尺寸检测', 'DEV-001', 10.2, 10.1, 10.3, 10.2, 10.1, 10.2, 10.3, 10.2, 10.1, 10.2, 10.3],
-      'Column2': ['15', '硬度测试', 'DEV-002', 85, 86, 84, 85, 86, 85, 84, 85, 86, 85, 84],
-      'Column3': ['16', '表面检查', 'DEV-003', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column4': ['17', '螺纹检测', 'DEV-004', 0.8, 0.9, 0.8, 0.7, 0.8, 0.9, 0.8, 0.7, 0.8, 0.9, 0.8],
-      'Column5': ['18', '材质分析', 'DEV-005', 304, 304, 304, 304, 304, 304, 304, 304, 304, 304, 304],
-      'Column6': ['19', '盐雾测试', 'DEV-006', 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72],
-      'Column7': ['20', '拉力测试', 'DEV-007', 450, 455, 448, 452, 449, 451, 453, 447, 450, 454, 449],
-      'Column8': ['21', '扭矩测试', 'DEV-008', 2.5, 2.6, 2.4, 2.5, 2.5, 2.6, 2.4, 2.5, 2.5, 2.6, 2.4],
-      'Column9': ['22', '外观检查', 'DEV-009', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column10': ['23', '包装检查', 'DEV-010', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column11': ['24', '重量检测', 'DEV-011', 2.1, 2.0, 2.1, 2.0, 2.1, 2.0, 2.1, 2.0, 2.1, 2.0, 2.1],
-      'Column12': ['25', '标识检查', 'DEV-012', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      'Column13': ['26', '清洁度', 'DEV-013', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    }
-  ]
-}".Replace("'", "\"");
-                JObject jsonData = JsonConvert.DeserializeObject<JObject>(dataJson);
+                // 将原始数据转换为对象列表
+                var dataList = new List<InspectData>();
+
+                foreach (DataRow row in originalData.Rows) {
+                    var data = new InspectData {
+                        ProgressName = row["INSPECT_PROGRESSNAME"]?.ToString(),
+                        InspectCode = row["INSPECT02CODE"]?.ToString(),
+                        Values = new List<object>()
+                    };
+
+                    // 收集A1-A64的值（跳过空值）
+                    for (int i = 1; i <= 64; i++) {
+                        string fieldName = $"A{i}";
+                        object value = row[fieldName];
+                        if (value != null && !string.IsNullOrEmpty(value.ToString())) {
+                            data.Values.Add(value);
+                        }
+                    }
+
+                    dataList.Add(data);
+                }
+                int pageRowCount = 13;
+                int pageColCount = 13;
+                // 分组逻辑
+                var groupedData = GroupData(dataList, pageColCount, pageRowCount);
+
+                // 构建最终的JSON结构
+                var result = new {
+                    PageRowCount = pageRowCount,
+                    FormCode = docNo,
+                    RecordNo= "",
+                    MaterialCode = ITEMID,
+                    MaterialName = ITEMNAME,
+                    BatchNo= orgMoa02,
+                    Qty= LOT_QTY,
+                    EffectiveDate= docCreateDate,
+                    InspectionResult = OQC_STATE,
+                    Remark= "",
+                    Inspector= "",
+                    InspectorDate= "",
+                    Reviewer="",
+                    ReviewerDate= "",
+                    DataValues = groupedData
+                };
+                string jsonData = JsonConvert.SerializeObject(result);
 
                 return new ApiResponse {
                     Success = true,
@@ -1048,6 +1076,76 @@ namespace Meiam.System.Interfaces.Service
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
+        }
+
+        // 数据分组方法
+        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount) {
+            var result = new List<Dictionary<string, List<object>>>();
+
+            int columnIndex = 1;
+            // 按pageColCount分组
+            for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount) {
+                var group = new Dictionary<string, List<object>>();
+
+                // 处理当前页的数据
+                for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++) {
+                    var data = dataList[i];
+                    var columnData = new List<object>();
+
+                    // 添加序号、检测名称、检测编码
+                    columnData.Add((i + 1).ToString()); // 序号（从1开始）
+                    columnData.Add(data.ProgressName);  // 检测名称
+                    columnData.Add(data.InspectCode);   // 检测编码
+
+                    // 添加检测值
+                    columnData.AddRange(data.Values);
+
+                    group[$"Column{columnIndex}"] = columnData;
+                    columnIndex++;
+                }
+
+                // 计算需要拆分的组数
+                int maxCount = group.Values.Max(list => list?.Count ?? 0);
+                int elementsToSplit = Math.Max(0, maxCount - 3);
+                int totalGroups = (int)Math.Ceiling((decimal)elementsToSplit / pageRowCount);
+
+                // 使用 LINQ 创建所有分组
+                var groupExList = Enumerable.Range(0, totalGroups)
+                    .Select(i => group.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => {
+                            var list = kvp.Value ?? new List<object>();
+                            var resultList = new List<object>();
+
+                            // 添加前3个固定元素
+                            if (list.Count >= 1) resultList.Add(list[0]);
+                            if (list.Count >= 2) resultList.Add(list[1]);
+                            if (list.Count >= 3) resultList.Add(list[2]);
+
+                            // 添加可变部分
+                            int start = 3 + i * pageRowCount;
+                            int count = Math.Min(pageRowCount, Math.Max(0, list.Count - start));
+                            if (count > 0) {
+                                resultList.AddRange(list.GetRange(start, count));
+                            }
+
+                            return resultList;
+                        }))
+                    .ToList();
+
+                foreach (var item in groupExList) {
+                    result.Add(item);
+                }
+            }
+
+            return result;
+        }
+
+        // 数据模型类
+        public class InspectData {
+            public string ProgressName { get; set; }
+            public string InspectCode { get; set; }
+            public List<object> Values { get; set; }
         }
         #endregion
     }
