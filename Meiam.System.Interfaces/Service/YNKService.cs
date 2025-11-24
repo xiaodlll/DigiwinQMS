@@ -1087,6 +1087,12 @@ namespace Meiam.System.Interfaces.Service
             for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount) {
                 var group = new Dictionary<string, List<object>>();
 
+                List<object> list = new List<object>();
+                for (int j = 1; j <= pageRowCount; j++) {
+                    list.Add(j + pageIndex * pageRowCount);
+                }
+                group.Add("Column0", list);
+
                 // 处理当前页的数据
                 for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++) {
                     var data = dataList[i];
@@ -1100,6 +1106,13 @@ namespace Meiam.System.Interfaces.Service
                     // 添加检测值
                     columnData.AddRange(data.Values);
 
+                    group[$"Column{columnIndex}"] = columnData;
+                    columnIndex++;
+                }
+
+                while ((columnIndex - 1) % pageRowCount != 0) {
+                    var columnData = new List<object>();
+                    columnData.Add((columnIndex).ToString());
                     group[$"Column{columnIndex}"] = columnData;
                     columnIndex++;
                 }
@@ -1133,7 +1146,8 @@ namespace Meiam.System.Interfaces.Service
                         }))
                     .ToList();
 
-                foreach (var item in groupExList) {
+                for (int i = 0; i < groupExList.Count; i++) {
+                    var item = groupExList[i];
                     result.Add(item);
                 }
             }
