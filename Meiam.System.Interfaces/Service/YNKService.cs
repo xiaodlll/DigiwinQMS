@@ -1015,8 +1015,8 @@ namespace Meiam.System.Interfaces.Service
             A33, A34, A35, A36, A37, A38, A39, A40, A41, A42, A43, A44, A45, A46, A47, A48, 
             A49, A50, A51, A52, A53, A54, A55, A56, A57, A58, A59, A60, A61, A62, A63, A64
             FROM INSPECT_PROGRESS
-            WHERE DOC_CODE = @DOC_CODE and COC_ATTR='COC_ATTR_001'"
-                , parameters);
+            WHERE DOC_CODE = @DOC_CODE"
+                , parameters);//and COC_ATTR='COC_ATTR_001'
 
                 // 将原始数据转换为对象列表
                 var dataList = new List<InspectData>();
