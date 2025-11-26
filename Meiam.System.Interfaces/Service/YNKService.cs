@@ -990,7 +990,7 @@ namespace Meiam.System.Interfaces.Service
                 if (data2 != null && data2.Rows.Count > 0) {
                     orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
                 }
-                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,PEOPLEID,QUA_DATE,
+                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,PEOPLEID,INSPECT_IQCNAME,USER_.USER_NAME AS INSPECTOR,
         CASE 
             WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
             WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
@@ -998,6 +998,7 @@ namespace Meiam.System.Interfaces.Service
             ELSE OQC_STATE
         END AS OQC_STATE
     FROM INSPECT_IQC
+    LEFT JOIN USER_ on USER_.User_Account=INSPECT_IQC.PEOPLEID
     WHERE INSPECT_IQCCODE=@DOC_CODE", parameters);
                 string ITEMID = string.Empty;
                 string ITEMNAME = string.Empty;
@@ -1012,8 +1013,8 @@ namespace Meiam.System.Interfaces.Service
                     LOTNO = dataMain.Rows[0]["LOTNO"].ToString();
                     LOT_QTY = dataMain.Rows[0]["LOT_QTY"].ToString();
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
-                    Inspector = dataMain.Rows[0]["PEOPLEID"].ToString();
-                    InspectorDate = dataMain.Rows[0]["QUA_DATE"].ToString();
+                    Inspector = dataMain.Rows[0]["INSPECTOR"].ToString();
+                    InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                 }
                 var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, SYSM002.SYSM002NAME AS INSPECT02CODE, NGS, COUNTTYPE,
             (case when INSPECT_RESULT='INSPECT_RESULT_001' then 'OK' when INSPECT_RESULT='INSPECT_RESULT_002' then 'NG' else '' end) INSPECT_RESULT, 
