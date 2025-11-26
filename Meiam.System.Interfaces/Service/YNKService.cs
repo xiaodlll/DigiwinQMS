@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using Aspose.Pdf.Operators;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Meiam.System.Common;
 using Meiam.System.Interfaces.IService;
 using Meiam.System.Model;
@@ -12,6 +13,7 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.PerformanceData;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -988,7 +990,7 @@ namespace Meiam.System.Interfaces.Service
                 if (data2 != null && data2.Rows.Count > 0) {
                     orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
                 }
-                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,
+                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,PEOPLEID,QUA_DATE,
         CASE 
             WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
             WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
@@ -1002,20 +1004,26 @@ namespace Meiam.System.Interfaces.Service
                 string LOTNO = string.Empty;
                 string LOT_QTY = string.Empty;
                 string OQC_STATE = string.Empty;
+                string Inspector = string.Empty;
+                string InspectorDate = string.Empty;
                 if (dataMain != null && dataMain.Rows.Count > 0) {
                     ITEMID = dataMain.Rows[0]["ITEMID"].ToString();
                     ITEMNAME = dataMain.Rows[0]["ITEMNAME"].ToString();
                     LOTNO = dataMain.Rows[0]["LOTNO"].ToString();
                     LOT_QTY = dataMain.Rows[0]["LOT_QTY"].ToString();
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
+                    Inspector = dataMain.Rows[0]["PEOPLEID"].ToString();
+                    InspectorDate = dataMain.Rows[0]["QUA_DATE"].ToString();
                 }
-                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, INSPECT02CODE,
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, SYSM002.SYSM002NAME AS INSPECT02CODE, NGS, COUNTTYPE,
+            (case when INSPECT_RESULT='INSPECT_RESULT_001' then 'OK' when INSPECT_RESULT='INSPECT_RESULT_002' then 'NG' else '' end) INSPECT_RESULT, 
             A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, 
             A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32, 
             A33, A34, A35, A36, A37, A38, A39, A40, A41, A42, A43, A44, A45, A46, A47, A48, 
             A49, A50, A51, A52, A53, A54, A55, A56, A57, A58, A59, A60, A61, A62, A63, A64
             FROM INSPECT_PROGRESS
-            WHERE DOC_CODE = @DOC_CODE"
+			LEFT JOIN SYSM002 on SYSM002.SYSM002ID=INSPECT_DEV
+            WHERE DOC_CODE = @DOC_CODE and INSPECT_TYPE ='INSPECT_TYPE_002' ORDER BY INSPECT_PROGRESSNAME"
                 , parameters);//and COC_ATTR='COC_ATTR_001'
 
                 // 将原始数据转换为对象列表
@@ -1025,6 +1033,9 @@ namespace Meiam.System.Interfaces.Service
                     var data = new InspectData {
                         ProgressName = row["INSPECT_PROGRESSNAME"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
+                        InspectrResult = row["INSPECT_RESULT"]?.ToString(),
+                        InspectrType = row["COUNTTYPE"]?.ToString(),
+                        NGS = row["NGS"]?.ToString(),
                         Values = new List<object>()
                     };
 
@@ -1048,16 +1059,16 @@ namespace Meiam.System.Interfaces.Service
                 var result = new {
                     PageRowCount = pageRowCount,
                     FormCode = docNo,
-                    RecordNo= "",
+                    RecordNo= input.DOC_CODE,
                     MaterialCode = ITEMID,
                     MaterialName = ITEMNAME,
-                    BatchNo= orgMoa02,
+                    BatchNo= LOTNO,
                     Qty= LOT_QTY,
                     EffectiveDate= docCreateDate,
                     InspectionResult = OQC_STATE,
                     Remark= "",
-                    Inspector= "",
-                    InspectorDate= "",
+                    Inspector= Inspector,
+                    InspectorDate= InspectorDate,
                     Reviewer="",
                     ReviewerDate= "",
                     DataValues = groupedData
@@ -1083,6 +1094,7 @@ namespace Meiam.System.Interfaces.Service
             var result = new List<Dictionary<string, List<object>>>();
 
             int columnIndex = 1;
+            int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
             // 按pageColCount分组
             for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount) {
                 var group = new Dictionary<string, List<object>>();
@@ -1092,6 +1104,7 @@ namespace Meiam.System.Interfaces.Service
                     list.Add(j + pageIndex * pageRowCount);
                 }
                 group.Add("Column0", list);
+                List<object> listResult = new List<object>();
 
                 // 处理当前页的数据
                 for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++) {
@@ -1104,11 +1117,30 @@ namespace Meiam.System.Interfaces.Service
                     columnData.Add(data.InspectCode);   // 检测编码
 
                     // 添加检测值
-                    columnData.AddRange(data.Values);
-
+                    if (data.InspectrType == "COUNTTYPE_001") {
+                        List<object> listValues = new List<object>();
+                        for (int j = 1; j<= maxLength; j++) {
+                            string re = "OK";
+                            if (string.IsNullOrEmpty(data.NGS)) {
+                                re = data.InspectrResult;
+                            }
+                            else {
+                                if (data.NGS.Contains($"A{j};")) {
+                                    re = "NG";
+                                }
+                            }
+                            listValues.Add(re);
+                        }
+                        columnData.AddRange(listValues);
+                    }
+                    else {
+                        columnData.AddRange(data.Values);
+                    }
+                    listResult.Add(data.InspectrResult);//样本结果
                     group[$"Column{columnIndex}"] = columnData;
                     columnIndex++;
                 }
+                group.Add("ColumnA", listResult);
 
                 while ((columnIndex - 1) % pageRowCount != 0) {
                     var columnData = new List<object>();
@@ -1159,6 +1191,9 @@ namespace Meiam.System.Interfaces.Service
         public class InspectData {
             public string ProgressName { get; set; }
             public string InspectCode { get; set; }
+            public string InspectrResult { get; set; }
+            public string InspectrType { get; set; }
+            public string NGS { get; set; }
             public List<object> Values { get; set; }
         }
         #endregion
