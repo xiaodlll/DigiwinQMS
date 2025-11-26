@@ -990,7 +990,7 @@ namespace Meiam.System.Interfaces.Service
                 if (data2 != null && data2.Rows.Count > 0) {
                     orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
                 }
-                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,PEOPLEID,INSPECT_IQCNAME,USER_.USER_NAME AS INSPECTOR,
+                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
         CASE 
             WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
             WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
@@ -998,7 +998,6 @@ namespace Meiam.System.Interfaces.Service
             ELSE OQC_STATE
         END AS OQC_STATE
     FROM INSPECT_IQC
-    LEFT JOIN USER_ on USER_.User_Account=INSPECT_IQC.PEOPLEID
     WHERE INSPECT_IQCCODE=@DOC_CODE", parameters);
                 string ITEMID = string.Empty;
                 string ITEMNAME = string.Empty;
@@ -1013,10 +1012,9 @@ namespace Meiam.System.Interfaces.Service
                     LOTNO = dataMain.Rows[0]["LOTNO"].ToString();
                     LOT_QTY = dataMain.Rows[0]["LOT_QTY"].ToString();
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
-                    Inspector = dataMain.Rows[0]["INSPECTOR"].ToString();
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                 }
-                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, SYSM002.SYSM002NAME AS INSPECT02CODE, NGS, COUNTTYPE,
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, SYSM002.SYSM002NAME AS INSPECT02CODE, NGS, COUNTTYPE,USER_.USER_NAME AS INSPECTOR,
             (case when INSPECT_RESULT='INSPECT_RESULT_001' then 'OK' when INSPECT_RESULT='INSPECT_RESULT_002' then 'NG' else '' end) INSPECT_RESULT, 
             A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, 
             A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32, 
@@ -1024,6 +1022,7 @@ namespace Meiam.System.Interfaces.Service
             A49, A50, A51, A52, A53, A54, A55, A56, A57, A58, A59, A60, A61, A62, A63, A64
             FROM INSPECT_PROGRESS
 			LEFT JOIN SYSM002 on SYSM002.SYSM002ID=INSPECT_DEV
+            LEFT JOIN USER_ on USER_.User_Account=INSPECT_PROGRESS.PEOPLEID
             WHERE DOC_CODE = @DOC_CODE and INSPECT_TYPE ='INSPECT_TYPE_002' ORDER BY INSPECT_PROGRESSNAME"
                 , parameters);//and COC_ATTR='COC_ATTR_001'
 
@@ -1031,6 +1030,7 @@ namespace Meiam.System.Interfaces.Service
                 var dataList = new List<InspectData>();
 
                 foreach (DataRow row in originalData.Rows) {
+                    Inspector = row["INSPECTOR"].ToString();
                     var data = new InspectData {
                         ProgressName = row["INSPECT_PROGRESSNAME"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
@@ -1095,32 +1095,35 @@ namespace Meiam.System.Interfaces.Service
             var result = new List<Dictionary<string, List<object>>>();
 
             int columnIndex = 1;
-            int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
+            int maxLength = dataList.Count == 0 ? 0 : (dataList.Select(d => d.Values?.Count ?? 0).Max());
+
             // 按pageColCount分组
             for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount) {
                 var group = new Dictionary<string, List<object>>();
 
                 List<object> list = new List<object>();
-                for (int j = 1; j <= pageRowCount; j++) {
-                    list.Add(j + pageIndex * pageRowCount);
+                for (int j = 1; j <= maxLength; j++) {
+                    list.Add(j);
                 }
                 group.Add("Column0", list);
                 List<object> listResult = new List<object>();
-
+                for (int i = 0; i < maxLength; i++) {
+                    listResult.Add("OK");//样本结果
+                }
                 // 处理当前页的数据
                 for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++) {
                     var data = dataList[i];
                     var columnData = new List<object>();
 
                     // 添加序号、检测名称、检测编码
-                    columnData.Add((i + 1).ToString()); // 序号（从1开始）
+                    columnData.Add((i + pageIndex).ToString()); // 序号（从1开始）
                     columnData.Add(data.ProgressName);  // 检测名称
                     columnData.Add(data.InspectCode);   // 检测编码
 
                     // 添加检测值
                     if (data.InspectrType == "COUNTTYPE_001") {
                         List<object> listValues = new List<object>();
-                        for (int j = 1; j<= maxLength; j++) {
+                        for (int j = 1; j <= maxLength; j++) {
                             string re = "OK";
                             if (string.IsNullOrEmpty(data.NGS)) {
                                 re = data.InspectrResult;
@@ -1130,6 +1133,9 @@ namespace Meiam.System.Interfaces.Service
                                     re = "NG";
                                 }
                             }
+                            if (re == "NG") {
+                                listResult[j - 1] = "NG";
+                            }
                             listValues.Add(re);
                         }
                         columnData.AddRange(listValues);
@@ -1137,7 +1143,6 @@ namespace Meiam.System.Interfaces.Service
                     else {
                         columnData.AddRange(data.Values);
                     }
-                    listResult.Add(data.InspectrResult);//样本结果
                     group[$"Column{columnIndex}"] = columnData;
                     columnIndex++;
                 }
@@ -1162,19 +1167,27 @@ namespace Meiam.System.Interfaces.Service
                         kvp => {
                             var list = kvp.Value ?? new List<object>();
                             var resultList = new List<object>();
-
-                            // 添加前3个固定元素
-                            if (list.Count >= 1) resultList.Add(list[0]);
-                            if (list.Count >= 2) resultList.Add(list[1]);
-                            if (list.Count >= 3) resultList.Add(list[2]);
-
-                            // 添加可变部分
-                            int start = 3 + i * pageRowCount;
-                            int count = Math.Min(pageRowCount, Math.Max(0, list.Count - start));
-                            if (count > 0) {
-                                resultList.AddRange(list.GetRange(start, count));
+                            if (kvp.Key == "Column0" || kvp.Key == "ColumnA") {
+                                // 添加可变部分
+                                int start = i * pageRowCount;
+                                int count = Math.Min(pageRowCount, Math.Max(0, list.Count - start));
+                                if (count > 0) {
+                                    resultList.AddRange(list.GetRange(start, count));
+                                }
                             }
+                            else {
+                                // 添加前3个固定元素
+                                if (list.Count >= 1) resultList.Add(list[0]);
+                                if (list.Count >= 2) resultList.Add(list[1]);
+                                if (list.Count >= 3) resultList.Add(list[2]);
 
+                                // 添加可变部分
+                                int start = 3 + i * pageRowCount;
+                                int count = Math.Min(pageRowCount, Math.Max(0, list.Count - start));
+                                if (count > 0) {
+                                    resultList.AddRange(list.GetRange(start, count));
+                                }
+                            }
                             return resultList;
                         }))
                     .ToList();

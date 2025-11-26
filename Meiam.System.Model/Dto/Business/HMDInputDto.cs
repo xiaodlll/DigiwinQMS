@@ -699,6 +699,11 @@ namespace Meiam.System.Model.Dto {
         /// </summary>
         [Display(Name = "TENID")]
         public string TENID { get; set; } = "001";
+
+        /// <summary>
+        /// 扩展字段保存文件类型和路径
+        /// </summary>
+        public string DEV_PATH { get; set; }
     }
 
     public class HMDRoshDataDto {

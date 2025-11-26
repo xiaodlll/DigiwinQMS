@@ -673,7 +673,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                 if (i < 64) sqlBuilder.Append(", ");
             }
 
-            sqlBuilder.Append(", INSPECT_PROGRESSCREATEUSER, INSPECT_PROGRESSCREATEDATE, TENID");
+            sqlBuilder.Append(", INSPECT_PROGRESSCREATEUSER, INSPECT_PROGRESSCREATEDATE,DEV_PATH,TENID");
             sqlBuilder.Append(") VALUES (");
 
             // 添加参数
@@ -707,8 +707,9 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
             // 添加创建信息参数
             AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PROGRESSCREATEUSER", item.INSPECT_PROGRESSCREATEUSER);
             AddParameterWithValue(sqlBuilder, parameters, "INSPECT_PROGRESSCREATEDATE", item.INSPECT_PROGRESSDATE);
+            AddParameterWithValue(sqlBuilder, parameters, "DEV_PATH", item.DEV_PATH);
             AddParameterWithValue(sqlBuilder, parameters, "TENID", item.TENID, false); // 最后一个参数不需要逗号
-
+            
             sqlBuilder.Append(")");
 
             return (sqlBuilder.ToString(), parameters);
