@@ -269,9 +269,13 @@
         const totalCols = 13; // 固定列数
 
         // 创建单元格
-        function createCell(tag, text, attrs = {}) {
+        function createCell(tag, content, attrs = {}, isHTML = false) {
             const el = document.createElement(tag);
-            el.innerText = text ?? "";
+            if (isHTML) {
+                el.innerHTML = content ?? "";
+            } else {
+                el.innerText = content ?? "";
+            }
             Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
             return el;
         }
@@ -380,7 +384,7 @@
             const tr3 = document.createElement('tr');
             data.DeviceID.forEach(dev => {
                 const text = dev ?? '';
-                tr3.appendChild(createCell('td', text));
+                tr3.appendChild(createCell('td', text, {}, true));
             });
             table.appendChild(tr3);
 

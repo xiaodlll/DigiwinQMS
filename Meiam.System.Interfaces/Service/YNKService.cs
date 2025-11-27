@@ -1014,7 +1014,13 @@ namespace Meiam.System.Interfaces.Service
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                 }
-                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESSNAME, SYSM002.SYSM002NAME AS INSPECT02CODE, NGS, COUNTTYPE,USER_.USER_NAME AS INSPECTOR,
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT 
+    INSPECT_PROGRESSNAME,
+    CASE 
+        WHEN INSPECT02CODE IS NULL OR LTRIM(RTRIM(INSPECT02CODE)) = '' 
+        THEN SYSM002.SYSM002NAME
+        ELSE SYSM002.SYSM002NAME + '<br>' + INSPECT02CODE 
+    END AS INSPECT02CODE, NGS, COUNTTYPE,USER_.USER_NAME AS INSPECTOR,
             (case when INSPECT_RESULT='INSPECT_RESULT_001' then 'OK' when INSPECT_RESULT='INSPECT_RESULT_002' then 'NG' else '' end) INSPECT_RESULT, 
             A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, 
             A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32, 
