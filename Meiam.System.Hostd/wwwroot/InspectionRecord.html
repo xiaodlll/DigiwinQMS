@@ -7,6 +7,7 @@
         /* 表格样式 */
         table {
             width: 100%;
+            height: 26px;
             table-layout: fixed;
             border-collapse: collapse;
         }
@@ -20,6 +21,11 @@
                 min-width: 60px;
                 max-width: 60px;
                 word-break: break-word;
+            }
+
+            /* 空行固定高度，不缩小 */
+            table tr.empty-row td {
+                height: 26px;
             }
 
         td:not(.except) {
@@ -196,6 +202,11 @@
                 height: 22px; /* 缩小行高 */
             }
 
+            /* 空行固定高度，不缩小 */
+            table tr.empty-row td {
+                height: 22px; 
+            }
+
             /* 打印时第一列加宽，不占用其他列空间 */
             table tr td.except {
                 width: 100px;
@@ -277,18 +288,20 @@
         ============================================================ */
         function buildReportDataSet(groupData, publicInfo) {
             // 样本号列从 Column0
-            const sampleNos = padOrTruncate(groupData.Column0 || [], totalCols);
-            // 评判列数据
+            const sampleNos = groupData.Column0 || [];
+            // 评判列数据从 ColumnA
             const judgeValues = groupData.ColumnA || [];
 
+            const serialNos = [];
             const items = [];
             const deviceIds = [];
             let rowCount = 0;
 
-            // 提取列头（SampleNos / Item / DeviceID）
+            // 提取列头（SerialNos / Item / DeviceID）
             for (let i = 1; i <= totalCols; i++) {
                 const key = "Column" + i;
                 const col = groupData[key] || []; // 不够列就用空数组
+                serialNos.push(col[0] ?? '');
                 items.push(col[1] ?? '');
                 deviceIds.push(col[2] ?? '');
                 rowCount = Math.max(rowCount, (col.length - 3) || 0);
@@ -308,9 +321,10 @@
             // 返回渲染所需格式
             return {
                 DefaultRowCount: publicInfo.PageRowCount || 15,
-                SampleNos: padOrTruncate(sampleNos, totalCols),
+                SerialNo: padOrTruncate(serialNos, totalCols),
                 Item: padOrTruncate(items, totalCols),
                 DeviceID: padOrTruncate(deviceIds, totalCols),
+                SampleNos: sampleNos,
                 JudgeValues: judgeValues,  // 评判
                 InspectionResult: publicInfo.InspectionResult,
                 Remark: publicInfo.Remark,
@@ -352,8 +366,8 @@
                         `;
             tr1.appendChild(tdClassify);
 
-            // 添加样本号单元格
-            data.SampleNos.forEach(s => tr1.appendChild(createCell('td', s)));
+            // 添加序号单元格
+            data.SerialNo.forEach(s => tr1.appendChild(createCell('td', s)));
             tr1.appendChild(createCell('td', '评判', { rowspan: '3' }));
             table.appendChild(tr1);
 
@@ -374,7 +388,10 @@
             const totalRows = data.DefaultRowCount ?? 15; // 从后端读取配置
             for (let i = 0; i < totalRows; i++) {
                 const tr = document.createElement('tr');
-                tr.appendChild(createCell('td', i + 1)); 
+
+                // 样本号列
+                const sampleNo = data.SampleNos[i] ?? '';
+                tr.appendChild(createCell('td', sampleNo));
 
                 // 数据不足用空值补齐
                 const rowData = data.TableRows[i]?.Cells ?? [];
@@ -383,6 +400,11 @@
 
                 const judge = data.JudgeValues[i] ?? '';
                 tr.appendChild(createCell('td', judge)); // 评判列
+
+                // 判断是否整行为空
+                const isEmpty = [sampleNo, ...paddedRow, judge].every(v => !v);
+                if (isEmpty) tr.classList.add('empty-row');
+
                 table.appendChild(tr);
             }
 

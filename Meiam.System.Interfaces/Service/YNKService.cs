@@ -1091,110 +1091,153 @@ namespace Meiam.System.Interfaces.Service
         }
 
         // 数据分组方法
-        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount) {
+        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount)
+        {
             var result = new List<Dictionary<string, List<object>>>();
 
-            int columnIndex = 1;
-            int maxLength = dataList.Count == 0 ? 0 : (dataList.Select(d => d.Values?.Count ?? 0).Max());
+            if (dataList == null || dataList.Count == 0)
+                return result;
 
-            // 按pageColCount分组
-            for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount) {
+            int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
+            if (maxLength < 3) maxLength = 3; // 确保至少有3个基础元素
+
+            // 按页分组处理数据
+            for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount)
+            {
                 var group = new Dictionary<string, List<object>>();
+                int columnIndex = 1;
 
-                List<object> list = new List<object>();
-                for (int j = 1; j <= maxLength; j++) {
-                    list.Add(j);
+                // 创建 Column0 - 序号列
+                var column0 = new List<object>();
+                for (int j = 1; j <= maxLength; j++)
+                {
+                    column0.Add(j);
                 }
-                group.Add("Column0", list);
-                List<object> listResult = new List<object>();
-                for (int i = 0; i < maxLength; i++) {
-                    listResult.Add("OK");//样本结果
-                }
-                // 处理当前页的数据
-                for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++) {
+                group.Add("Column0", column0);
+
+                // 处理当前页的每一列数据
+                for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++)
+                {
                     var data = dataList[i];
                     var columnData = new List<object>();
 
-                    // 添加序号、检测名称、检测编码
-                    columnData.Add((i + pageIndex).ToString()); // 序号（从1开始）
-                    columnData.Add(data.ProgressName);  // 检测名称
-                    columnData.Add(data.InspectCode);   // 检测编码
+                    // 添加基础信息：序号、检测名称、检测编码
+                    columnData.Add(columnIndex); // 序号
+                    columnData.Add(data.ProgressName ?? "");  // 检测名称
+                    columnData.Add(data.InspectCode ?? "");   // 检测编码
 
-                    // 添加检测值
-                    if (data.InspectrType == "COUNTTYPE_001") {
-                        List<object> listValues = new List<object>();
-                        for (int j = 1; j <= maxLength; j++) {
-                            string re = "OK";
-                            if (string.IsNullOrEmpty(data.NGS)) {
-                                re = data.InspectrResult;
+                    // 处理检测值
+                    if (data.InspectrType == "COUNTTYPE_001")
+                    {
+                        // 计数类型处理
+                        for (int j = 1; j <= maxLength; j++)
+                        {
+                            string resultValue = "OK";
+                            if (string.IsNullOrEmpty(data.NGS))
+                            {
+                                resultValue = data.InspectrResult ?? "OK";
                             }
-                            else {
-                                if (data.NGS.Contains($"A{j};")) {
-                                    re = "NG";
+                            else
+                            {
+                                if (data.NGS.Contains($"A{j};"))
+                                {
+                                    resultValue = "NG";
                                 }
                             }
-                            if (re == "NG") {
-                                listResult[j - 1] = "NG";
-                            }
-                            listValues.Add(re);
+                            columnData.Add(resultValue);
                         }
-                        columnData.AddRange(listValues);
                     }
-                    else {
-                        columnData.AddRange(data.Values);
+                    else
+                    {
+                        // 其他类型直接添加值
+                        if (data.Values != null)
+                        {
+                            columnData.AddRange(data.Values);
+                        }
+                        // 填充剩余位置
+                        while (columnData.Count < 3 + maxLength)
+                        {
+                            columnData.Add(""); // 空值填充
+                        }
                     }
-                    group[$"Column{columnIndex}"] = columnData;
+
+                    group.Add($"Column{columnIndex}", columnData);
                     columnIndex++;
                 }
-                group.Add("ColumnA", listResult);
 
-                while ((columnIndex - 1) % pageRowCount != 0) {
-                    var columnData = new List<object>();
-                    columnData.Add((columnIndex).ToString());
-                    group[$"Column{columnIndex}"] = columnData;
+                // 创建 ColumnA - 结果汇总列
+                var columnA = new List<object>();
+                for (int i = 0; i < maxLength; i++)
+                {
+                    columnA.Add("OK"); // 默认结果
+                }
+                group.Add("ColumnA", columnA);
+
+                // 填充空列以达到页面列数要求
+                while ((columnIndex - 1) % pageColCount != 0)
+                {
+                    var emptyColumn = new List<object> { columnIndex };
+                    // 填充基础结构
+                    for (int i = 1; i < 3 + maxLength; i++)
+                    {
+                        emptyColumn.Add(""); // 空值
+                    }
+                    group.Add($"Column{columnIndex}", emptyColumn);
                     columnIndex++;
                 }
 
-                // 计算需要拆分的组数
-                int maxCount = group.Values.Max(list => list?.Count ?? 0);
-                int elementsToSplit = Math.Max(0, maxCount - 3);
-                int totalGroups = (int)Math.Ceiling((decimal)elementsToSplit / pageRowCount);
+                // 按行数拆分大组
+                int totalRows = group.Values.Max(list => list?.Count ?? 0);
+                int splitCount = (int)Math.Ceiling((double)(totalRows - 3) / pageRowCount);
 
-                // 使用 LINQ 创建所有分组
-                var groupExList = Enumerable.Range(0, totalGroups)
-                    .Select(i => group.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => {
-                            var list = kvp.Value ?? new List<object>();
-                            var resultList = new List<object>();
-                            if (kvp.Key == "Column0" || kvp.Key == "ColumnA") {
-                                // 添加可变部分
-                                int start = i * pageRowCount;
-                                int count = Math.Min(pageRowCount, Math.Max(0, list.Count - start));
-                                if (count > 0) {
-                                    resultList.AddRange(list.GetRange(start, count));
+                for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
+                {
+                    var splitGroup = new Dictionary<string, List<object>>();
+
+                    foreach (var kvp in group)
+                    {
+                        var originalList = kvp.Value ?? new List<object>();
+                        var splitList = new List<object>();
+
+                        if (kvp.Key == "Column0" || kvp.Key == "ColumnA")
+                        {
+                            // 序号列和结果列：只拆分数据部分
+                            if (splitIndex == 0 && originalList.Count > 0)
+                            {
+                                splitList.AddRange(originalList);
+                            }
+                            else
+                            {
+                                // 后续分组中，Column0和ColumnA只包含当前分页的数据
+                                int startIndex = splitIndex * pageRowCount;
+                                int takeCount = Math.Min(pageRowCount, originalList.Count - startIndex);
+                                if (takeCount > 0)
+                                {
+                                    splitList.AddRange(originalList.GetRange(startIndex, takeCount));
                                 }
                             }
-                            else {
-                                // 添加前3个固定元素
-                                if (list.Count >= 1) resultList.Add(list[0]);
-                                if (list.Count >= 2) resultList.Add(list[1]);
-                                if (list.Count >= 3) resultList.Add(list[2]);
+                        }
+                        else
+                        {
+                            // 数据列：前3个固定元素 + 当前分页的数据
+                            // 添加固定元素（序号、名称、编码）
+                            if (originalList.Count >= 1) splitList.Add(originalList[0]);
+                            if (originalList.Count >= 2) splitList.Add(originalList[1]);
+                            if (originalList.Count >= 3) splitList.Add(originalList[2]);
 
-                                // 添加可变部分
-                                int start = 3 + i * pageRowCount;
-                                int count = Math.Min(pageRowCount, Math.Max(0, list.Count - start));
-                                if (count > 0) {
-                                    resultList.AddRange(list.GetRange(start, count));
-                                }
+                            // 添加当前分页的数据
+                            int dataStartIndex = 3 + splitIndex * pageRowCount;
+                            int dataTakeCount = Math.Min(pageRowCount, originalList.Count - dataStartIndex);
+                            if (dataTakeCount > 0)
+                            {
+                                splitList.AddRange(originalList.GetRange(dataStartIndex, dataTakeCount));
                             }
-                            return resultList;
-                        }))
-                    .ToList();
+                        }
 
-                for (int i = 0; i < groupExList.Count; i++) {
-                    var item = groupExList[i];
-                    result.Add(item);
+                        splitGroup.Add(kvp.Key, splitList);
+                    }
+
+                    result.Add(splitGroup);
                 }
             }
 
