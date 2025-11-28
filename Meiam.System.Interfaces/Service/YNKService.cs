@@ -70,7 +70,8 @@ namespace Meiam.System.Interfaces.Service
                         throw new ArgumentException("到货数量必须大于0");
                     }
 
-                    if (request.ITEMID.StartsWith("Z")|| request.ITEMID.StartsWith("H")) {
+                    if (request.ITEMID.StartsWith("Z") || request.ITEMID.StartsWith("H"))
+                    {
                         _logger.LogWarning($"过滤Z和H开头的物料: {request.ITEMID}");
                         continue;
                     }
@@ -400,7 +401,8 @@ namespace Meiam.System.Interfaces.Service
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
-            foreach (var item in list) {
+            foreach (var item in list)
+            {
                 item.FCheckQty = Db.Ado.GetDecimal(@$"SELECT COALESCE((
     SELECT TOP 1 
         MAX(CAST(INSPECT_CNT AS INT)) OVER (PARTITION BY INSPECT_TYPE) AS INSPECT_CNT
@@ -426,7 +428,8 @@ namespace Meiam.System.Interfaces.Service
             Db.Ado.ExecuteCommand(sql);
         }
 
-        public List<AttachmentResultRequestYNK> GetAttachmentResultRequest() {
+        public List<AttachmentResultRequestYNK> GetAttachmentResultRequest()
+        {
             var sql = @"SELECT TOP 10 SCANDOC.SCANDOCID,
                             ERP_ARRIVEDID AS ERP_ARRIVEDID,
                             INSPECT_IQCCODE AS INSPECT_IQCCODE,
@@ -439,19 +442,23 @@ namespace Meiam.System.Interfaces.Service
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<AttachmentResultRequestYNK>(sql);
-            foreach (var item in list) {
+            foreach (var item in list)
+            {
                 string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], item.FilePath.TrimStart('\\'));
-                if (File.Exists(filePath)) {
+                if (File.Exists(filePath))
+                {
                     item.SendBytes = File.ReadAllBytes(filePath);
                 }
-                else {
-                    throw new Exception("找不到文件:"+ filePath);
+                else
+                {
+                    throw new Exception("找不到文件:" + filePath);
                 }
             }
             return list;
         }
 
-        public void CallBackAttachmentResult(AttachmentResultRequestYNK request) {
+        public void CallBackAttachmentResult(AttachmentResultRequestYNK request)
+        {
             var sql = string.Format(@"update SCANDOC set ISSY='1' where SCANDOC='{0}' ", request.SCANDOCID);
             Db.Ado.ExecuteCommand(sql);
         }
@@ -459,8 +466,10 @@ namespace Meiam.System.Interfaces.Service
         #endregion
 
         #region 工具API
-        public async Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input) {
-            try {
+        public async Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input)
+        {
+            try
+            {
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
@@ -469,22 +478,27 @@ namespace Meiam.System.Interfaces.Service
                     parameters
                 );
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = JsonConvert.SerializeObject(data.FirstOrDefault())
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input) {
-            try {
+        public async Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input)
+        {
+            try
+            {
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
@@ -493,23 +507,29 @@ namespace Meiam.System.Interfaces.Service
                     parameters
                 );
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = JsonConvert.SerializeObject(data)
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input) {
-            try {
-                foreach (var item in input) {
+        public async Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input)
+        {
+            try
+            {
+                foreach (var item in input)
+                {
                     // 1. 检查主表是否存在相同数据
                     var checkSql = @"SELECT COUNT(1) FROM INSPECT_AOI 
                                 WHERE DOC_CODE = @DOC_CODE 
@@ -536,7 +556,8 @@ namespace Meiam.System.Interfaces.Service
                     var exists = await Db.Ado.GetIntAsync(checkSql, checkParams) > 0;
 
                     // 2数据处理
-                    if (!exists) {
+                    if (!exists)
+                    {
                         // 构建插入SQL语句
                         var mainSql = @"INSERT INTO INSPECT_AOI 
                             (DOC_CODE, INSPECT_PROGRESSID, INSPECT_AOIID, INSPECT_AOICREATEDATE, 
@@ -599,43 +620,55 @@ namespace Meiam.System.Interfaces.Service
                     }
                 }
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "Aoi数据保存成功"
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"Aoi数据保存失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input) {
-            try {
-                if (input.Count == 0) {
-                    return new ApiResponse {
+        public async Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input)
+        {
+            try
+            {
+                if (input.Count == 0)
+                {
+                    return new ApiResponse
+                    {
                         Success = false,
                         Message = $"传入数据为空!"
                     };
                 }
                 string baseDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @"AOI");
-                foreach (var item in input) {
+                foreach (var item in input)
+                {
                     // 1. 验证必要数据
-                    if (string.IsNullOrEmpty(item.DOC_CODE)) {
+                    if (string.IsNullOrEmpty(item.DOC_CODE))
+                    {
                         throw new ArgumentException("DOC_CODE不能为空，无法存储图片");
                     }
-                    if (string.IsNullOrEmpty(item.ImageName)) {
+                    if (string.IsNullOrEmpty(item.ImageName))
+                    {
                         throw new ArgumentException("ImageName不能为空，无法确定文件名");
                     }
-                    if (string.IsNullOrEmpty(item.ImageData)) {
+                    if (string.IsNullOrEmpty(item.ImageData))
+                    {
                         throw new ArgumentException($"DOC_CODE: {item.DOC_CODE} 的图片数据为空，无法存储");
                     }
 
                     // 2. 创建DOC_CODE对应的文件夹
                     string docCodeDirPath = Path.Combine(baseDirPath, item.DOC_CODE);
-                    if (!Directory.Exists(docCodeDirPath)) {
+                    if (!Directory.Exists(docCodeDirPath))
+                    {
                         Directory.CreateDirectory(docCodeDirPath);
                     }
 
@@ -645,9 +678,11 @@ namespace Meiam.System.Interfaces.Service
                     string targetFilePath = Path.Combine(docCodeDirPath, item.ImageName);
 
                     // 检查文件是否存在，存在则生成新文件名
-                    if (File.Exists(targetFilePath)) {
+                    if (File.Exists(targetFilePath))
+                    {
                         int counter = 1;
-                        do {
+                        do
+                        {
                             string newFileName = $"{fileNameWithoutExt}_{counter}{fileExtension}";
                             targetFilePath = Path.Combine(docCodeDirPath, newFileName);
                             counter++;
@@ -662,24 +697,31 @@ namespace Meiam.System.Interfaces.Service
                     item.ImageName = Path.GetFileName(targetFilePath);
                 }
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "AOI图片保存成功",
                     Data = JsonConvert.SerializeObject(input)
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"AOI图片数据保存失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> ProcessYNKInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input) {
-            try {
-                if (input.Count == 0) {
-                    return new ApiResponse {
+        public async Task<ApiResponse> ProcessYNKInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input)
+        {
+            try
+            {
+                if (input.Count == 0)
+                {
+                    return new ApiResponse
+                    {
                         Success = false,
                         Message = $"传入数据为空!"
                     };
@@ -701,7 +743,8 @@ namespace Meiam.System.Interfaces.Service
                 int lastMaxVer = 0;   // 上一版本号（数字形式）
 
                 // 2. 处理版本号逻辑
-                if (dtOldData.Rows.Count > 0) {
+                if (dtOldData.Rows.Count > 0)
+                {
                     lastMaxVer = dtEnum
                         .Select(row => {
                             int.TryParse(row["VER"].ToString().TrimStart('0'), out int v);
@@ -710,21 +753,27 @@ namespace Meiam.System.Interfaces.Service
                         .Max();
                     newVer = (lastMaxVer + 1).ToString("00");
                 }
-                if (newVer == "01") {
+                if (newVer == "01")
+                {
                     int oIdIndex = 1;
                     int INSPECT_CNT = 0;
                     var entityType = firstEntity.GetType();
                     // 遍历A1到A64的所有属性
-                    for (int i = 1; i <= 64; i++) {
+                    for (int i = 1; i <= 64; i++)
+                    {
                         // 构造属性名（A1, A2, ..., A64）
                         string propertyName = $"A{i}";
                         // 获取属性信息
                         var property = entityType.GetProperty(propertyName);
-                        if (property != null) {
+                        if (property != null)
+                        {
                             var value = property.GetValue(firstEntity);
-                            if (value != null) {
-                                if (value is string strValue) {
-                                    if (!string.IsNullOrEmpty(strValue.Trim())) {
+                            if (value != null)
+                            {
+                                if (value is string strValue)
+                                {
+                                    if (!string.IsNullOrEmpty(strValue.Trim()))
+                                    {
                                         INSPECT_CNT++;
                                     }
                                 }
@@ -739,16 +788,18 @@ namespace Meiam.System.Interfaces.Service
                         @"select INSPECT_PLANID from INSPECT_PLAN where SPOT_CNT = @SPOT_CNT", // 条件：样本数量匹配
                         planParameters
                     );
-                    foreach (var item in input) {
+                    foreach (var item in input)
+                    {
                         item.VER = newVer; // 设置新版本号
                         item.OID = (oIdIndex++).ToString("00");
                         item.INSPECT_CNT = INSPECT_CNT.ToString();
                         item.INSPECT_PLANID = planId;
                     }
                 }
-                else {//第二次上传
-                      // 非首次上传：处理OID逻辑
-                      // 2.1 提取历史数据中每个检验项目最近出现的OID（按版本倒序取最近）
+                else
+                {//第二次上传
+                 // 非首次上传：处理OID逻辑
+                 // 2.1 提取历史数据中每个检验项目最近出现的OID（按版本倒序取最近）
                     var lastestOidMap = dtEnum
                         .GroupBy(row => row["INSPECT_PROGRESSNAME"].ToString(), StringComparer.OrdinalIgnoreCase)
                         .ToDictionary(
@@ -763,7 +814,8 @@ namespace Meiam.System.Interfaces.Service
                                     .FirstOrDefault();
 
                                 // 转换OID为整数（默认0）
-                                if (latestRow != null && int.TryParse(latestRow["OID"].ToString(), out int oid)) {
+                                if (latestRow != null && int.TryParse(latestRow["OID"].ToString(), out int oid))
+                                {
                                     return oid;
                                 }
                                 return 0;
@@ -783,16 +835,19 @@ namespace Meiam.System.Interfaces.Service
 
                     // 2.3 遍历输入项分配OID
                     int currentMaxOid = maxHistoryOid; // 当前最大OID（用于累加）
-                    foreach (var item in input) {
+                    foreach (var item in input)
+                    {
                         item.VER = newVer;
                         item.INSPECT_CNT = firstVerRow["INSPECT_CNT"].ToString();
                         item.INSPECT_PLANID = firstVerRow["INSPECT_PLANID"].ToString();
                         // 检查当前检验项目是否在历史记录中存在
-                        if (lastestOidMap.TryGetValue(item.INSPECT_PROGRESSNAME, out int existOid) && existOid > 0) {
+                        if (lastestOidMap.TryGetValue(item.INSPECT_PROGRESSNAME, out int existOid) && existOid > 0)
+                        {
                             // 规则2：存在则使用最近版本的OID
                             item.OID = existOid.ToString("00");
                         }
-                        else {
+                        else
+                        {
                             // 规则1：不存在则从最大OID累加
                             currentMaxOid++;
                             item.OID = currentMaxOid.ToString("00");
@@ -804,14 +859,17 @@ namespace Meiam.System.Interfaces.Service
                 await SaveInspectProgressList(input);
                 #endregion
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据保存成功",
                     Data = JsonConvert.SerializeObject(input)
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"二次元数据保存失败：{ex.Message}"
                 };
@@ -823,7 +881,8 @@ namespace Meiam.System.Interfaces.Service
         /// </summary>
         /// <param name="input">检验进度实体数组</param>
         /// <returns>是否保存成功</returns>
-        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input) {
+        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input)
+        {
             if (input == null || input.Count == 0)
                 return;
 
@@ -832,7 +891,8 @@ namespace Meiam.System.Interfaces.Service
             int parametersPerItem = 82;
             int maxBatchSize = 2100 / parametersPerItem; // 仍保持分批处理基础逻辑
 
-            for (int i = 0; i < input.Count; i += maxBatchSize) {
+            for (int i = 0; i < input.Count; i += maxBatchSize)
+            {
                 var batchItems = input.Skip(i).Take(maxBatchSize).ToList();
                 if (batchItems.Count == 0)
                     continue;
@@ -842,7 +902,8 @@ namespace Meiam.System.Interfaces.Service
             }
         }
 
-        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems) {
+        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems)
+        {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("INSERT INTO INSPECT_PROGRESS (");
             sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID,INSPECT02CODE, VER, OID, COC_ATTR, ");
@@ -850,7 +911,8 @@ namespace Meiam.System.Interfaces.Service
             sqlBuilder.Append("INSPECT_CNT, STD_VALUE, MAX_VALUE, MIN_VALUE, UP_VALUE, DOWN_VALUE, ");
 
             // 拼接A1-A64样本字段
-            for (int i = 1; i <= 64; i++) {
+            for (int i = 1; i <= 64; i++)
+            {
                 sqlBuilder.Append($"A{i}, ");
             }
 
@@ -861,7 +923,8 @@ namespace Meiam.System.Interfaces.Service
             var parameterCache = new Dictionary<string, string>(); // 缓存值与参数名的映射
             int paramIndex = 0;
 
-            foreach (var item in batchItems) {
+            foreach (var item in batchItems)
+            {
                 sqlBuilder.Append("(");
 
                 // 处理主键ID（通常唯一，难以复用）
@@ -921,7 +984,8 @@ namespace Meiam.System.Interfaces.Service
                     "DOWN_VALUE", item.DOWN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
                 // 处理A1-A64样本字段
-                for (int j = 1; j <= 64; j++) {
+                for (int j = 1; j <= 64; j++)
+                {
                     var propName = $"A{j}";
                     var propValue = item.GetType().GetProperty(propName)?.GetValue(item);
                     var paramKey = $"{propName}_{propValue}";
@@ -944,7 +1008,8 @@ namespace Meiam.System.Interfaces.Service
             }
 
             // 移除最后一个逗号
-            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',') {
+            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',')
+            {
                 sqlBuilder.Length--;
             }
 
@@ -953,12 +1018,14 @@ namespace Meiam.System.Interfaces.Service
 
         // 复用参数的核心方法：相同值使用同一个参数
         private string AddReusableParameter(string fieldName, object value, ref int paramIndex,
-            List<SugarParameter> parameters, Dictionary<string, string> parameterCache) {
+            List<SugarParameter> parameters, Dictionary<string, string> parameterCache)
+        {
             // 创建唯一键：字段名+值（处理null情况）
             var cacheKey = $"{fieldName}_{(value ?? "NULL").ToString()}";
 
             // 如果已有相同值的参数，直接返回已存在的参数名
-            if (parameterCache.TryGetValue(cacheKey, out var existingParamName)) {
+            if (parameterCache.TryGetValue(cacheKey, out var existingParamName))
+            {
                 return existingParamName;
             }
 
@@ -973,21 +1040,25 @@ namespace Meiam.System.Interfaces.Service
         #endregion
 
         #region 报表相关
-        public async Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input) {
-            try {
+        public async Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input)
+        {
+            try
+            {
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
                 string docNo = string.Empty;
                 string docCreateDate = string.Empty;
                 string orgMoa02 = string.Empty;
-                var data1 = await Db.Ado.GetDataTableAsync("select TOP 1 DOC_NO,DOC_CREATEDATE from INSPECT_DOC_INFO where IS_NEW='1' and DOC_TYPE='图纸尺寸文件'" );
-                if (data1 != null && data1.Rows.Count>0) {
+                var data1 = await Db.Ado.GetDataTableAsync("select TOP 1 DOC_NO,DOC_CREATEDATE from INSPECT_DOC_INFO where IS_NEW='1' and DOC_TYPE='图纸尺寸文件'");
+                if (data1 != null && data1.Rows.Count > 0)
+                {
                     docNo = data1.Rows[0]["DOC_NO"].ToString();
                     docCreateDate = data1.Rows[0]["DOC_CREATEDATE"].ToString();
                 }
                 var data2 = await Db.Ado.GetDataTableAsync("select TOP 1 ORGM0A02 from ORGM001 where ORGM0A01='001'");
-                if (data2 != null && data2.Rows.Count > 0) {
+                if (data2 != null && data2.Rows.Count > 0)
+                {
                     orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
                 }
                 var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
@@ -1006,7 +1077,8 @@ namespace Meiam.System.Interfaces.Service
                 string OQC_STATE = string.Empty;
                 string Inspector = string.Empty;
                 string InspectorDate = string.Empty;
-                if (dataMain != null && dataMain.Rows.Count > 0) {
+                if (dataMain != null && dataMain.Rows.Count > 0)
+                {
                     ITEMID = dataMain.Rows[0]["ITEMID"].ToString();
                     ITEMNAME = dataMain.Rows[0]["ITEMNAME"].ToString();
                     LOTNO = dataMain.Rows[0]["LOTNO"].ToString();
@@ -1037,9 +1109,11 @@ namespace Meiam.System.Interfaces.Service
                 // 将原始数据转换为对象列表
                 var dataList = new List<InspectData>();
 
-                foreach (DataRow row in originalData.Rows) {
+                foreach (DataRow row in originalData.Rows)
+                {
                     Inspector = row["INSPECTOR"].ToString();
-                    var data = new InspectData {
+                    var data = new InspectData
+                    {
                         ProgressName = row["PROGRESSNAME1"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
                         InspectrResult = row["INSPECT_RESULT"]?.ToString(),
@@ -1049,10 +1123,12 @@ namespace Meiam.System.Interfaces.Service
                     };
 
                     // 收集A1-A64的值（跳过空值）
-                    for (int i = 1; i <= 64; i++) {
+                    for (int i = 1; i <= 64; i++)
+                    {
                         string fieldName = $"A{i}";
                         object value = row[fieldName];
-                        if (value != null && !string.IsNullOrEmpty(value.ToString())) {
+                        if (value != null && !string.IsNullOrEmpty(value.ToString()))
+                        {
                             data.Values.Add(value);
                         }
                     }
@@ -1065,33 +1141,37 @@ namespace Meiam.System.Interfaces.Service
                 var groupedData = GroupData(dataList, pageColCount, pageRowCount);
 
                 // 构建最终的JSON结构
-                var result = new {
+                var result = new
+                {
                     PageRowCount = pageRowCount,
                     FormCode = docNo,
-                    RecordNo= input.DOC_CODE,
+                    RecordNo = input.DOC_CODE,
                     MaterialCode = ITEMID,
                     MaterialName = ITEMNAME,
-                    BatchNo= LOTNO,
-                    Qty= LOT_QTY,
-                    EffectiveDate= docCreateDate,
+                    BatchNo = LOTNO,
+                    Qty = LOT_QTY,
+                    EffectiveDate = docCreateDate,
                     InspectionResult = OQC_STATE,
-                    Remark= "",
-                    Inspector= Inspector,
-                    InspectorDate= InspectorDate,
-                    Reviewer="",
-                    ReviewerDate= "",
+                    Remark = "",
+                    Inspector = Inspector,
+                    InspectorDate = InspectorDate,
+                    Reviewer = "",
+                    ReviewerDate = "",
                     DataValues = groupedData
                 };
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1109,11 +1189,11 @@ namespace Meiam.System.Interfaces.Service
             int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
             if (maxLength < 3) maxLength = 3; // 确保至少有3个基础元素
 
+            int columnIndex = 1;
             // 按页分组处理数据
             for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount)
             {
                 var group = new Dictionary<string, List<object>>();
-                int columnIndex = 1;
 
                 // 创建 Column0 - 序号列
                 var column0 = new List<object>();
@@ -1169,7 +1249,7 @@ namespace Meiam.System.Interfaces.Service
                         }
                     }
 
-                    group.Add($"Column{columnIndex}", columnData);
+                    group.Add($"Column{columnIndex - pageIndex}", columnData);
                     columnIndex++;
                 }
 
@@ -1179,7 +1259,6 @@ namespace Meiam.System.Interfaces.Service
                 {
                     columnA.Add("OK"); // 默认结果
                 }
-                group.Add("ColumnA", columnA);
 
                 // 填充空列以达到页面列数要求
                 while ((columnIndex - 1) % pageColCount != 0)
@@ -1190,9 +1269,10 @@ namespace Meiam.System.Interfaces.Service
                     {
                         emptyColumn.Add(""); // 空值
                     }
-                    group.Add($"Column{columnIndex}", emptyColumn);
+                    group.Add($"Column{columnIndex - pageIndex}", emptyColumn);
                     columnIndex++;
                 }
+                group.Add("ColumnA", columnA);
 
                 // 按行数拆分大组
                 int totalRows = group.Values.Max(list => list?.Count ?? 0);
@@ -1253,7 +1333,8 @@ namespace Meiam.System.Interfaces.Service
         }
 
         // 数据模型类
-        public class InspectData {
+        public class InspectData
+        {
             public string ProgressName { get; set; }
             public string InspectCode { get; set; }
             public string InspectrResult { get; set; }
