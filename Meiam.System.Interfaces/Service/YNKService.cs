@@ -1014,8 +1014,10 @@ namespace Meiam.System.Interfaces.Service
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                 }
-                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT 
-    INSPECT_PROGRESSNAME,
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT CASE 
+        WHEN STD_VALUE IS NULL OR STD_VALUE='' THEN 'N/A'
+        ELSE STD_VALUE + '+' + MAX_VALUE + '/-' + replace(MIN_VALUE,'-','')
+    END AS  PROGRESSNAME1,
     CASE 
         WHEN INSPECT02CODE IS NULL OR LTRIM(RTRIM(INSPECT02CODE)) = '' 
         THEN SYSM002.SYSM002NAME
@@ -1038,7 +1040,7 @@ namespace Meiam.System.Interfaces.Service
                 foreach (DataRow row in originalData.Rows) {
                     Inspector = row["INSPECTOR"].ToString();
                     var data = new InspectData {
-                        ProgressName = row["INSPECT_PROGRESSNAME"]?.ToString(),
+                        ProgressName = row["PROGRESSNAME1"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
                         InspectrResult = row["INSPECT_RESULT"]?.ToString(),
                         InspectrType = row["COUNTTYPE"]?.ToString(),
