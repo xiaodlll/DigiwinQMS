@@ -1348,5 +1348,100 @@ namespace Meiam.System.Interfaces.Service
             public List<object> Values { get; set; }
         }
         #endregion
+
+        #region 看板相关
+        /// <summary>
+        /// 人员检验批数
+        /// </summary>
+        public async Task<ApiResponse> GetPersonnelBatchesDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
+                // 构建最终的JSON结构
+                var result = new
+                {
+
+                };
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 人员检验效率
+        /// </summary>
+        public async Task<ApiResponse> GetPersonnelEfficiencyDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
+                // 构建最终的JSON结构
+                var result = new
+                {
+
+                };
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 人员总检验时长
+        /// </summary>
+        public async Task<ApiResponse> GetPersonnelDurationDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
+                // 构建最终的JSON结构
+                var result = new
+                {
+
+                };
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+        #endregion
     }
 }

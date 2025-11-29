@@ -1,0 +1,656 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>效率看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+
+        .title {
+            display: flex;
+            font-size: 24px;
+            font-weight: bold;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .chart-container {
+            width: calc(50% - 10px);
+            height: 600px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 6px 12px;
+            background: #f0f2f5;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+            .btn:hover {
+                background: #e1e5eb;
+            }
+
+            .btn.active {
+                background: #409eff;
+                color: white;
+            }
+
+        .date-range-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .date-input {
+            padding: 6px 10px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 130px;
+        }
+
+        .material-selector {
+            position: relative;
+        }
+
+        .material-btn {
+            padding: 6px 12px;
+            background: #f0f2f5;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .material-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 10px;
+            z-index: 100;
+            width: 200px;
+            display: none;
+        }
+
+        .material-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+            .material-option input {
+                margin-right: 8px;
+            }
+
+        .chart-content {
+            flex: 1;
+            width: 100%;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        效率看板
+    </div>
+
+    <div class="container">
+        <!-- 人员检验批数 -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">人员检验批数</div>
+                <div class="chart-controls">
+                    <div class="btn-group">
+                        <button class="btn active" data-type="month" data-chart="batches">月</button>
+                        <button class="btn" data-type="custom" data-chart="batches">自定义</button>
+                    </div>
+                </div>
+            </div>
+            <div class="date-range-picker hidden" id="batches-date-picker">
+                <input type="text" class="date-input" id="batches-start-date" placeholder="开始日期">
+                <span>至</span>
+                <input type="text" class="date-input" id="batches-end-date" placeholder="结束日期">
+                <button class="btn" id="batches-apply">应用</button>
+            </div>
+            <div id="batches" class="chart-content">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 人员检验效率 -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">人员检验效率</div>
+                <div class="chart-controls">
+                    <div class="material-selector">
+                        <button class="material-btn">
+                            物料种类 ▼
+                        </button>
+                        <div class="material-dropdown">
+                            <div class="material-option">
+                                <input type="checkbox" id="material-plastic" value="塑胶件" checked>
+                                <label for="material-plastic">塑胶件</label>
+                            </div>
+                            <div class="material-option">
+                                <input type="checkbox" id="material-metal" value="金属件" checked>
+                                <label for="material-metal">金属件</label>
+                            </div>
+                            <div class="material-option">
+                                <input type="checkbox" id="material-electronic" value="电子件" checked>
+                                <label for="material-electronic">电子件</label>
+                            </div>
+                            <div class="material-option">
+                                <input type="checkbox" id="material-accessory" value="辅料" checked>
+                                <label for="material-accessory">辅料</label>
+                            </div>
+                            <div class="material-option">
+                                <input type="checkbox" id="material-packaging" value="包材" checked>
+                                <label for="material-packaging">包材</label>
+                            </div>
+                            <div class="material-option">
+                                <input type="checkbox" id="material-standard" value="成品外购标准件" checked>
+                                <label for="material-standard">成品外购标准件</label>
+                            </div>
+                            <button class="btn" id="material-apply" style="width: 100%; margin-top: 10px;">确定</button>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn active" data-type="month" data-chart="efficiency">月</button>
+                        <button class="btn" data-type="year" data-chart="efficiency">年</button>
+                        <button class="btn" data-type="custom" data-chart="efficiency">自定义</button>
+                    </div>
+                </div>
+            </div>
+            <div class="date-range-picker hidden" id="efficiency-date-picker">
+                <input type="text" class="date-input" id="efficiency-start-date" placeholder="开始日期">
+                <span>至</span>
+                <input type="text" class="date-input" id="efficiency-end-date" placeholder="结束日期">
+                <button class="btn" id="efficiency-apply">应用</button>
+            </div>
+            <div id="efficiency" class="chart-content">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 人员总检验时长 -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">人员总检验时长</div>
+                <div class="chart-controls">
+                    <div class="btn-group">
+                        <button class="btn active" data-type="month" data-chart="duration">月</button>
+                        <button class="btn" data-type="custom" data-chart="duration">自定义</button>
+                    </div>
+                </div>
+            </div>
+            <div class="date-range-picker hidden" id="duration-date-picker">
+                <input type="text" class="date-input" id="duration-start-date" placeholder="开始日期">
+                <span>至</span>
+                <input type="text" class="date-input" id="duration-end-date" placeholder="结束日期">
+                <button class="btn" id="duration-apply">应用</button>
+            </div>
+            <div id="duration" class="chart-content">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // 初始化图表
+        var batchesChart = echarts.init(document.getElementById('batches'));
+        var effChart = echarts.init(document.getElementById('efficiency'));
+        var duraChart = echarts.init(document.getElementById('duration'));
+
+        // 当前视图状态
+        const viewState = {
+            batches: {
+                type: 'month', // month, custom
+                startDate: null,
+                endDate: null
+            },
+            efficiency: {
+                type: 'month', // month, year, custom
+                startDate: null,
+                endDate: null,
+                materials: ['塑胶件', '金属件', '电子件', '辅料', '包材', '成品外购标准件']
+            },
+            duration: {
+                type: 'month', // month, year, custom
+                startDate: null,
+                endDate: null
+            }
+        };
+
+        // 初始化日期选择器
+        flatpickr("#batches-start-date", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                viewState.batches.startDate = dateStr;
+            }
+        });
+
+        flatpickr("#batches-end-date", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                viewState.batches.endDate = dateStr;
+            }
+        });
+
+        flatpickr("#efficiency-start-date", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                viewState.efficiency.startDate = dateStr;
+            }
+        });
+
+        flatpickr("#efficiency-end-date", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                viewState.efficiency.endDate = dateStr;
+            }
+        });
+
+        flatpickr("#duration-start-date", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                viewState.duration.startDate = dateStr;
+            }
+        });
+
+        flatpickr("#duration-end-date", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                viewState.duration.endDate = dateStr;
+            }
+        });
+
+        // 设置默认日期范围为最近30天
+        function setDefaultDateRange() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+
+            const formatDate = (date) => date.toISOString().split('T')[0];
+
+            // 设置批次图表的日期
+            document.getElementById('batches-start-date').value = formatDate(startDate);
+            document.getElementById('batches-end-date').value = formatDate(endDate);
+            viewState.batches.startDate = formatDate(startDate);
+            viewState.batches.endDate = formatDate(endDate);
+
+            // 设置效率图表的日期
+            document.getElementById('efficiency-start-date').value = formatDate(startDate);
+            document.getElementById('efficiency-end-date').value = formatDate(endDate);
+            viewState.efficiency.startDate = formatDate(startDate);
+            viewState.efficiency.endDate = formatDate(endDate);
+
+            // 设置效率图表的日期
+            document.getElementById('duration-start-date').value = formatDate(startDate);
+            document.getElementById('duration-end-date').value = formatDate(endDate);
+            viewState.duration.startDate = formatDate(startDate);
+            viewState.duration.endDate = formatDate(endDate);
+        }
+
+        // 物料选择器交互
+        document.querySelector('.material-btn').addEventListener('click', function() {
+            const dropdown = document.querySelector('.material-dropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.getElementById('material-apply').addEventListener('click', function() {
+            const selectedMaterials = [];
+            document.querySelectorAll('.material-option input:checked').forEach(checkbox => {
+                selectedMaterials.push(checkbox.value);
+            });
+            viewState.efficiency.materials = selectedMaterials;
+            document.querySelector('.material-dropdown').style.display = 'none';
+            updateEfficiencyChart();
+        });
+
+        // 视图类型切换
+        document.querySelectorAll('.btn[data-type]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const chartType = this.getAttribute('data-chart');
+                const viewType = this.getAttribute('data-type');
+
+                // 更新按钮状态
+                document.querySelectorAll(`.btn[data-chart="${chartType}"]`).forEach(b => {
+                    b.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                // 更新视图状态
+                viewState[chartType].type = viewType;
+
+                // 显示/隐藏日期选择器
+                if (viewType === 'custom') {
+                    document.getElementById(`${chartType}-date-picker`).classList.remove('hidden');
+                } else {
+                    document.getElementById(`${chartType}-date-picker`).classList.add('hidden');
+                }
+
+                // 更新图表
+                if (chartType === 'batches') {
+                    updateBatchesChart();
+                } else if (chartType === 'efficiency') {
+                    updateEfficiencyChart();
+                } else if (chartType === 'duration') {
+                    updateDurationChart();
+                }
+            });
+        });
+
+        // 应用日期范围
+        document.getElementById('batches-apply').addEventListener('click', updateBatchesChart);
+        document.getElementById('efficiency-apply').addEventListener('click', updateEfficiencyChart);
+        document.getElementById('duration-apply').addEventListener('click', updateDurationChart);
+
+        // 获取数据的函数
+        async function fetchData(url, params) {
+            try {
+                const queryString = new URLSearchParams(params).toString();
+                const response = await fetch(`${url}?${queryString}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('获取数据失败:', error);
+                return null;
+            }
+        }
+
+        // 更新批次图表
+        async function updateBatchesChart() {
+            const params = {
+                type: viewState.batches.type,
+                startDate: viewState.batches.startDate,
+                endDate: viewState.batches.endDate
+            };
+
+            const batchesData = await fetchData('/api/erp/GetPersonnelBatchesData', params);
+            if (batchesData) {
+                const batchesOption = {
+                    title: {
+                        text: '人员检验批数',
+                        left: 'center'
+                    },
+                    grid: {
+                        left: 50,
+                        right: 100,
+                        top: 60,
+                        bottom: 50
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross',
+                            crossStyle: {
+                                color: '#999'
+                            }
+                        }
+                    },
+                    legend: {
+                        type: 'scroll',
+                        orient: 'vertical',
+                        right: 10,
+                        top: 20,
+                        bottom: 20,
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: viewState.batches.type === 'month' ? '日期' : '月份',
+                        data: batchesData.categories || ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '批次数',
+                        min: 0
+                    },
+                    series: batchesData.series || [
+                        {
+                            name: '郭东良',
+                            type: 'bar',
+                            data: [33, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 330],
+                            label: { show: true, position: "top" }
+                        },
+                        {
+                            name: '李小龙',
+                            type: 'bar',
+                            data: [10, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 310],
+                            label: { show: true, position: "top" }
+                        }
+                    ]
+                };
+                batchesChart.setOption(batchesOption, true);
+                document.querySelector('#batches .loading').classList.add('hidden');
+            }
+        }
+
+        // 更新效率图表
+        async function updateEfficiencyChart() {
+            const params = {
+                type: viewState.efficiency.type,
+                startDate: viewState.efficiency.startDate,
+                endDate: viewState.efficiency.endDate,
+                materials: viewState.efficiency.materials.join(',')
+            };
+
+            const efficiencyData = await fetchData('/api/erp/GetPersonnelEfficiencyData', params);
+            if (efficiencyData) {
+                const effOption = {
+                    title: {
+                        text: '人员检验效率',
+                        left: 'center'
+                    },
+                    grid: {
+                        left: 50,
+                        right: 100,
+                        top: 60,
+                        bottom: 50
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross',
+                            crossStyle: {
+                                color: '#999'
+                            }
+                        }
+                    },
+                    legend: {
+                        type: 'scroll',
+                        orient: 'vertical',
+                        right: 10,
+                        top: 20,
+                        bottom: 20,
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: viewState.efficiency.type === 'month' ? '日期' :
+                              viewState.efficiency.type === 'year' ? '月份' : '日期',
+                        data: efficiencyData.categories || ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '效率',
+                        min: 0
+                    },
+                    series: efficiencyData.series || [
+                        {
+                            name: '郭东良',
+                            type: 'bar',
+                            data: [1, 5, 20, 33, 39, 33, 22, 18, 19, 23, 29, 33],
+                            label: { show: true, position: "top" }
+                        },
+                        {
+                            name: '李小龙',
+                            type: 'bar',
+                            data: [3, 5, 20, 33, 39, 33, 22, 18, 19, 23, 29, 31],
+                            label: { show: true, position: "top" }
+                        }
+                    ]
+                };
+                effChart.setOption(effOption, true);
+                document.querySelector('#efficiency .loading').classList.add('hidden');
+            }
+        }
+
+        // 更新时长图表
+        async function updateDurationChart() {
+            const params = {
+                type: viewState.batches.type,
+                startDate: viewState.batches.startDate,
+                endDate: viewState.batches.endDate
+            };
+            const durationData = await fetchData('/api/erp/GetPersonnelDurationData', params);
+            if (durationData) {
+                const duraOption = {
+                    title: {
+                        text: '人员总校验时长',
+                        left: 'center'
+                    },
+                    grid: {
+                        left: 50,
+                        right: 100,
+                        top: 60,
+                        bottom: 50
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross',
+                            crossStyle: {
+                                color: '#999'
+                            }
+                        }
+                    },
+                    legend: {
+                        type: 'scroll',
+                        orient: 'vertical',
+                        right: 10,
+                        top: 20,
+                        bottom: 20,
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: '月份',
+                        data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '校验时长',
+                        min: 0
+                    },
+                    series: durationData.series || [
+                        {
+                            name: '郭东良',
+                            type: 'bar',
+                            data: [83, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 330]
+                        },
+                        {
+                            name: '李小龙',
+                            type: 'bar',
+                            data: [44, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 310]
+                        }
+                    ]
+                };
+                duraChart.setOption(duraOption, true);
+                document.querySelector('#duration .loading').classList.add('hidden');
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setDefaultDateRange();
+            updateBatchesChart();
+            updateEfficiencyChart();
+            updateDurationChart();
+        });
+
+        // 窗口大小变化时重新调整图表大小
+        window.addEventListener('resize', function() {
+            batchesChart.resize();
+            effChart.resize();
+            duraChart.resize();
+        });
+    </script>
+</body>
+</html>

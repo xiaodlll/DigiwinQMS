@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Meiam.System.Model.Dto {
-    public class InspectAoi {
+namespace Meiam.System.Model.Dto
+{
+    public class InspectAoi
+    {
         public string DOC_CODE { get; set; }
         public string INSPECT_PROGRESSID { get; set; }
         public string INSPECT_AOIID { get; set; }
@@ -42,9 +44,18 @@ namespace Meiam.System.Model.Dto {
         public string ConfirmedResultCode { get; set; }
     }
 
-    public class InspectImageAoi {
+    public class InspectImageAoi
+    {
         public string DOC_CODE { get; set; }
         public string ImageName { get; set; }
         public string ImageData { get; set; }
+    }
+
+    public class INSPECT_PERSONNELDATA
+    {
+        public string SumType { get; set; }
+        public string StartDate { get; set; }
+        public string EndDate { get; set; }
+        public string MeterialNames { get; set; }
     }
 }

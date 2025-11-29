@@ -214,7 +214,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                         // 封装成金蝶ERP需要的格式
                         var erpRequestData = new
                         {
-                            formid = "PUR_ReceiveBill", 
+                            formid = "PUR_ReceiveBill",
                             data = new
                             {
                                 NeedUpDateFields = new[] { "FDetailEntity", "FReceiveQty", "FRefuseQty", "FCheckQty" },
@@ -260,14 +260,17 @@ namespace Meiam.System.Hostd.Controllers.Business
                         {
                             string requestJsonAudit = string.Empty;
                             List<string> numbers = new List<string>();
-                            foreach (var entry in entries) {
+                            foreach (var entry in entries)
+                            {
                                 numbers.Add(entry.ERP_ARRIVEDID);
                             }
                             string erpApiAuditUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
                             _logger.LogInformation(@$"请求金蝶ERP审核接口: FID: {fid}, 包含 {entries.Count} 个明细行");
-                            var erpRequestAuditData = new {
+                            var erpRequestAuditData = new
+                            {
                                 formid = "PUR_ReceiveBill",
-                                data = new {
+                                data = new
+                                {
                                     Numbers = numbers
                                 }
                             };
@@ -327,18 +330,22 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("AttachUploadResultYNK")]
-        public async Task<IActionResult> AttachUploadResultYNKSync() {
+        public async Task<IActionResult> AttachUploadResultYNKSync()
+        {
             List<AttachmentResultRequestYNK> requests = _ynkService.GetAttachmentResultRequest();
 
             string erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AttachUploadUrl"];
 
-            try {
+            try
+            {
                 // 1. 首先获取KDSVCSessionId
                 var loginResult = await _ynkService.LoginAsync();
 
-                if (!loginResult.IsSuccess || string.IsNullOrEmpty(loginResult.KDSVCSessionId)) {
+                if (!loginResult.IsSuccess || string.IsNullOrEmpty(loginResult.KDSVCSessionId))
+                {
                     _logger.LogError($"获取KDSVCSessionId失败: {loginResult.ErrorMessage}");
-                    return BadRequest(new ApiResponse {
+                    return BadRequest(new ApiResponse
+                    {
                         Success = false,
                         Message = $"登录ERP系统失败: {loginResult.ErrorMessage}"
                     });
@@ -350,15 +357,19 @@ namespace Meiam.System.Hostd.Controllers.Business
                 int successCount = 0;
                 int failCount = 0;
 
-                foreach (var item in requests) {
-                    try {
+                foreach (var item in requests)
+                {
+                    try
+                    {
                         string sendByte = string.Empty;
                         //判断如果fileContent>4M则分批发送
                         List<string> base64List = SplitFileToBase64List(item.SendBytes);
 
-                        if (base64List.Count == 1) {//无需分批发送
+                        if (base64List.Count == 1)
+                        {//无需分批发送
                             // 封装成金蝶ERP需要的格式
-                            var erpRequestData = new {
+                            var erpRequestData = new
+                            {
                                 FormId = "PUR_ReceiveBill",
                                 FileName = item.FileName,
                                 IsLast = true,
@@ -383,23 +394,28 @@ namespace Meiam.System.Hostd.Controllers.Business
                             _logger.LogInformation(@$"金蝶ERP接口响应 - FileName: {item.FileName}, 结果: {postResult}");
 
                             // 解析响应结果
-                            if (postResult.Contains("false")) {
+                            if (postResult.Contains("false"))
+                            {
                                 failCount++;
                                 _logger.LogError($"单据 {item.BillNO}-{item.FileName} 回传失败: {postResult}");
                             }
-                            else {
+                            else
+                            {
                                 _ynkService.CallBackAttachmentResult(item);
                                 successCount++;
                                 _logger.LogInformation($"单据 {item.BillNO}-{item.FileName} 回传成功");
                             }
                         }
-                        else {//分批发送
+                        else
+                        {//分批发送
                             string fileId = string.Empty;
                             bool result = true;
-                            for (int i = 0; i < base64List.Count; i++) {
+                            for (int i = 0; i < base64List.Count; i++)
+                            {
                                 bool isLast = (i == base64List.Count - 1);
                                 // 封装成金蝶ERP需要的格式
-                                var erpRequestData = new {
+                                var erpRequestData = new
+                                {
                                     FormId = "PUR_ReceiveBill",
                                     FileName = item.FileName,
                                     IsLast = isLast,
@@ -425,30 +441,36 @@ namespace Meiam.System.Hostd.Controllers.Business
                                 _logger.LogInformation(@$"金蝶ERP接口响应 - FileName: {item.FileName}, 结果: {postResult}");
 
                                 // 解析响应结果
-                                if (postResult.Contains("false")) {
+                                if (postResult.Contains("false"))
+                                {
                                     _logger.LogError($"单据 {item.BillNO}-{item.FileName}-{i} 回传失败: {postResult}");
                                     result = false;
                                     break;
                                 }
-                                else {
-                                    if(i == 0) {//解析结果
+                                else
+                                {
+                                    if (i == 0)
+                                    {//解析结果
                                         fileId = string.Empty;
                                     }
                                 }
                             }
 
                             // 解析响应结果
-                            if (!result) {
+                            if (!result)
+                            {
                                 failCount++;
                             }
-                            else {
+                            else
+                            {
                                 _ynkService.CallBackAttachmentResult(item);
                                 successCount++;
                                 _logger.LogInformation($"单据 {item.BillNO}-{item.FileName} 回传成功");
                             }
                         }
                     }
-                    catch (Exception ex) {
+                    catch (Exception ex)
+                    {
                         failCount++;
                         _logger.LogError(ex, $"处理单据 {item.BillNO}-{item.FileName} 时发生异常:" + ex.ToString());
                         // 继续处理其他单据
@@ -456,15 +478,18 @@ namespace Meiam.System.Hostd.Controllers.Business
                     }
                 }
 
-                return Ok(new ApiResponse {
+                return Ok(new ApiResponse
+                {
                     Success = true,
                     Message = $"处理完成！成功: {successCount} 个单据, 失败: {failCount} 个单据, 总计: {requests.Count} 个单据"
                 });
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, "调用 ERP 接口异常");
 
-                return StatusCode(500, new ApiResponse {
+                return StatusCode(500, new ApiResponse
+                {
                     Success = false,
                     Message = $"系统异常：{erpApiUrl} : {ex.Message}"
                 });
@@ -476,18 +501,21 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <param name="fileContent">原始文件字节数组</param>
         /// <returns>分割后的Base64字符串列表</returns>
-        private List<string> SplitFileToBase64List(byte[] fileContent) {
+        private List<string> SplitFileToBase64List(byte[] fileContent)
+        {
             int ChunkSize = 4 * 1024 * 1024; // 4194304 字节
             // 初始化结果列表
             List<string> base64List = new List<string>();
 
             // 处理空值（避免空引用异常）
-            if (fileContent == null || fileContent.Length == 0) {
+            if (fileContent == null || fileContent.Length == 0)
+            {
                 return base64List;
             }
 
             // 情况1：文件小于等于4M，直接转Base64添加到列表
-            if (fileContent.Length <= ChunkSize) {
+            if (fileContent.Length <= ChunkSize)
+            {
                 string base64Str = Convert.ToBase64String(fileContent);
                 base64List.Add(base64Str);
                 return base64List;
@@ -498,7 +526,8 @@ namespace Meiam.System.Hostd.Controllers.Business
             int currentIndex = 0; // 当前分割起始位置
 
             // 循环分割，直到处理完所有字节
-            while (currentIndex < totalLength) {
+            while (currentIndex < totalLength)
+            {
                 // 计算当前块的实际长度（最后一块可能不足4M）
                 int currentChunkLength = Math.Min(ChunkSize, totalLength - currentIndex);
 
@@ -530,11 +559,14 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetAOIInspectInfoByDocCode")]
-        public async Task<IActionResult> GetAOIInspectInfoByDocCode([FromBody] INSPECT_REQCODE input) {
-            if (!ModelState.IsValid) {
+        public async Task<IActionResult> GetAOIInspectInfoByDocCode([FromBody] INSPECT_REQCODE input)
+        {
+            if (!ModelState.IsValid)
+            {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
 
-                return BadRequest(new ApiResponse {
+                return BadRequest(new ApiResponse
+                {
                     Success = false,
                     Message = $"参数验证失败，原因：{ModelState}"
                 });
@@ -542,7 +574,8 @@ namespace Meiam.System.Hostd.Controllers.Business
 
             var result = await _ynkService.GetAOIInspectInfoByDocCodeAsync(input);
 
-            if (result.Success) {
+            if (result.Success)
+            {
                 return Ok(result);
             }
             return BadRequest(result);
@@ -554,11 +587,14 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetAOIProgressDataByDocCode")]
-        public async Task<IActionResult> GetAOIProgressDataByDocCode([FromBody] INSPECT_REQCODE input) {
-            if (!ModelState.IsValid) {
+        public async Task<IActionResult> GetAOIProgressDataByDocCode([FromBody] INSPECT_REQCODE input)
+        {
+            if (!ModelState.IsValid)
+            {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
 
-                return BadRequest(new ApiResponse {
+                return BadRequest(new ApiResponse
+                {
                     Success = false,
                     Message = $"参数验证失败，原因：{ModelState}"
                 });
@@ -566,7 +602,8 @@ namespace Meiam.System.Hostd.Controllers.Business
 
             var result = await _ynkService.GetAOIProgressDataByDocCodeAsync(input);
 
-            if (result.Success) {
+            if (result.Success)
+            {
                 return Ok(result);
             }
             return BadRequest(result);
@@ -577,11 +614,14 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("UploadAOIData")]
-        public async Task<IActionResult> UploadAOIData([FromBody] List<InspectAoi> input) {
-            if (!ModelState.IsValid) {
+        public async Task<IActionResult> UploadAOIData([FromBody] List<InspectAoi> input)
+        {
+            if (!ModelState.IsValid)
+            {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
 
-                return BadRequest(new ApiResponse {
+                return BadRequest(new ApiResponse
+                {
                     Success = false,
                     Message = $"参数验证失败，原因：{ModelState}"
                 });
@@ -589,7 +629,8 @@ namespace Meiam.System.Hostd.Controllers.Business
 
             var result = await _ynkService.ProcessUploadAOIDataAsync(input);
 
-            if (result.Success) {
+            if (result.Success)
+            {
                 return Ok(result);
             }
             return BadRequest(result);
@@ -600,11 +641,14 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("UploadAOIImageData")]
-        public async Task<IActionResult> UploadAOIImageData([FromBody] List<InspectImageAoi> input) {
-            if (!ModelState.IsValid) {
+        public async Task<IActionResult> UploadAOIImageData([FromBody] List<InspectImageAoi> input)
+        {
+            if (!ModelState.IsValid)
+            {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
 
-                return BadRequest(new ApiResponse {
+                return BadRequest(new ApiResponse
+                {
                     Success = false,
                     Message = $"参数验证失败，原因：{ModelState}"
                 });
@@ -612,7 +656,8 @@ namespace Meiam.System.Hostd.Controllers.Business
 
             var result = await _ynkService.ProcessUploadAOIImageDataAsync(input);
 
-            if (result.Success) {
+            if (result.Success)
+            {
                 return Ok(result);
             }
             return BadRequest(result);
@@ -623,11 +668,14 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("UploadYNKInpectProcessData")]
-        public async Task<IActionResult> UploadYNKInpectProcessData([FromBody] List<INSPECT_PROGRESSDto> input) {
-            if (!ModelState.IsValid) {
+        public async Task<IActionResult> UploadYNKInpectProcessData([FromBody] List<INSPECT_PROGRESSDto> input)
+        {
+            if (!ModelState.IsValid)
+            {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
 
-                return BadRequest(new ApiResponse {
+                return BadRequest(new ApiResponse
+                {
                     Success = false,
                     Message = $"参数验证失败，原因：{ModelState}"
                 });
@@ -635,7 +683,8 @@ namespace Meiam.System.Hostd.Controllers.Business
 
             var result = await _ynkService.ProcessYNKInpectProcessDataAsync(input);
 
-            if (result.Success) {
+            if (result.Success)
+            {
                 return Ok(result);
             }
             return BadRequest(result);
@@ -648,11 +697,14 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetInspectionRecordReportData")]
-        public async Task<IActionResult> GetInspectionRecordReportData([FromBody] INSPECT_REQCODE input) {
-            if (!ModelState.IsValid) {
+        public async Task<IActionResult> GetInspectionRecordReportData([FromBody] INSPECT_REQCODE input)
+        {
+            if (!ModelState.IsValid)
+            {
                 _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
 
-                return BadRequest(new ApiResponse {
+                return BadRequest(new ApiResponse
+                {
                     Success = false,
                     Message = $"参数验证失败，原因：{ModelState}"
                 });
@@ -660,7 +712,91 @@ namespace Meiam.System.Hostd.Controllers.Business
 
             var result = await _ynkService.GetInspectionRecordReportDataAsync(input);
 
-            if (result.Success) {
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        #endregion
+
+        #region 看板相关
+        /// <summary>
+        /// 人员检验批数
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetPersonnelBatchesData")]
+        public async Task<IActionResult> GetPersonnelBatchesData([FromBody] INSPECT_PERSONNELDATA input)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetPersonnelBatchesDataAsync(input);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        /// <summary>
+        /// 人员检验效率
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetPersonnelEfficiencyData")]
+        public async Task<IActionResult> GetPersonnelEfficiencyData([FromBody] INSPECT_PERSONNELDATA input)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetPersonnelEfficiencyDataAsync(input);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        /// <summary>
+        /// 人员总检验时长
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetPersonnelDurationData")]
+        public async Task<IActionResult> GetPersonnelDurationData([FromBody] INSPECT_PERSONNELDATA input)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetPersonnelDurationDataAsync(input);
+
+            if (result.Success)
+            {
                 return Ok(result);
             }
             return BadRequest(result);

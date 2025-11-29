@@ -33,5 +33,8 @@ namespace Meiam.System.Interfaces.IService
         List<AttachmentResultRequestYNK> GetAttachmentResultRequest();
         void CallBackAttachmentResult(AttachmentResultRequestYNK item);
         Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input);
+        Task<ApiResponse> GetPersonnelBatchesDataAsync(INSPECT_PERSONNELDATA input);
+        Task<ApiResponse> GetPersonnelEfficiencyDataAsync(INSPECT_PERSONNELDATA input);
+        Task<ApiResponse> GetPersonnelDurationDataAsync(INSPECT_PERSONNELDATA input);
     }
 }

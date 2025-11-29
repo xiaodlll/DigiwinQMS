@@ -331,6 +331,24 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetPersonnelBatchesData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            人员检验批数
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetPersonnelEfficiencyData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            人员检验效率
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetPersonnelDurationData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            人员总检验时长
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
