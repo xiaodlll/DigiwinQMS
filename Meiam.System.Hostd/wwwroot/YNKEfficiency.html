@@ -404,35 +404,98 @@
                     document.getElementById(`${chartType}-date-picker`).classList.remove('hidden');
                 } else {
                     document.getElementById(`${chartType}-date-picker`).classList.add('hidden');
-                }
-
-                // 更新图表
-                if (chartType === 'batches') {
-                    updateBatchesChart();
-                } else if (chartType === 'efficiency') {
-                    updateEfficiencyChart();
-                } else if (chartType === 'duration') {
-                    updateDurationChart();
+                    // 更新图表
+                    if (chartType === 'batches') {
+                        updateBatchesChart();
+                    } else if (chartType === 'efficiency') {
+                        updateEfficiencyChart();
+                    } else if (chartType === 'duration') {
+                        updateDurationChart();
+                    }
                 }
             });
         });
 
         // 应用日期范围
-        document.getElementById('batches-apply').addEventListener('click', updateBatchesChart);
-        document.getElementById('efficiency-apply').addEventListener('click', updateEfficiencyChart);
-        document.getElementById('duration-apply').addEventListener('click', updateDurationChart);
+        document.getElementById('batches-apply').addEventListener('click', function() {
+            // 验证日期是否已选择
+            if (!viewState.batches.startDate || !viewState.batches.endDate) {
+                alert('请选择开始日期和结束日期');
+                return;
+            }
+            // 隐藏日期选择器
+            document.getElementById('batches-date-picker').classList.add('hidden');
+            updateBatchesChart();
+        });
 
+        document.getElementById('efficiency-apply').addEventListener('click', function() {
+            // 验证日期是否已选择
+            if (!viewState.efficiency.startDate || !viewState.efficiency.endDate) {
+                alert('请选择开始日期和结束日期');
+                return;
+            }
+            // 隐藏日期选择器
+            document.getElementById('efficiency-date-picker').classList.add('hidden');
+            updateEfficiencyChart();
+        });
+
+        document.getElementById('duration-apply').addEventListener('click', function() {
+            // 验证日期是否已选择
+            if (!viewState.duration.startDate || !viewState.duration.endDate) {
+                alert('请选择开始日期和结束日期');
+                return;
+            }
+            // 隐藏日期选择器
+            document.getElementById('duration-date-picker').classList.add('hidden');
+            updateDurationChart();
+        });
+        // 隐藏日期选择器
+        document.getElementById('duration-date-picker').classList.add('hidden');
         // 获取数据的函数
         async function fetchData(url, params) {
+            const urlBase = url;
+
             try {
-                const queryString = new URLSearchParams(params).toString();
-                const response = await fetch(`${url}?${queryString}`);
+                const response = await fetch(urlBase, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        SumType: params.type,
+                        StartDate:params.startDate,
+                        EndDate:params.endDate,
+                        MeterialNames:params.materials
+                        }),
+                    credentials: 'same-origin'
+                });
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // 提示并尝试显示后端返回的错误信息
+                    let txt = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}  ${txt}`);
                 }
-                return await response.json();
+
+                let result = await response.json();
+
+                // 后端返回 ApiResponse { Success, Message, Data }
+                // 兼容不同命名：Data / data
+                let payload = result.Data ?? result.data ?? result;
+                // 如果 Data 是字符串（JSON 字符串），尝试解析
+                if (typeof payload === 'string') {
+                    try { payload = JSON.parse(payload); } catch { console.warn('解析数据字符串失败:', e); }
+                }
+
+                if (!payload) {
+                    console.warn('接口返回为空数据');
+                    return null;
+                }
+
+                return payload;
+
             } catch (error) {
-                console.error('获取数据失败:', error);
+                console.error('加载数据失败:', error);
+                alert('加载数据失败: ' + (error.message || error));   
                 return null;
             }
         }
@@ -446,7 +509,36 @@
             };
 
             const batchesData = await fetchData('/api/erp/GetPersonnelBatchesData', params);
-            if (batchesData) {
+
+            if (batchesData && Array.isArray(batchesData) && batchesData.length > 0) {
+                // 处理x轴数据
+                let xAxisData = [];
+                if (viewState.batches.type === 'month') {
+                    // 当月数据 - 假设返回的是当月的日期数据，如果没有则使用默认
+                    xAxisData = batchesData.categories || Array.from({length: 31}, (_, i) => (i + 1).toString());
+                } else if (viewState.batches.type === 'year') {
+                    // 年数据 - 1-12月
+                    xAxisData = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                } else {
+                    // 自定义 - 使用数据长度生成
+                    const dataLength = batchesData[0].data ? batchesData[0].data.length : 12;
+                    xAxisData = Array.from({length: dataLength}, (_, i) => (i + 1).toString());
+                }
+
+                 // 处理系列数据
+                const series = batchesData.map(item => ({
+                    name: item.name,
+                    type: 'bar',
+                    data: item.data,
+                    label: { 
+                        show: true, 
+                        position: "top",
+                        formatter: function(params) {
+                            return params.value !== null && params.value !== undefined ? params.value : '0';
+                        }
+                    }
+                }));
+
                 const batchesOption = {
                     title: {
                         text: '人员检验批数',
@@ -476,31 +568,41 @@
                     },
                     xAxis: {
                         type: 'category',
-                        name: viewState.batches.type === 'month' ? '日期' : '月份',
-                        data: batchesData.categories || ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                        name: viewState.batches.type === 'month' ? '日期' : 
+                              viewState.batches.type === 'year' ? '月份' : '日期',
+                        data: xAxisData
                     },
                     yAxis: {
                         type: 'value',
                         name: '批次数',
                         min: 0
                     },
-                    series: batchesData.series || [
-                        {
-                            name: '郭东良',
-                            type: 'bar',
-                            data: [33, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 330],
-                            label: { show: true, position: "top" }
-                        },
-                        {
-                            name: '李小龙',
-                            type: 'bar',
-                            data: [10, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 310],
-                            label: { show: true, position: "top" }
-                        }
-                    ]
+                    series: series
                 };
                 batchesChart.setOption(batchesOption, true);
-                document.querySelector('#batches .loading').classList.add('hidden');
+            }else {
+                // 显示错误信息，不显示模拟数据
+                const errorOption = {
+                    title: {
+                        text: '人员检验批数',
+                        left: 'center'
+                    },
+                    graphic: {
+                        type: 'text',
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            text: '暂无数据或数据加载失败',
+                            fontSize: 16,
+                            fill: '#999'
+                        }
+                    },
+                    xAxis: { show: false },
+                    yAxis: { show: false },
+                    series: []
+                };
+        
+                batchesChart.setOption(errorOption, true);
             }
         }
 
@@ -514,7 +616,35 @@
             };
 
             const efficiencyData = await fetchData('/api/erp/GetPersonnelEfficiencyData', params);
-            if (efficiencyData) {
+            if (efficiencyData && Array.isArray(efficiencyData) && efficiencyData.length > 0) {
+                // 处理x轴数据
+                let xAxisData = [];
+                if (viewState.efficiency.type === 'month') {
+                    // 当月数据
+                    xAxisData = efficiencyData.categories || Array.from({length: 31}, (_, i) => (i + 1).toString());
+                } else if (viewState.efficiency.type === 'year') {
+                    // 年数据 - 1-12月
+                    xAxisData = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                } else {
+                    // 自定义 - 使用数据长度生成
+                    const dataLength = batchesData[0].data ? batchesData[0].data.length : 12;
+                    xAxisData = Array.from({length: dataLength}, (_, i) => (i + 1).toString());
+                }
+
+                // 处理系列数据
+                const series = efficiencyData.map(item => ({
+                    name: item.name,
+                    type: 'bar',
+                    data: item.data,
+                    label: { 
+                        show: true, 
+                        position: "top",
+                        formatter: function(params) {
+                            return params.value !== null && params.value !== undefined ? params.value : '0';
+                        }
+                    }
+                }));
+
                 const effOption = {
                     title: {
                         text: '人员检验效率',
@@ -546,30 +676,41 @@
                         type: 'category',
                         name: viewState.efficiency.type === 'month' ? '日期' :
                               viewState.efficiency.type === 'year' ? '月份' : '日期',
-                        data: efficiencyData.categories || ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                        data: xAxisData
                     },
                     yAxis: {
                         type: 'value',
                         name: '效率',
                         min: 0
                     },
-                    series: efficiencyData.series || [
-                        {
-                            name: '郭东良',
-                            type: 'bar',
-                            data: [1, 5, 20, 33, 39, 33, 22, 18, 19, 23, 29, 33],
-                            label: { show: true, position: "top" }
-                        },
-                        {
-                            name: '李小龙',
-                            type: 'bar',
-                            data: [3, 5, 20, 33, 39, 33, 22, 18, 19, 23, 29, 31],
-                            label: { show: true, position: "top" }
-                        }
-                    ]
+                    series: series
                 };
                 effChart.setOption(effOption, true);
-                document.querySelector('#efficiency .loading').classList.add('hidden');
+            }else {
+                console.error('效率数据格式错误或为空:', efficiencyData);
+        
+                // 显示错误信息
+                const errorOption = {
+                    title: {
+                        text: '人员检验效率',
+                        left: 'center'
+                    },
+                    graphic: {
+                        type: 'text',
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            text: '暂无数据或数据加载失败',
+                            fontSize: 16,
+                            fill: '#999'
+                        }
+                    },
+                    xAxis: { show: false },
+                    yAxis: { show: false },
+                    series: []
+                };
+        
+                effChart.setOption(errorOption, true);
             }
         }
 
@@ -581,7 +722,35 @@
                 endDate: viewState.batches.endDate
             };
             const durationData = await fetchData('/api/erp/GetPersonnelDurationData', params);
-            if (durationData) {
+            if (durationData && Array.isArray(durationData) && durationData.length > 0) {
+                // 处理x轴数据
+                let xAxisData = [];
+                if (viewState.duration.type === 'month') {
+                    // 当月数据
+                    xAxisData = durationData.categories || Array.from({length: 31}, (_, i) => (i + 1).toString());
+                } else if (viewState.duration.type === 'year') {
+                    // 年数据 - 1-12月
+                    xAxisData = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                } else {
+                    // 自定义 - 使用数据长度生成
+                    const dataLength = batchesData[0].data ? batchesData[0].data.length : 12;
+                    xAxisData = Array.from({length: dataLength}, (_, i) => (i + 1).toString());
+                }
+
+                // 处理系列数据
+                const series = durationData.map(item => ({
+                    name: item.name,
+                    type: 'bar',
+                    data: item.data,
+                    label: { 
+                        show: true, 
+                        position: "top",
+                        formatter: function(params) {
+                            return params.value !== null && params.value !== undefined ? params.value : '0';
+                        }
+                    }
+                }));
+
                 const duraOption = {
                     title: {
                         text: '人员总校验时长',
@@ -611,29 +780,43 @@
                     },
                     xAxis: {
                         type: 'category',
-                        name: '月份',
-                        data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                        name: viewState.duration.type === 'month' ? '日期' :
+                              viewState.duration.type === 'year' ? '月份' : '日期',
+                        data: xAxisData
                     },
                     yAxis: {
                         type: 'value',
                         name: '校验时长',
                         min: 0
                     },
-                    series: durationData.series || [
-                        {
-                            name: '郭东良',
-                            type: 'bar',
-                            data: [83, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 330]
-                        },
-                        {
-                            name: '李小龙',
-                            type: 'bar',
-                            data: [44, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 310]
-                        }
-                    ]
+                    series: series
                 };
                 duraChart.setOption(duraOption, true);
-                document.querySelector('#duration .loading').classList.add('hidden');
+            }else {
+                console.error('时长数据格式错误或为空:', durationData);
+        
+                // 显示错误信息
+                const errorOption = {
+                    title: {
+                        text: '人员总校验时长',
+                        left: 'center'
+                    },
+                    graphic: {
+                        type: 'text',
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            text: '暂无数据或数据加载失败',
+                            fontSize: 16,
+                            fill: '#999'
+                        }
+                    },
+                    xAxis: { show: false },
+                    yAxis: { show: false },
+                    series: []
+                };
+        
+                duraChart.setOption(errorOption, true);
             }
         }
 
