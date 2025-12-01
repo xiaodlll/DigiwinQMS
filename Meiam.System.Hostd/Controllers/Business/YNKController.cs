@@ -212,176 +212,21 @@ namespace Meiam.System.Hostd.Controllers.Business
                     try
                     {
                         #region OLD
-                        //// 封装成金蝶ERP需要的格式
-                        //var erpRequestData = new
-                        //{
-                        //    formid = "PUR_ReceiveBill",
-                        //    data = new
-                        //    {
-                        //        NeedUpDateFields = new[] { "FDetailEntity", "FReceiveQty", "FRefuseQty", "FCheckQty" },
-                        //        IsDeleteEntry = "false",
-                        //        IsVerifyBaseDataField = "true",
-                        //        IsAutoAdjustField = "true",
-                        //        Model = new
-                        //        {
-                        //            FID = fid, // 传进来的FID
-                        //            FDetailEntity = entries.Select(entry => new
-                        //            {
-                        //                FEntryID = entry.FEntryID, // 传进来的FEntryID
-                        //                FReceiveQty = entry.FReceiveQty, // 传进来的FReceiveQty
-                        //                FRefuseQty = entry.FRefuseQty, // 传进来的FRefuseQty
-                        //                FCheckQty = entry.FCheckQty
-                        //            }).ToList()
-                        //        }
-                        //    }
-                        //};
-
-                        //_logger.LogInformation(@$"请求金蝶ERP接口: FID: {fid}, 包含 {entries.Count} 个明细行");
-
-                        //string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
-                        //_logger.LogInformation(@$"请求URL: {erpApiUrl}");
-                        //_logger.LogInformation(@$"请求数据: {jsonRequest}");
-
-                        //// 使用带有SessionId的HTTP请求
-                        //string postResult = await HttpHelper.PostJsonWithSessionAsync(
-                        //    erpApiUrl,
-                        //    jsonRequest,
-                        //    sessionId
-                        //);
-
-                        //_logger.LogInformation(@$"金蝶ERP接口响应 - FID: {fid}, 结果: {postResult}");
-
-                        //// 解析响应结果
-                        //if (postResult.Contains("false"))
-                        //{
-                        //    failCount++;
-                        //    _logger.LogError($"单据 {fid} 回传失败: {postResult}");
-                        //}
-                        //else
-                        //{
-                        //    string requestJsonAudit = string.Empty;
-                        //    List<string> numbers = new List<string>();
-                        //    foreach (var entry in entries)
-                        //    {
-                        //        numbers.Add(entry.ERP_ARRIVEDID);
-                        //    }
-                        //    string erpApiAuditUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
-                        //    _logger.LogInformation(@$"请求金蝶ERP审核接口: FID: {fid}, 包含 {entries.Count} 个明细行");
-                        //    var erpRequestAuditData = new
-                        //    {
-                        //        formid = "PUR_ReceiveBill",
-                        //        data = new
-                        //        {
-                        //            Numbers = numbers
-                        //        }
-                        //    };
-
-                        //    requestJsonAudit = JsonConvert.SerializeObject(erpRequestAuditData);
-                        //    _logger.LogInformation(@$"请求URL: {erpApiAuditUrl}");
-                        //    _logger.LogInformation(@$"请求数据: {requestJsonAudit}");
-                        //    // 使用带有SessionId的HTTP请求
-                        //    postResult = await HttpHelper.PostJsonWithSessionAsync(
-                        //        erpApiAuditUrl,
-                        //        requestJsonAudit,
-                        //        sessionId
-                        //    );
-
-                        //    _logger.LogInformation(@$"金蝶ERP审核接口响应 - FID: {fid}, 结果: {postResult}");
-
-                        //    // 回传成功，更新所有相关明细行的状态
-                        //    foreach (var entry in entries)
-                        //    {
-                        //        _ynkService.CallBackQmsLotNoticeResult(entry);
-                        //    }
-                        //    successCount++;
-                        //    _logger.LogInformation($"单据 {fid} 回传成功");
-                        //}
-                        #endregion
                         // 封装成金蝶ERP需要的格式
-                        erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
                         var erpRequestData = new {
-                            formid = "QM_InspectBill",
+                            formid = "PUR_ReceiveBill",
                             data = new {
-                                IsVerifyBaseDataField = true,
-                                IsAutoAdjustField = true,
+                                NeedUpDateFields = new[] { "FDetailEntity", "FReceiveQty", "FRefuseQty", "FCheckQty" },
+                                IsDeleteEntry = "false",
+                                IsVerifyBaseDataField = "true",
+                                IsAutoAdjustField = "true",
                                 Model = new {
                                     FID = fid, // 传进来的FID
-                                    FBillTypeID = new {
-                                        FNUMBER= "JYD001_SYS",
-                                    },
-                                    FBusinessType = "1",
-                                    FDate = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss"),
-                                    FSourceOrgId = new {
-                                        FNumber = "100",//组织
-                                    },
-                                    FInspectOrgId = new {
-                                        FNumber = "100",//组织
-                                    },
-                                    FEntity = entries.Select(entry => new {
-                                        FMaterialId = new {
-                                            FNUMBER = entry.ITEMID
-                                        },
-                                        FUnitID = new {
-                                            FNUMBER = entry.UNIT
-                                        },
-                                        FInspectQty = entry.FCheckQty, //检验数量
-                                        FQualifiedQty = entry.FReceiveQty, // 合格数量
-                                        FUnqualifiedQty = entry.FRefuseQty, // 不合格数量
-                                        FSrcBillType0 = "PUR_ReceiveBill",
-                                        FSrcBillNo0 = entry.ERP_ARRIVEDID,
-                                        FBaseInspectQty = entry.FCheckQty, //检验数量
-                                        FSupplierId = new {
-                                            FNUMBER = entry.SUPPNAME
-                                        },
-                                        FStockId = new {
-                                            FNumber = "CK001"
-                                        },
-                                        FBaseUnqualifiedQty = entry.FRefuseQty, // 不合格数量
-                                        FBaseQualifiedQty = entry.FReceiveQty, // 合格数量
-                                        FPolicyDetail = new object[]{ 
-                                            new {
-                                                FPolicyMaterialId =new {
-                                                    FNUMBER = entry.ITEMID
-                                                },
-                                                FPolicyStatus = "1",
-                                                FPolicyQty = entry.FReceiveQty, // 合格数量
-                                                FBasePolicyQty = entry.FReceiveQty, // 合格数量
-                                                FUsePolicy  = "A",
-                                                FIBUsePolicy  = "A",
-                                            },
-                                            new {
-                                                FPolicyMaterialId =new {
-                                                    FNUMBER = entry.ITEMID
-                                                },
-                                                FPolicyStatus = "2",
-                                                FPolicyQty = entry.FRefuseQty, // 合格数量
-                                                FBasePolicyQty = entry.FRefuseQty, // 合格数量
-                                                FUsePolicy  = "F",
-                                                FIBUsePolicy  = "F",
-                                            },
-                                        },
-                                        FReferDetail = new object[]{
-                                            new {
-                                                PUR_ReceiveBill = "PUR_ReceiveBill",
-                                                FSrcBillNo = entry.ERP_ARRIVEDID,
-                                                FSrcInterId = entry.FID,
-                                                FSrcEntryId= entry.FEntryID,
-                                            }
-                                        },
-                                        FEntity_Link = new object[]{
-                                            new {
-                                                FEntity_Link_FRuleId = "QM_PURReceive2Inspect",
-                                                FEntity_Link_FSTableName = "T_PUR_ReceiveEntry",
-                                                FEntity_Link_FSBillId = entry.ERP_ARRIVEDID,
-                                                FEntity_Link_FSId= entry.FEntryID,
-                                                FEntity_Link_FBaseInspectQty = entry.FCheckQty,
-                                                FEntity_Link_FBaseInspectQtyOld = entry.FCheckQty,
-                                                FEntity_Link_FBaseAcceptQty = entry.FReceiveQty,
-                                                FEntity_Link_FBaseAcceptQtyOld = entry.FReceiveQty,
-                                                FEntity_Link_FBaseRejectQty = entry.FRefuseQty,
-                                                FEntity_Link_FBaseDefectQtyOld = entry.FRefuseQty
-                                            }
-                                        }
+                                    FDetailEntity = entries.Select(entry => new {
+                                        FEntryID = entry.FEntryID, // 传进来的FEntryID
+                                        FReceiveQty = entry.FReceiveQty, // 传进来的FReceiveQty
+                                        FRefuseQty = entry.FRefuseQty, // 传进来的FRefuseQty
+                                        FCheckQty = entry.FCheckQty
                                     }).ToList()
                                 }
                             }
@@ -441,6 +286,154 @@ namespace Meiam.System.Hostd.Controllers.Business
                             successCount++;
                             _logger.LogInformation($"单据 {fid} 回传成功");
                         }
+                        #endregion
+
+                        #region NEW
+                        //// 封装成金蝶ERP需要的格式
+                        //erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
+                        //var erpRequestData = new {
+                        //    formid = "QM_InspectBill",
+                        //    data = new {
+                        //        IsVerifyBaseDataField = true,
+                        //        IsAutoAdjustField = true,
+                        //        Model = new {
+                        //            FID = fid, // 传进来的FID
+                        //            FBillTypeID = new {
+                        //                FNUMBER= "JYD001_SYS",
+                        //            },
+                        //            FBusinessType = "1",
+                        //            FDate = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss"),
+                        //            FSourceOrgId = new {
+                        //                FNumber = "100",//组织
+                        //            },
+                        //            FInspectOrgId = new {
+                        //                FNumber = "100",//组织
+                        //            },
+                        //            FEntity = entries.Select(entry => new {
+                        //                FMaterialId = new {
+                        //                    FNUMBER = entry.ITEMID
+                        //                },
+                        //                FUnitID = new {
+                        //                    FNUMBER = entry.UNIT
+                        //                },
+                        //                FInspectQty = entry.FCheckQty, //检验数量
+                        //                FQualifiedQty = entry.FReceiveQty, // 合格数量
+                        //                FUnqualifiedQty = entry.FRefuseQty, // 不合格数量
+                        //                FSrcBillType0 = "PUR_ReceiveBill",
+                        //                FSrcBillNo0 = entry.ERP_ARRIVEDID,
+                        //                FBaseInspectQty = entry.FCheckQty, //检验数量
+                        //                FSupplierId = new {
+                        //                    FNUMBER = entry.SUPPNAME
+                        //                },
+                        //                FStockId = new {
+                        //                    FNumber = "CK001"
+                        //                },
+                        //                FBaseUnqualifiedQty = entry.FRefuseQty, // 不合格数量
+                        //                FBaseQualifiedQty = entry.FReceiveQty, // 合格数量
+                        //                FPolicyDetail = new object[]{ 
+                        //                    new {
+                        //                        FPolicyMaterialId =new {
+                        //                            FNUMBER = entry.ITEMID
+                        //                        },
+                        //                        FPolicyStatus = "1",
+                        //                        FPolicyQty = entry.FReceiveQty, // 合格数量
+                        //                        FBasePolicyQty = entry.FReceiveQty, // 合格数量
+                        //                        FUsePolicy  = "A",
+                        //                        FIBUsePolicy  = "A",
+                        //                    },
+                        //                    new {
+                        //                        FPolicyMaterialId =new {
+                        //                            FNUMBER = entry.ITEMID
+                        //                        },
+                        //                        FPolicyStatus = "2",
+                        //                        FPolicyQty = entry.FRefuseQty, // 合格数量
+                        //                        FBasePolicyQty = entry.FRefuseQty, // 合格数量
+                        //                        FUsePolicy  = "F",
+                        //                        FIBUsePolicy  = "F",
+                        //                    },
+                        //                },
+                        //                FReferDetail = new object[]{
+                        //                    new {
+                        //                        PUR_ReceiveBill = "PUR_ReceiveBill",
+                        //                        FSrcBillNo = entry.ERP_ARRIVEDID,
+                        //                        FSrcInterId = entry.FID,
+                        //                        FSrcEntryId= entry.FEntryID,
+                        //                    }
+                        //                },
+                        //                FEntity_Link = new object[]{
+                        //                    new {
+                        //                        FEntity_Link_FRuleId = "QM_PURReceive2Inspect",
+                        //                        FEntity_Link_FSTableName = "T_PUR_ReceiveEntry",
+                        //                        FEntity_Link_FSBillId = entry.ERP_ARRIVEDID,
+                        //                        FEntity_Link_FSId= entry.FEntryID,
+                        //                        FEntity_Link_FBaseInspectQty = entry.FCheckQty,
+                        //                        FEntity_Link_FBaseInspectQtyOld = entry.FCheckQty,
+                        //                        FEntity_Link_FBaseAcceptQty = entry.FReceiveQty,
+                        //                        FEntity_Link_FBaseAcceptQtyOld = entry.FReceiveQty,
+                        //                        FEntity_Link_FBaseRejectQty = entry.FRefuseQty,
+                        //                        FEntity_Link_FBaseDefectQtyOld = entry.FRefuseQty
+                        //                    }
+                        //                }
+                        //            }).ToList()
+                        //        }
+                        //    }
+                        //};
+
+                        //_logger.LogInformation(@$"请求金蝶ERP接口: FID: {fid}, 包含 {entries.Count} 个明细行");
+
+                        //string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
+                        //_logger.LogInformation(@$"请求URL: {erpApiUrl}");
+                        //_logger.LogInformation(@$"请求数据: {jsonRequest}");
+
+                        //// 使用带有SessionId的HTTP请求
+                        //string postResult = await HttpHelper.PostJsonWithSessionAsync(
+                        //    erpApiUrl,
+                        //    jsonRequest,
+                        //    sessionId
+                        //);
+
+                        //_logger.LogInformation(@$"金蝶ERP接口响应 - FID: {fid}, 结果: {postResult}");
+
+                        //// 解析响应结果
+                        //if (postResult.Contains("false")) {
+                        //    failCount++;
+                        //    _logger.LogError($"单据 {fid} 回传失败: {postResult}");
+                        //}
+                        //else {
+                        //    string requestJsonAudit = string.Empty;
+                        //    List<string> numbers = new List<string>();
+                        //    foreach (var entry in entries) {
+                        //        numbers.Add(entry.ERP_ARRIVEDID);
+                        //    }
+                        //    string erpApiAuditUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
+                        //    _logger.LogInformation(@$"请求金蝶ERP审核接口: FID: {fid}, 包含 {entries.Count} 个明细行");
+                        //    var erpRequestAuditData = new {
+                        //        formid = "PUR_ReceiveBill",
+                        //        data = new {
+                        //            Numbers = numbers
+                        //        }
+                        //    };
+
+                        //    requestJsonAudit = JsonConvert.SerializeObject(erpRequestAuditData);
+                        //    _logger.LogInformation(@$"请求URL: {erpApiAuditUrl}");
+                        //    _logger.LogInformation(@$"请求数据: {requestJsonAudit}");
+                        //    // 使用带有SessionId的HTTP请求
+                        //    postResult = await HttpHelper.PostJsonWithSessionAsync(
+                        //        erpApiAuditUrl,
+                        //        requestJsonAudit,
+                        //        sessionId
+                        //    );
+
+                        //    _logger.LogInformation(@$"金蝶ERP审核接口响应 - FID: {fid}, 结果: {postResult}");
+
+                        //    // 回传成功，更新所有相关明细行的状态
+                        //    foreach (var entry in entries) {
+                        //        _ynkService.CallBackQmsLotNoticeResult(entry);
+                        //    }
+                        //    successCount++;
+                        //    _logger.LogInformation($"单据 {fid} 回传成功");
+                        //}
+                        #endregion
                     }
                     catch (Exception ex)
                     {

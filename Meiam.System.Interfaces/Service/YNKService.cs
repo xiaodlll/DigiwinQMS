@@ -1062,7 +1062,7 @@ namespace Meiam.System.Interfaces.Service
                 {
                     orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
                 }
-                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
+                var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ALL_REMARK3,ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
         CASE 
             WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
             WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
@@ -1078,6 +1078,7 @@ namespace Meiam.System.Interfaces.Service
                 string OQC_STATE = string.Empty;
                 string Inspector = string.Empty;
                 string InspectorDate = string.Empty;
+                string remark = string.Empty;
                 if (dataMain != null && dataMain.Rows.Count > 0)
                 {
                     ITEMID = dataMain.Rows[0]["ITEMID"].ToString();
@@ -1086,6 +1087,7 @@ namespace Meiam.System.Interfaces.Service
                     LOT_QTY = dataMain.Rows[0]["LOT_QTY"].ToString();
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
+                    remark = dataMain.Rows[0]["ALL_REMARK3"].ToString();
                 }
                 var originalData = await Db.Ado.GetDataTableAsync(@"SELECT CASE 
         WHEN STD_VALUE IS NULL OR STD_VALUE='' THEN 'N/A'
@@ -1117,7 +1119,9 @@ namespace Meiam.System.Interfaces.Service
 
                 foreach (DataRow row in originalData.Rows)
                 {
-                    Inspector = row["INSPECTOR"].ToString();
+                    if (!string.IsNullOrEmpty(row["INSPECTOR"].ToString())) {
+                        Inspector = row["INSPECTOR"].ToString();
+                    }                    
                     var data = new InspectData
                     {
                         ProgressName = row["PROGRESSNAME1"]?.ToString(),
@@ -1158,7 +1162,7 @@ namespace Meiam.System.Interfaces.Service
                     Qty = LOT_QTY,
                     EffectiveDate = docCreateDate,
                     InspectionResult = OQC_STATE,
-                    Remark = "",
+                    Remark = remark,
                     Inspector = Inspector,
                     InspectorDate = InspectorDate,
                     Reviewer = "",
@@ -1191,9 +1195,35 @@ namespace Meiam.System.Interfaces.Service
 
             if (dataList == null || dataList.Count == 0)
                 return result;
-
             int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
             if (maxLength < 3) maxLength = 3; // 确保至少有3个基础元素
+            Dictionary<int,string> dicColumnsAValues = new Dictionary<int, string>();
+            for (int i = 0; i < maxLength; i++) {
+                string resultValue = "OK";
+                //横向寻找NG
+                foreach (var data in dataList) {
+                    if (data.InspectrType == "COUNTTYPE_001") {
+                        if (string.IsNullOrEmpty(data.NGS)) {
+                            resultValue = data.InspectrResult ?? "OK";
+                        }
+                        else {
+                            if (!data.NGS.Contains("A")) {
+                                resultValue = "NG";
+                            }
+                            else if (data.NGS.Contains($"A{i+1};")) {
+                                resultValue = "NG";
+                            }
+                            else {
+                                resultValue = "OK";
+                            }
+                        }
+                        if (resultValue == "NG") {
+                            break;
+                        }
+                    }
+                }
+                dicColumnsAValues.Add(i, resultValue);
+            }
 
             int columnIndex = 1;
             // 按页分组处理数据
@@ -1233,9 +1263,14 @@ namespace Meiam.System.Interfaces.Service
                             }
                             else
                             {
-                                if (data.NGS.Contains($"A{j};"))
-                                {
+                                if (!data.NGS.Contains("A")) {
                                     resultValue = "NG";
+                                }
+                                else if (!data.NGS.Contains($"A{j};")) {
+                                    resultValue = "NG";
+                                }
+                                else {
+                                    resultValue = "OK";
                                 }
                             }
                             columnData.Add(resultValue);
@@ -1261,9 +1296,8 @@ namespace Meiam.System.Interfaces.Service
 
                 // 创建 ColumnA - 结果汇总列
                 var columnA = new List<object>();
-                for (int i = 0; i < maxLength; i++)
-                {
-                    columnA.Add("OK"); // 默认结果
+                for (int i = 0; i < maxLength; i++) {
+                    columnA.Add(dicColumnsAValues[i]); // 结果
                 }
 
                 // 填充空列以达到页面列数要求
