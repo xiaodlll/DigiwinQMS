@@ -1,10 +1,545 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title></title>
+    <title>质量看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style type="text/css">
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eee;
+        }
+
+        .title {
+            display: flex;
+            font-size: 24px;
+            font-weight: bold;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            padding: 0 20px;
+            ul
+
+        {
+            width: 100%;
+            padding: 0;
+            list-style-type: none;
+            display: inline-flex;
+            justify-content: space-between;
+            li
+
+        {
+            border: 1px solid #000;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+        }
+
+        li:nth-child(1) {
+            background: rgba(26, 188, 156, .1);
+            color: #1abc9c;
+            border-color: #1abc9c;
+        }
+
+        li:nth-child(2) {
+            background: rgba(52, 152, 219, .1);
+            color: #3498db;
+            border-color: #3498db;
+        }
+
+        li:nth-child(3) {
+            background: rgba(155, 89, 182, .1);
+            color: #9b59b6;
+            border-color: #9b59b6;
+        }
+
+        li:nth-child(4) {
+            background: rgba(241, 196, 15, .1);
+            color: #f1c40f;
+            border-color: #f1c40f;
+        }
+
+        li:nth-child(5) {
+            background: rgba(231, 76, 60, .1);
+            color: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        li:nth-child(6) {
+            background: rgba(52, 73, 94, .1);
+            color: #34495e;
+            border-color: #34495e;
+        }
+
+        }
+
+        .line-title {
+            padding-left: 12px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            border-left: 3px solid #2980b9;
+        }
+
+        .rank-box {
+            width: 100%;
+            height: 400px;
+            box-shadow: rgba(0, 0, 0, 0.12) 0px 0px 12px 0px;
+            border-radius: 10px;
+            background: #fff;
+            padding: 12px 20px;
+            thead
+
+        {
+            height: 50px;
+        }
+
+        }
+        }
+
+        .charts-box {
+            width: calc(50% - 5px);
+            height: 600px;
+            box-shadow: rgba(0, 0, 0, 0.12) 0px 0px 12px 0px;
+            background: #fff;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
+    <div class="title">
+        质量看板
+    </div>
+    <div class="container">
+        <ul>
+            <li>已检验数量：0</li>
+            <li>物料待检验数量：0</li>
+            <li>待判定数量：0</li>
+            <li>物料待维护数量：0</li>
+            <li>当月批退数：0</li>
+            <li>检验延时：0</li>
+        </ul>
 
+        <!-- 年累计进料/累计合格率 -->
+        <div id="yearComingQualified" class="charts-box"></div>
+        <!-- 累计进料/累计合格率 -->
+        <div id="comingQualified" class="charts-box"></div>
+        <!-- 年累计进料（按项目） -->
+        <div id="yearComingProject" class="charts-box"></div>
+        <!-- 累计进料/累计合格率（按项目） -->
+        <div id="comingQualProject" class="charts-box"></div>
+
+        <div class="line-title">供应商排行</div>
+
+        <div class="rank-box">
+            <table width="100%" border="0" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>供应商名称</th>
+                        <th>不良率</th>
+                        <th>进料批数</th>
+                        <th>批退批数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>供应商A</td>
+                        <td>0%</td>
+                        <td>23441</td>
+                        <td>3323</td>
+                    </tr>
+                    <tr>
+                        <td>供应商B</td>
+                        <td>0%</td>
+                        <td>442344</td>
+                        <td>234</td>
+                    </tr>
+                    <tr>
+                        <td>供应商C</td>
+                        <td>0%</td>
+                        <td>23455</td>
+                        <td>23</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
+
+<script type="text/javascript">
+    // 年累计进料/累计合格率配置
+    let yearComingQualChart = echarts.init(document.getElementById('yearComingQualified'));
+
+    let yearComingQualOption = {
+        title: {
+            text: '年累计进料/累计合格率',
+        },
+        grid: {
+            left: 50
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross',
+                crossStyle: {
+                    color: '#999'
+                }
+            }
+        },
+        legend: {
+            show: true,
+        },
+        xAxis: [{
+            type: 'category',
+            name: '月份',
+            data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            axisPointer: {
+                type: 'shadow'
+            }
+        }],
+        yAxis: [{
+            type: 'value',
+            name: '累计进料',
+            alignTicks: true,
+        },
+        {
+            type: 'value',
+            name: '累计合格率',
+            interval: 1,
+            min: 90,
+            max: 100,
+            axisLabel: {
+                formatter: '{value}%'
+            }
+        }],
+        series: [
+            {
+                name: '特采',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [100, 302, 301, 334, 390, 330, 320, 310, 123, 442, 321, 90]
+            },
+            {
+                name: '批退',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [320, 132, 101, 134, 90, 230, 210, 180, 200, 123, 334, 310]
+            },
+            {
+                name: '合格',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [220, 182, 191, 234, 290, 330, 310, 123, 442, 321, 90, 123]
+            },
+            {
+                name: '累计合格率',
+                type: 'line',
+                yAxisIndex: 1,
+                tooltip: {
+                    valueFormatter: function (value) {
+                        return value + '%';
+                    }
+                },
+                data: [97.15, 96.54, 93.89, 96.23, 96.78, 97.01, 97.34, 98.45, 97.60, 100, 97.85, 98.00]
+            }
+        ]
+    };
+
+    yearComingQualChart.setOption(yearComingQualOption);
+
+    // 累计进料/累计合格率配置
+    let comingQualChart = echarts.init(document.getElementById('comingQualified'));
+    let comingQualOption = {
+        title: {
+            text: '累计进料/累计合格率',
+        },
+        grid: {
+            left: 50
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross',
+                crossStyle: {
+                    color: '#999'
+                }
+            }
+        },
+        legend: {
+            show: true,
+        },
+        xAxis: [{
+            type: 'category',
+            name: '月份',
+            data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            axisPointer: {
+                type: 'shadow'
+            }
+        }],
+        yAxis: [{
+            type: 'value',
+            name: '累计进料',
+            alignTicks: true,
+        },
+        {
+            type: 'value',
+            name: '累计合格率',
+            interval: 1,
+            min: 90,
+            max: 100,
+            axisLabel: {
+                formatter: '{value}%'
+            }
+        }],
+        series: [
+            {
+                name: '特采',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [900, 302, 301, 334, 390, 330, 320, 310, 123, 442, 321, 90]
+            },
+            {
+                name: '批退',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [220, 132, 101, 134, 90, 230, 210, 180, 200, 123, 334, 310]
+            },
+            {
+                name: '合格',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [120, 182, 191, 234, 290, 330, 310, 123, 442, 321, 90, 123]
+            },
+            {
+                name: '累计合格率',
+                type: 'line',
+                yAxisIndex: 1,
+                tooltip: {
+                    valueFormatter: function (value) {
+                        return value + '%';
+                    }
+                },
+                data: [91.15, 94.54, 91.89, 96.23, 94.78, 95.01, 98.34, 96.45, 95.60, 98, 95.85, 96.00]
+            }
+        ]
+    };
+
+    comingQualChart.setOption(comingQualOption);
+
+    // 年累计进料（按项目）配置
+    let yearComingProjectChart = echarts.init(document.getElementById('yearComingProject'));
+
+    let yearComingProjectOption = {
+        title: {
+            text: '年累计进料（按项目）',
+        },
+        grid: {
+            left: 50
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross',
+                crossStyle: {
+                    color: '#999'
+                }
+            }
+        },
+        legend: {
+            type: 'scroll',
+            orient: 'vertical',
+            right: 10,
+            top: 20,
+            bottom: 20,
+        },
+        xAxis: [
+            {
+
+                type: 'category',
+                name: '月份',
+                data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                axisPointer: {
+                    type: 'shadow'
+                }
+            }
+        ],
+        yAxis: [
+            {
+                type: 'value',
+                name: '累计进料',
+                min: 0,
+                interval: 50
+            },
+        ],
+        series: [
+            {
+                name: '超乳',
+                type: 'bar',
+                data: [
+                    83, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 330
+                ]
+            },
+            {
+                name: '超声刀',
+                type: 'bar',
+                data: [
+                    44, 52, 200, 334, 390, 330, 220, 182, 191, 234, 290, 310
+                ]
+            },
+            {
+                name: '电刀',
+                type: 'bar',
+                data: [
+                    220, 182, 434, 291, 390, 30, 10, 23, 45, 78, 213, 123
+                ]
+            },
+            {
+                name: '通用',
+                type: 'bar',
+                data: [
+                    190, 123, 145, 167, 189, 210, 234, 256, 278, 290, 300, 320
+                ]
+            }
+        ]
+    };
+
+    yearComingProjectChart.setOption(yearComingProjectOption)
+
+    // 累计进料/累计合格率（按项目）配置
+    let comingQualProjectChart = echarts.init(document.getElementById('comingQualProject'));
+    let comingQualProjectOption = {
+        title: {
+            text: '累计进料/累计合格率（按项目）',
+        },
+        grid: {
+            left: 50
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross',
+                crossStyle: {
+                    color: '#999'
+                }
+            }
+        },
+        legend: {
+            show: true,
+        },
+        xAxis: [{
+            type: 'category',
+            name: '月份',
+            data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            axisPointer: {
+                type: 'shadow'
+            }
+        }],
+        yAxis: [{
+            type: 'value',
+            name: '累计进料',
+            alignTicks: true,
+        },
+        {
+            type: 'value',
+            name: '累计合格率',
+            interval: 1,
+            min: 90,
+            max: 100,
+            axisLabel: {
+                formatter: '{value}%'
+            }
+        }],
+        series: [
+            {
+                name: '特采',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [620, 302, 301, 334, 390, 330, 320, 310, 123, 442, 321, 90]
+            },
+            {
+                name: '批退',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [100, 132, 101, 134, 90, 230, 210, 180, 200, 123, 334, 310]
+            },
+            {
+                name: '合格',
+                type: 'bar',
+                stack: 'total',
+                barWidth: '60%',
+                label: {
+                    show: true,
+                },
+                data: [720, 182, 191, 234, 290, 330, 310, 123, 442, 321, 90, 123]
+            },
+            {
+                name: '累计合格率',
+                type: 'line',
+                yAxisIndex: 1,
+                tooltip: {
+                    valueFormatter: function (value) {
+                        return value + '%';
+                    }
+                },
+                data: [99.15, 98.54, 97.89, 96.23, 95.78, 97.01, 96.34, 95.45, 94.60, 98, 97.85, 96.00]
+            }
+        ]
+    };
+    comingQualProjectChart.setOption(comingQualProjectOption);
+
+</script>
+
 </html>
