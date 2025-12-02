@@ -747,7 +747,8 @@ namespace Meiam.System.Interfaces.Service
                 if (dtOldData.Rows.Count > 0)
                 {
                     lastMaxVer = dtEnum
-                        .Select(row => {
+                        .Select(row =>
+                        {
                             int.TryParse(row["VER"].ToString().TrimStart('0'), out int v);
                             return v;
                         })
@@ -805,10 +806,12 @@ namespace Meiam.System.Interfaces.Service
                         .GroupBy(row => row["INSPECT_PROGRESSNAME"].ToString(), StringComparer.OrdinalIgnoreCase)
                         .ToDictionary(
                             group => group.Key,
-                            group => {
+                            group =>
+                            {
                                 // 按版本号降序排序，取第一个（最近版本）的OID
                                 var latestRow = group
-                                    .OrderByDescending(row => {
+                                    .OrderByDescending(row =>
+                                    {
                                         int.TryParse(row["VER"].ToString().TrimStart('0'), out int v);
                                         return v;
                                     })
@@ -825,7 +828,8 @@ namespace Meiam.System.Interfaces.Service
 
                     // 2.2 获取历史数据中最大的OID（用于新增项目累加）
                     int maxHistoryOid = dtEnum
-                        .Select(row => {
+                        .Select(row =>
+                        {
                             int.TryParse(row["OID"].ToString(), out int oid);
                             return oid;
                         })
@@ -1119,9 +1123,10 @@ namespace Meiam.System.Interfaces.Service
 
                 foreach (DataRow row in originalData.Rows)
                 {
-                    if (!string.IsNullOrEmpty(row["INSPECTOR"].ToString())) {
+                    if (!string.IsNullOrEmpty(row["INSPECTOR"].ToString()))
+                    {
                         Inspector = row["INSPECTOR"].ToString();
-                    }                    
+                    }
                     var data = new InspectData
                     {
                         ProgressName = row["PROGRESSNAME1"]?.ToString(),
@@ -1197,27 +1202,36 @@ namespace Meiam.System.Interfaces.Service
                 return result;
             int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
             if (maxLength < 3) maxLength = 3; // 确保至少有3个基础元素
-            Dictionary<int,string> dicColumnsAValues = new Dictionary<int, string>();
-            for (int i = 0; i < maxLength; i++) {
+            Dictionary<int, string> dicColumnsAValues = new Dictionary<int, string>();
+            for (int i = 0; i < maxLength; i++)
+            {
                 string resultValue = "OK";
                 //横向寻找NG
-                foreach (var data in dataList) {
-                    if (data.InspectrType == "COUNTTYPE_001") {
-                        if (string.IsNullOrEmpty(data.NGS)) {
+                foreach (var data in dataList)
+                {
+                    if (data.InspectrType == "COUNTTYPE_001")
+                    {
+                        if (string.IsNullOrEmpty(data.NGS))
+                        {
                             resultValue = data.InspectrResult ?? "OK";
                         }
-                        else {
-                            if (!data.NGS.Contains("A")) {
+                        else
+                        {
+                            if (!data.NGS.Contains("A"))
+                            {
                                 resultValue = "NG";
                             }
-                            else if (data.NGS.Contains($"A{i+1};")) {
+                            else if (data.NGS.Contains($"A{i + 1};"))
+                            {
                                 resultValue = "NG";
                             }
-                            else {
+                            else
+                            {
                                 resultValue = "OK";
                             }
                         }
-                        if (resultValue == "NG") {
+                        if (resultValue == "NG")
+                        {
                             break;
                         }
                     }
@@ -1263,13 +1277,16 @@ namespace Meiam.System.Interfaces.Service
                             }
                             else
                             {
-                                if (!data.NGS.Contains("A")) {
+                                if (!data.NGS.Contains("A"))
+                                {
                                     resultValue = "NG";
                                 }
-                                else if (!data.NGS.Contains($"A{j};")) {
+                                else if (!data.NGS.Contains($"A{j};"))
+                                {
                                     resultValue = "NG";
                                 }
-                                else {
+                                else
+                                {
                                     resultValue = "OK";
                                 }
                             }
@@ -1296,7 +1313,8 @@ namespace Meiam.System.Interfaces.Service
 
                 // 创建 ColumnA - 结果汇总列
                 var columnA = new List<object>();
-                for (int i = 0; i < maxLength; i++) {
+                for (int i = 0; i < maxLength; i++)
+                {
                     columnA.Add(dicColumnsAValues[i]); // 结果
                 }
 
@@ -1385,7 +1403,8 @@ namespace Meiam.System.Interfaces.Service
         #endregion
 
         #region 看板相关
-        private async Task<DataTable> GetPersonnelData(INSPECT_PERSONNELDATA input) {
+        private async Task<DataTable> GetPersonnelData(INSPECT_PERSONNELDATA input)
+        {
             if (input == null) return null;
             string sql = @"SELECT INSPECT_IQCCREATEDATE,COMP_DATE,LOT_QTY,ITEMKIND,PROGRESS.INSPECTOR
 from INSPECT_IQC 
@@ -1396,20 +1415,25 @@ GROUP by DOC_CODE having (max(USER_.USER_NAME) is not null
 and max(USER_.USER_NAME)!= '管理员' and max(USER_.USER_NAME)!= '管理员1')) PROGRESS ON PROGRESS.DOC_CODE=INSPECT_IQC.INSPECT_IQCCODE
 where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件','辅料','包材','成品外购标准件')";
 
-            if (input.SumType.ToLower() == "year") {
+            if (input.SumType.ToLower() == "year")
+            {
                 sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
             }
-            else if (input.SumType.ToLower() == "month") {
+            else if (input.SumType.ToLower() == "month")
+            {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.Year}-{DateTime.Today.Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
-            else {
+            else
+            {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
-            if (!string.IsNullOrEmpty(input.MeterialNames)) {
+            if (!string.IsNullOrEmpty(input.MeterialNames))
+            {
                 var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                            .Select(item => item.Trim())
                                            .Where(item => !string.IsNullOrWhiteSpace(item));
-                if (materialItems.Any()){ 
+                if (materialItems.Any())
+                {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
                     sql += $" and ITEMKIND in ({materialParams})";
                 }
@@ -1429,7 +1453,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 DataTable dt = await GetPersonnelData(input);
                 // 转换为可枚举数据并处理空值
                 var dataList = dt.AsEnumerable()
-                    .Select(row => new {
+                    .Select(row => new
+                    {
                         Inspector = row.IsNull("INSPECTOR") ? string.Empty : row.Field<string>("INSPECTOR"),
                         CreateDate = row.IsNull("INSPECT_IQCCREATEDATE") ? DateTime.MinValue : row.Field<DateTime>("INSPECT_IQCCREATEDATE"),
                         LotQty = row.IsNull("LOT_QTY") ? 0 : Convert.ToDecimal(row.Field<object>("LOT_QTY"))
@@ -1439,10 +1464,13 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 object result = null;
 
-                if (input.SumType.ToLower() == "month") {
+                string sumType = input.SumType?.ToLower() ?? "";
+                if (sumType == "month")
+                {
                     var monthStats = dataList
                         .GroupBy(x => x.Inspector)
-                        .Select(g => new {
+                        .Select(g => new
+                        {
                             name = g.Key,
                             data = new[] { g.Sum(x => x.LotQty) } // 单元素数组
                         })
@@ -1450,11 +1478,13 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = monthStats;
                 }
-                else {
+                else if (sumType == "year")
+                {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
-                    var monthStats = dataList
+                    var yearStats = dataList
                         .GroupBy(x => x.Inspector)
-                        .Select(g => new {
+                        .Select(g => new
+                        {
                             name = g.Key,
                             data = Enumerable.Range(1, 12) // 生成1-12月
                                 .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.LotQty))
@@ -1462,7 +1492,49 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         })
                         .ToList();
 
-                    result = monthStats;
+                    result = yearStats;
+                }
+                else if (sumType == "custom")
+                {
+                    // StartDate / EndDate 是 string，需要解析
+                    if (string.IsNullOrWhiteSpace(input.StartDate) || string.IsNullOrWhiteSpace(input.EndDate))
+                        throw new Exception("自定义时间统计必须提供 StartDate 和 EndDate");
+
+                    if (!DateTime.TryParse(input.StartDate, out DateTime start))
+                        throw new Exception($"无法解析 StartDate：{input.StartDate}");
+
+                    if (!DateTime.TryParse(input.EndDate, out DateTime end))
+                        throw new Exception($"无法解析 EndDate：{input.EndDate}");
+
+                    if (end < start)
+                        throw new Exception("EndDate 不能小于 StartDate");
+
+                    // 计算跨越的月份列表
+                    var months = new List<(int Year, int Month)>();
+                    DateTime cursor = new DateTime(start.Year, start.Month, 1);
+
+                    DateTime endMonth = new DateTime(end.Year, end.Month, 1);
+
+                    while (cursor <= endMonth)
+                    {
+                        months.Add((cursor.Year, cursor.Month));
+                        cursor = cursor.AddMonths(1);
+                    }
+
+                    // 按自定义月份统计
+                    var customStats = dataList
+                        .GroupBy(x => x.Inspector)
+                        .Select(g => new
+                        {
+                            name = g.Key,
+                            data = months
+                                .Select(m => g.Where(x => x.CreateDate.Year == m.Year && x.CreateDate.Month == m.Month)
+                                              .Sum(x => x.LotQty))
+                                .ToArray()
+                        })
+                        .ToList();
+
+                    result = customStats;
                 }
 
                 string jsonData = JsonConvert.SerializeObject(result);
@@ -1489,12 +1561,14 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// </summary>
         public async Task<ApiResponse> GetPersonnelEfficiencyDataAsync(INSPECT_PERSONNELDATA input)
         {
-            try {
+            try
+            {
                 //INSPECTOR,INSPECT_IQCCREATEDATE,LOT_QTY
                 DataTable dt = await GetPersonnelData(input);
                 // 转换为可枚举数据并处理空值
                 var dataList = dt.AsEnumerable()
-                    .Select(row => new {
+                    .Select(row => new
+                    {
                         Inspector = row.IsNull("INSPECTOR") ? string.Empty : row.Field<string>("INSPECTOR"),
                         CreateDate = row.IsNull("INSPECT_IQCCREATEDATE") ? DateTime.MinValue : row.Field<DateTime>("INSPECT_IQCCREATEDATE"),
                         LotQty = row.IsNull("LOT_QTY") ? 0 : Convert.ToDecimal(row.Field<object>("LOT_QTY"))
@@ -1504,10 +1578,13 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 object result = null;
 
-                if (input.SumType.ToLower() == "month") {
+                string sumType = input.SumType?.ToLower() ?? "";
+                if (sumType == "month")
+                {
                     var monthStats = dataList
                         .GroupBy(x => x.Inspector)
-                        .Select(g => new {
+                        .Select(g => new
+                        {
                             name = g.Key,
                             data = new[] { g.Sum(x => x.LotQty) } // 单元素数组
                         })
@@ -1515,11 +1592,13 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = monthStats;
                 }
-                else {
+                else if (sumType == "year")
+                {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
-                    var monthStats = dataList
+                    var yearStats = dataList
                         .GroupBy(x => x.Inspector)
-                        .Select(g => new {
+                        .Select(g => new
+                        {
                             name = g.Key,
                             data = Enumerable.Range(1, 12) // 生成1-12月
                                 .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.LotQty))
@@ -1527,19 +1606,64 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         })
                         .ToList();
 
-                    result = monthStats;
+                    result = yearStats;
+                }
+                else if (sumType == "custom")
+                {
+                    // StartDate / EndDate 是 string，需要解析
+                    if (string.IsNullOrWhiteSpace(input.StartDate) || string.IsNullOrWhiteSpace(input.EndDate))
+                        throw new Exception("自定义时间统计必须提供 StartDate 和 EndDate");
+
+                    if (!DateTime.TryParse(input.StartDate, out DateTime start))
+                        throw new Exception($"无法解析 StartDate：{input.StartDate}");
+
+                    if (!DateTime.TryParse(input.EndDate, out DateTime end))
+                        throw new Exception($"无法解析 EndDate：{input.EndDate}");
+
+                    if (end < start)
+                        throw new Exception("EndDate 不能小于 StartDate");
+
+                    // 计算跨越的月份列表
+                    var months = new List<(int Year, int Month)>();
+                    DateTime cursor = new DateTime(start.Year, start.Month, 1);
+
+                    DateTime endMonth = new DateTime(end.Year, end.Month, 1);
+
+                    while (cursor <= endMonth)
+                    {
+                        months.Add((cursor.Year, cursor.Month));
+                        cursor = cursor.AddMonths(1);
+                    }
+
+                    // 按自定义月份统计
+                    var customStats = dataList
+                        .GroupBy(x => x.Inspector)
+                        .Select(g => new
+                        {
+                            name = g.Key,
+                            data = months
+                                .Select(m => g.Where(x => x.CreateDate.Year == m.Year && x.CreateDate.Month == m.Month)
+                                              .Sum(x => x.LotQty))
+                                .ToArray()
+                        })
+                        .ToList();
+
+                    result = customStats;
                 }
 
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1551,7 +1675,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// </summary>
         public async Task<ApiResponse> GetPersonnelDurationDataAsync(INSPECT_PERSONNELDATA input)
         {
-            try {
+            try
+            {
                 //INSPECTOR,ITEMKIND,LOT_QTY
                 DataTable dt = await GetPersonnelData(input);
                 // 定义ITEMKIND对应的检验时长系数（严格匹配名称）
@@ -1568,7 +1693,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 // 转换数据并计算每条记录的检验时长
                 var dataList = dt.AsEnumerable()
-                    .Select(row => new {
+                    .Select(row => new
+                    {
                         Inspector = row.IsNull("INSPECTOR") ? string.Empty : row.Field<string>("INSPECTOR"),
                         ItemKind = row.IsNull("ITEMKIND") ? string.Empty : row.Field<string>("ITEMKIND"),
                         LotQty = row.IsNull("LOT_QTY") ? 0 : Convert.ToDecimal(row.Field<object>("LOT_QTY")),
@@ -1583,42 +1709,92 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 object result = null;
 
-                if (input.SumType.ToLower() == "month") {
+                string sumType = input.SumType?.ToLower() ?? "";
+                if (sumType == "month")
+                {
                     var monthStats = dataList
-                       .GroupBy(x => x.Inspector)
-                       .Select(g => new {
-                           name = g.Key,
-                           data = new[] { g.Sum(x => x.InspectionTime) } // 月度总检验时长
-                       })
-                       .ToList();
+                        .GroupBy(x => x.Inspector)
+                        .Select(g => new
+                        {
+                            name = g.Key,
+                            data = new[] { g.Sum(x => x.LotQty) } // 单元素数组
+                        })
+                        .ToList();
 
                     result = monthStats;
                 }
-                else {
-                    //每个人1-12月的检验时长（固定12元素数组）
-                    var monthStats = dataList
-                    .GroupBy(x => x.Inspector)
-                    .Select(g => new {
-                        name = g.Key,
-                        data = Enumerable.Range(1, 12)
-                            .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.InspectionTime))
-                            .ToArray() // 1-12月检验时长数组
-                    })
-                    .ToList();
+                else if (sumType == "year")
+                {
+                    // 按月统计：每个人1-12月的数据（固定12元素数组）
+                    var yearStats = dataList
+                        .GroupBy(x => x.Inspector)
+                        .Select(g => new
+                        {
+                            name = g.Key,
+                            data = Enumerable.Range(1, 12) // 生成1-12月
+                                .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.LotQty))
+                                .ToArray() // 转为12元素数组
+                        })
+                        .ToList();
 
-                    result = monthStats;
+                    result = yearStats;
+                }
+                else if (sumType == "custom")
+                {
+                    // StartDate / EndDate 是 string，需要解析
+                    if (string.IsNullOrWhiteSpace(input.StartDate) || string.IsNullOrWhiteSpace(input.EndDate))
+                        throw new Exception("自定义时间统计必须提供 StartDate 和 EndDate");
+
+                    if (!DateTime.TryParse(input.StartDate, out DateTime start))
+                        throw new Exception($"无法解析 StartDate：{input.StartDate}");
+
+                    if (!DateTime.TryParse(input.EndDate, out DateTime end))
+                        throw new Exception($"无法解析 EndDate：{input.EndDate}");
+
+                    if (end < start)
+                        throw new Exception("EndDate 不能小于 StartDate");
+
+                    // 计算跨越的月份列表
+                    var months = new List<(int Year, int Month)>();
+                    DateTime cursor = new DateTime(start.Year, start.Month, 1);
+
+                    DateTime endMonth = new DateTime(end.Year, end.Month, 1);
+
+                    while (cursor <= endMonth)
+                    {
+                        months.Add((cursor.Year, cursor.Month));
+                        cursor = cursor.AddMonths(1);
+                    }
+
+                    // 按自定义月份统计
+                    var customStats = dataList
+                        .GroupBy(x => x.Inspector)
+                        .Select(g => new
+                        {
+                            name = g.Key,
+                            data = months
+                                .Select(m => g.Where(x => x.CreateDate.Year == m.Year && x.CreateDate.Month == m.Month)
+                                              .Sum(x => x.LotQty))
+                                .ToArray()
+                        })
+                        .ToList();
+
+                    result = customStats;
                 }
 
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
