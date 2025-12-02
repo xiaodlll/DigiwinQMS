@@ -177,7 +177,7 @@
                 <div class="chart-title">人员检验批数</div>
                 <div class="chart-controls">
                     <div class="btn-group">
-                        <button class="btn active" data-type="month" data-chart="batches">月</button>
+                        <button class="btn active" data-type="year" data-chart="batches">年</button>
                         <button class="btn" data-type="custom" data-chart="batches">自定义</button>
                     </div>
                 </div>
@@ -232,8 +232,7 @@
                     </div>
 
                     <div class="btn-group">
-                        <button class="btn active" data-type="month" data-chart="efficiency">月</button>
-                        <button class="btn" data-type="year" data-chart="efficiency">年</button>
+                        <button class="btn active" data-type="year" data-chart="efficiency">年</button>
                         <button class="btn" data-type="custom" data-chart="efficiency">自定义</button>
                     </div>
                 </div>
@@ -255,7 +254,7 @@
                 <div class="chart-title">人员总检验时长</div>
                 <div class="chart-controls">
                     <div class="btn-group">
-                        <button class="btn active" data-type="month" data-chart="duration">月</button>
+                        <button class="btn active" data-type="year" data-chart="duration">年</button>
                         <button class="btn" data-type="custom" data-chart="duration">自定义</button>
                     </div>
                 </div>
@@ -281,18 +280,18 @@
         // 当前视图状态
         const viewState = {
             batches: {
-                type: 'month', // month, custom
+                type: 'year', // year, custom
                 startDate: null,
                 endDate: null
             },
             efficiency: {
-                type: 'month', // month, year, custom
+                type: 'year', // year, custom
                 startDate: null,
                 endDate: null,
                 materials: ['塑胶件', '金属件', '电子件', '辅料', '包材', '成品外购标准件']
             },
             duration: {
-                type: 'month', // month, year, custom
+                type: 'year', // year, custom
                 startDate: null,
                 endDate: null
             }
@@ -341,11 +340,11 @@
             }
         });
 
-        // 设置默认日期范围为最近30天
+        // 设置默认日期范围为当前年
         function setDefaultDateRange() {
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - 30);
+            const currentYear = new Date().getFullYear();
+            const startDate = new Date(currentYear, 0, 1); // 当年1月1日
+            const endDate = new Date(currentYear, 11, 31); // 当年12月31日
 
             const formatDate = (date) => date.toISOString().split('T')[0];
 
@@ -361,11 +360,35 @@
             viewState.efficiency.startDate = formatDate(startDate);
             viewState.efficiency.endDate = formatDate(endDate);
 
-            // 设置效率图表的日期
+            // 设置时长图表的日期
             document.getElementById('duration-start-date').value = formatDate(startDate);
             document.getElementById('duration-end-date').value = formatDate(endDate);
             viewState.duration.startDate = formatDate(startDate);
             viewState.duration.endDate = formatDate(endDate);
+        }
+
+        // 生成月份标签
+        function generateMonthLabels(startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const monthLabels = [];
+            
+            // 限制最多显示12个月
+            let maxMonths = 12;
+            let currentDate = new Date(start);
+            
+            while (currentDate <= end && monthLabels.length < maxMonths) {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+                monthLabels.push(`${year}年${month}月`);
+                
+                // 移动到下一个月
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                // 设置为当月的第一天
+                currentDate.setDate(1);
+            }
+            
+            return monthLabels;
         }
 
         // 物料选择器交互
@@ -404,6 +427,16 @@
                     document.getElementById(`${chartType}-date-picker`).classList.remove('hidden');
                 } else {
                     document.getElementById(`${chartType}-date-picker`).classList.add('hidden');
+                    // 如果是年视图，重置为当前年
+                    if (viewType === 'year') {
+                        const currentYear = new Date().getFullYear();
+                        const startDate = new Date(currentYear, 0, 1);
+                        const endDate = new Date(currentYear, 11, 31);
+                        const formatDate = (date) => date.toISOString().split('T')[0];
+                        
+                        viewState[chartType].startDate = formatDate(startDate);
+                        viewState[chartType].endDate = formatDate(endDate);
+                    }
                     // 更新图表
                     if (chartType === 'batches') {
                         updateBatchesChart();
@@ -449,8 +482,7 @@
             document.getElementById('duration-date-picker').classList.add('hidden');
             updateDurationChart();
         });
-        // 隐藏日期选择器
-        document.getElementById('duration-date-picker').classList.add('hidden');
+        
         // 获取数据的函数
         async function fetchData(url, params) {
             const urlBase = url;
@@ -511,18 +543,15 @@
             const batchesData = await fetchData('/api/erp/GetPersonnelBatchesData', params);
 
             if (batchesData && Array.isArray(batchesData) && batchesData.length > 0) {
-                // 处理x轴数据
+                // 生成x轴标签
                 let xAxisData = [];
-                if (viewState.batches.type === 'month') {
-                    // 当月数据 - 假设返回的是当月的日期数据，如果没有则使用默认
-                    xAxisData = batchesData.categories || Array.from({length: 31}, (_, i) => (i + 1).toString());
-                } else if (viewState.batches.type === 'year') {
+                if (viewState.batches.type === 'year') {
                     // 年数据 - 1-12月
-                    xAxisData = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                    const currentYear = new Date().getFullYear();
+                    xAxisData = Array.from({length: 12}, (_, i) => `${currentYear}年${i+1}月`);
                 } else {
-                    // 自定义 - 使用数据长度生成
-                    const dataLength = batchesData[0].data ? batchesData[0].data.length : 12;
-                    xAxisData = Array.from({length: dataLength}, (_, i) => (i + 1).toString());
+                    // 自定义范围 - 按月份生成标签
+                    xAxisData = generateMonthLabels(viewState.batches.startDate, viewState.batches.endDate);
                 }
 
                  // 处理系列数据
@@ -544,7 +573,7 @@
                         left: 50,
                         right: 100,
                         top: 60,
-                        bottom: 50
+                        bottom: 60
                     },
                     tooltip: {
                         trigger: 'axis',
@@ -564,9 +593,12 @@
                     },
                     xAxis: {
                         type: 'category',
-                        name: viewState.batches.type === 'month' ? '日期' : 
-                              viewState.batches.type === 'year' ? '月份' : '日期',
-                        data: xAxisData
+                        name: '月份',
+                        data: xAxisData,
+                        axisLabel: {
+                            interval: 0,
+                            rotate: 45
+                        }
                     },
                     yAxis: {
                         type: 'value',
@@ -609,18 +641,15 @@
 
             const efficiencyData = await fetchData('/api/erp/GetPersonnelEfficiencyData', params);
             if (efficiencyData && Array.isArray(efficiencyData) && efficiencyData.length > 0) {
-                // 处理x轴数据
+                // 生成x轴标签
                 let xAxisData = [];
-                if (viewState.efficiency.type === 'month') {
-                    // 当月数据
-                    xAxisData = efficiencyData.categories || Array.from({length: 31}, (_, i) => (i + 1).toString());
-                } else if (viewState.efficiency.type === 'year') {
+                if (viewState.efficiency.type === 'year') {
                     // 年数据 - 1-12月
-                    xAxisData = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                    const currentYear = new Date().getFullYear();
+                    xAxisData = Array.from({length: 12}, (_, i) => `${currentYear}年${i+1}月`);
                 } else {
-                    // 自定义 - 使用数据长度生成
-                    const dataLength = batchesData[0].data ? batchesData[0].data.length : 12;
-                    xAxisData = Array.from({length: dataLength}, (_, i) => (i + 1).toString());
+                    // 自定义范围 - 按月份生成标签
+                    xAxisData = generateMonthLabels(viewState.efficiency.startDate, viewState.efficiency.endDate);
                 }
 
                 // 处理系列数据
@@ -642,7 +671,7 @@
                         left: 50,
                         right: 100,
                         top: 60,
-                        bottom: 50
+                        bottom: 60
                     },
                     tooltip: {
                         trigger: 'axis',
@@ -662,9 +691,12 @@
                     },
                     xAxis: {
                         type: 'category',
-                        name: viewState.efficiency.type === 'month' ? '日期' :
-                              viewState.efficiency.type === 'year' ? '月份' : '日期',
-                        data: xAxisData
+                        name: '月份',
+                        data: xAxisData,
+                        axisLabel: {
+                            interval: 0,
+                            rotate: 45
+                        }
                     },
                     yAxis: {
                         type: 'value',
@@ -701,24 +733,21 @@
         // 更新时长图表
         async function updateDurationChart() {
             const params = {
-                type: viewState.batches.type,
-                startDate: viewState.batches.startDate,
-                endDate: viewState.batches.endDate
+                type: viewState.duration.type,
+                startDate: viewState.duration.startDate,
+                endDate: viewState.duration.endDate
             };
             const durationData = await fetchData('/api/erp/GetPersonnelDurationData', params);
             if (durationData && Array.isArray(durationData) && durationData.length > 0) {
-                // 处理x轴数据
+                // 生成x轴标签
                 let xAxisData = [];
-                if (viewState.duration.type === 'month') {
-                    // 当月数据
-                    xAxisData = durationData.categories || Array.from({length: 31}, (_, i) => (i + 1).toString());
-                } else if (viewState.duration.type === 'year') {
+                if (viewState.duration.type === 'year') {
                     // 年数据 - 1-12月
-                    xAxisData = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                    const currentYear = new Date().getFullYear();
+                    xAxisData = Array.from({length: 12}, (_, i) => `${currentYear}年${i+1}月`);
                 } else {
-                    // 自定义 - 使用数据长度生成
-                    const dataLength = batchesData[0].data ? batchesData[0].data.length : 12;
-                    xAxisData = Array.from({length: dataLength}, (_, i) => (i + 1).toString());
+                    // 自定义范围 - 按月份生成标签
+                    xAxisData = generateMonthLabels(viewState.duration.startDate, viewState.duration.endDate);
                 }
 
                 // 处理系列数据
@@ -740,7 +769,7 @@
                         left: 50,
                         right: 100,
                         top: 60,
-                        bottom: 50
+                        bottom: 60
                     },
                     tooltip: {
                         trigger: 'axis',
@@ -760,13 +789,16 @@
                     },
                     xAxis: {
                         type: 'category',
-                        name: viewState.duration.type === 'month' ? '日期' :
-                              viewState.duration.type === 'year' ? '月份' : '日期',
-                        data: xAxisData
+                        name: '月份',
+                        data: xAxisData,
+                        axisLabel: {
+                            interval: 0,
+                            rotate: 45
+                        }
                     },
                     yAxis: {
                         type: 'value',
-                        name: '校验时长',
+                        name: '检验时长',
                         min: 0
                     },
                     series: series
