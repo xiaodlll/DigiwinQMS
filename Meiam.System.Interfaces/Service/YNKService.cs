@@ -1878,7 +1878,7 @@ LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
 WHERE YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
-                switch (input.DetailType) {
+                switch (input.CardType) {
                     case "VerifiedQty":
                         sql += "";
                         break;

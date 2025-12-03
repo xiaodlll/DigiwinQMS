@@ -57,6 +57,11 @@ namespace Meiam.System.Model.Dto
         public string StartDate { get; set; }
         public string EndDate { get; set; }
         public string MeterialNames { get; set; }
-        public string DetailType { get; set; }
+        //VerifiedQty、PendingInspectionQty、QtyAwaitingDisposition、PendingMaterialMaintenance、MonthlyLotRejections、InspectionDelay
+        public string CardType { get; set; }
+        //量产类物料：1；研发类物料：2
+        public string MaterialType { get; set; }
+        //供应商ID
+        public string SuppID { get; set; }
     }
 }

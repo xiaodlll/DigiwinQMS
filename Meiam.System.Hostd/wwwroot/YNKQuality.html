@@ -936,7 +936,8 @@
 
         // 图表状态
         yearComingQualified: {
-            type: 'year'
+            type: 'year',
+            projects: []
         },
         comingQualified: {
             type: 'day',
@@ -957,7 +958,7 @@
 
         // 供应商排行状态
         supplierRank: {
-            type: 'month', // 默认显示月数据
+            type: 'day', 
             startDate: null,
             endDate: null,
             projects: []
@@ -1141,7 +1142,8 @@
                     SumType: params.type || "",
                     StartDate: params.startDate || "",
                     EndDate: params.endDate || "",
-                    MeterialNames: params.materials || ""
+                    MeterialNames: params.materials || "",
+                    SuppID: params.SuppID || ""
                 }),
                 credentials: 'same-origin'
             });
@@ -1421,18 +1423,18 @@
                     <thead>
                         <tr>
                             <th>检验单号</th>
-                            <th>项目名称</th>
-                            <th>供应商名称</th>
-                            <th>ERP到货单号</th>
+                            <th>所属项目</th>
+                            <th>供应商</th>
+                            <th>到货单号</th>
                             <th>检验状态</th>
-                            <th>是否可用</th>
-                            <th>物料编码</th>
-                            <th>物料名称</th>
+                            <th>是否回写</th>
+                            <th>品号</th>
+                            <th>材料名称</th>
                             <th>批号</th>
-                            <th>批数量</th>
-                            <th>申请日期</th>
-                            <th>检验创建日期</th>
-                            <th>备注</th>
+                            <th>到货数量</th>
+                            <th>进料日期</th>
+                            <th>创建时间</th>
+                            <th>检验项备注合并值</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1444,7 +1446,7 @@
                 if (item.PSTATE === '已完成') statusColor = '#1abc9c';
                 if (item.PSTATE === '检验中') statusColor = '#f39c12';
 
-                // 是否可用状态
+                // 是否回写状态
                 let isAvailableText = item.ISSY === '1' ? '是' : (item.ISSY === '' || item.ISSY === null ? '否' : item.ISSY);
                 let isAvailableColor = item.ISSY === '1' ? '#1abc9c' : '#999';
 
