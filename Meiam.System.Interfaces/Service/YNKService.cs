@@ -1801,7 +1801,55 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <returns></returns>
         public async Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input){
             try {
-                object result = null;
+                string sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                var count = await Db.Ado.GetIntAsync(sql);
+                object A1 = new {
+                    name = "VerifiedQty",
+                    value = count
+                };
+
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_001'  --待检验
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                count = await Db.Ado.GetIntAsync(sql);
+                object A2 = new {
+                    name = "PendingInspectionQty",
+                    value = count
+                };
+
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_004'  --待判定
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                count = await Db.Ado.GetIntAsync(sql);
+                object A3 = new {
+                    name = "QtyAwaitingDisposition",
+                    value = count
+                };
+
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                count = await Db.Ado.GetIntAsync(sql);
+                object A4 = new {
+                    name = "PendingMaterialMaintenance",
+                    value = count
+                };
+
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                count = await Db.Ado.GetIntAsync(sql);
+                object A5 = new {
+                    name = "MonthlyLotRejections",
+                    value = count
+                };
+
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                count = await Db.Ado.GetIntAsync(sql);
+                object A6 = new {
+                    name = "InspectionDelay",
+                    value = count
+                };
+
+                object result = new object[] { A1, A2, A3, A4, A5, A6 };
                 string jsonData = JsonConvert.SerializeObject(result);
 
                 return new ApiResponse {
@@ -1823,7 +1871,36 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// </summary>
         public async Task<ApiResponse> GetIQCDetailDataAsync(INSPECT_PERSONNELDATA input) {
             try {
-                object result = null;
+                string sql = @"select INSPECT_IQCCODE,PROJECT.PROJECTNAME,SUPP.SUPPNAME,ERP_ARRIVEDID,SYSM002.SYSM002NAME PSTATE,ISSY,ITEMID,ITEMNAME, 
+LOTNO,LOT_QTY,APPLY_DATE,INSPECT_IQCCREATEDATE,ALL_REMARK3
+from INSPECT_IQC 
+LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
+LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
+LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
+WHERE YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
+                switch (input.DetailType) {
+                    case "VerifiedQty":
+                        sql += "";
+                        break;
+                    case "PendingInspectionQty":
+                        sql += "";
+                        break;
+                    case "QtyAwaitingDisposition":
+                        sql += "";
+                        break;
+                    case "PendingMaterialMaintenance":
+                        sql += "";
+                        break;
+                    case "MonthlyLotRejections":
+                        sql += "";
+                        break;
+                    case "InspectionDelay":
+                        sql += "";
+                        break;
+                    default:
+                        break;
+                }
+                var result = await Db.Ado.GetDataTableAsync(sql);
                 string jsonData = JsonConvert.SerializeObject(result);
 
                 return new ApiResponse {
