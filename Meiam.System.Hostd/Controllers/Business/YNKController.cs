@@ -940,6 +940,148 @@ namespace Meiam.System.Hostd.Controllers.Business
             }
             return BadRequest(result);
         }
+
+        /// <summary>
+        /// 质量看板总数
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetIQCTotalData")]
+        public async Task<IActionResult> GetIQCTotalData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetIQCTotalDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+
+        /// <summary>
+        /// 质量看板明细
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetIQCDetailData")]
+        public async Task<IActionResult> GetIQCDetailData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetIQCDetailDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        /// <summary>
+        /// 累计进料/累计合格率
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetComingQualifiedData")]
+        public async Task<IActionResult> GetComingQualifiedData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetComingQualifiedDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+
+        /// <summary>
+        /// 累计进料/累计合格率（按项目）
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetComingProjectData")]
+        public async Task<IActionResult> GetComingProjectData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetComingProjectDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+
+        /// <summary>
+        /// 供应商质量排行
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetSuppBatchRejectionData")]
+        public async Task<IActionResult> GetSuppBatchRejectionData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetSuppBatchRejectionDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+
+        /// <summary>
+        /// 供应商质量明细
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetSuppBatchRejectionDetailData")]
+        public async Task<IActionResult> GetSuppBatchRejectionDetailData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetSuppBatchRejectionDetailDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
         #endregion
     }
 }

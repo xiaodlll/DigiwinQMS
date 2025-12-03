@@ -1093,7 +1093,7 @@ namespace Meiam.System.Interfaces.Service
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                     remark = dataMain.Rows[0]["ALL_REMARK3"].ToString();
                 }
-                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT CASE 
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESS.INSPECT_CNT,CASE 
         WHEN STD_VALUE IS NULL OR STD_VALUE='' THEN 'N/A'
         ELSE STD_VALUE + '+' + MAX_VALUE + '/-' + replace(MIN_VALUE,'-','')
     END AS  PROGRESSNAME1,
@@ -1127,12 +1127,14 @@ namespace Meiam.System.Interfaces.Service
                     {
                         Inspector = row["INSPECTOR"].ToString();
                     }
+                    int.TryParse(row["INSPECT_CNT"]?.ToString(), out int inspectCnt);
                     var data = new InspectData
                     {
                         ProgressName = row["PROGRESSNAME1"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
-                        InspectrResult = row["INSPECT_RESULT"]?.ToString(),
-                        InspectrType = row["COUNTTYPE"]?.ToString(),
+                        InspectResult = row["INSPECT_RESULT"]?.ToString(),
+                        InspectType = row["COUNTTYPE"]?.ToString(),
+                        InspectCnt = inspectCnt,
                         NGS = row["NGS"]?.ToString(),
                         Values = new List<object>()
                     };
@@ -1209,31 +1211,22 @@ namespace Meiam.System.Interfaces.Service
                 //横向寻找NG
                 foreach (var data in dataList)
                 {
-                    if (data.InspectrType == "COUNTTYPE_001")
-                    {
-                        if (string.IsNullOrEmpty(data.NGS))
-                        {
-                            resultValue = data.InspectrResult ?? "OK";
+                    if (string.IsNullOrEmpty(data.NGS)) {
+                        resultValue = data.InspectResult ?? "OK";
+                    }
+                    else {
+                        if (!data.NGS.Contains("A")) {
+                            resultValue = "NG";
                         }
-                        else
-                        {
-                            if (!data.NGS.Contains("A"))
-                            {
-                                resultValue = "NG";
-                            }
-                            else if (data.NGS.Contains($"A{i + 1};"))
-                            {
-                                resultValue = "NG";
-                            }
-                            else
-                            {
-                                resultValue = "OK";
-                            }
+                        else if (data.NGS.Contains($"A{i + 1};")) {
+                            resultValue = "NG";
                         }
-                        if (resultValue == "NG")
-                        {
-                            break;
+                        else {
+                            resultValue = "OK";
                         }
+                    }
+                    if (resultValue == "NG") {
+                        break;
                     }
                 }
                 dicColumnsAValues.Add(i, resultValue);
@@ -1265,15 +1258,15 @@ namespace Meiam.System.Interfaces.Service
                     columnData.Add(data.InspectCode ?? "");   // 检测编码
 
                     // 处理检测值
-                    if (data.InspectrType == "COUNTTYPE_001")
+                    if (data.InspectType == "COUNTTYPE_001")
                     {
                         // 计数类型处理
-                        for (int j = 1; j <= maxLength; j++)
+                        for (int j = 1; j <= data.InspectCnt; j++)
                         {
                             string resultValue = "OK";
                             if (string.IsNullOrEmpty(data.NGS))
                             {
-                                resultValue = data.InspectrResult ?? "OK";
+                                resultValue = data.InspectResult ?? "OK";
                             }
                             else
                             {
@@ -1395,8 +1388,9 @@ namespace Meiam.System.Interfaces.Service
         {
             public string ProgressName { get; set; }
             public string InspectCode { get; set; }
-            public string InspectrResult { get; set; }
-            public string InspectrType { get; set; }
+            public string InspectResult { get; set; }
+            public string InspectType { get; set; }
+            public int InspectCnt { get; set; }
             public string NGS { get; set; }
             public List<object> Values { get; set; }
         }
@@ -1800,6 +1794,141 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 };
             }
         }
+
+        /// <summary>
+        /// 质量看板总数
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input){
+            try {
+                object result = null;
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 质量看板明细
+        /// </summary>
+        public async Task<ApiResponse> GetIQCDetailDataAsync(INSPECT_PERSONNELDATA input) {
+            try {
+                object result = null;
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 累计进料/累计合格率
+        /// </summary>
+        public async Task<ApiResponse> GetComingQualifiedDataAsync(INSPECT_PERSONNELDATA input) {
+            try {
+                object result = null;
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 累计进料/累计合格率（按项目）
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ApiResponse> GetComingProjectDataAsync(INSPECT_PERSONNELDATA input) {
+            try {
+                object result = null;
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 供应商质量排行
+        /// </summary>
+        public async Task<ApiResponse> GetSuppBatchRejectionDataAsync(INSPECT_PERSONNELDATA input) {
+            try {
+                object result = null;
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 供应商质量明细
+        /// </summary>
+        public async Task<ApiResponse> GetSuppBatchRejectionDetailDataAsync(INSPECT_PERSONNELDATA input) {
+            try {
+                object result = null;
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
         #endregion
     }
 }

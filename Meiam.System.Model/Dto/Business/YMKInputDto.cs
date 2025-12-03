@@ -57,5 +57,6 @@ namespace Meiam.System.Model.Dto
         public string StartDate { get; set; }
         public string EndDate { get; set; }
         public string MeterialNames { get; set; }
+        public string DetailType { get; set; }
     }
 }

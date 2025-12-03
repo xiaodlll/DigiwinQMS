@@ -349,6 +349,42 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetIQCTotalData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            质量看板总数
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetIQCDetailData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            质量看板明细
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetComingQualifiedData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            累计进料/累计合格率
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetComingProjectData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            累计进料/累计合格率（按项目）
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetSuppBatchRejectionData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            供应商质量排行
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetSuppBatchRejectionDetailData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            供应商质量明细
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Meiam.System.Hostd.Controllers.System.LogsController">
             <summary>
             日志接口
