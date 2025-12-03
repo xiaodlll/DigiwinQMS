@@ -809,7 +809,7 @@ and DOC_CODE ='{input.DOC_CODE}' and INSPECT_NORID='3828c830-51a4-4cdd-bb50-2ed1
                     foreach (var entity in entities)
                     {
                         //判断重复
-                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{entity.KEEID}' AND ERP_ARRIVEDID= '{entity.ERP_ARRIVEDID}' ") > 0;
+                        bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{entity.KEEID}' AND ERP_ARRIVEDID= '{entity.ERP_ARRIVEDID}' AND ITEMID= '{entity.ITEMID}'") > 0;
                         if (isExist)
                         {
                             _logger.LogWarning($"收料通知单已存在。KEEID: {entity.KEEID}, ERP_ARRIVEDID: {entity.ERP_ARRIVEDID}, ITEMID: {entity.ITEMID}, SUPPLOTNO: {entity.SUPPLOTNO}");
