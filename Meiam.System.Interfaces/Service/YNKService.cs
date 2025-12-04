@@ -1014,7 +1014,7 @@ namespace Meiam.System.Interfaces.Service {
                         Values = new List<object>()
                     };
                     if (data.InspectType == "INSPECT_TYPE_000" || data.InspectType == "INSPECT_TYPE_003" || data.InspectType == "INSPECT_TYPE_999") {
-                        data.ProgressName = row["PROGRESSNAME"]?.ToString();
+                        data.ProgressName = row["INSPECT_PROGRESSNAME"]?.ToString();
                     }
 
                     // 收集A1-A64的值（跳过空值）
@@ -2015,7 +2015,7 @@ WHERE [STATE]='PSTATE_003'";
                             END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE {0} SUPP.SUPPNAME Is not null
+WHERE {0} AND SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere); //  批退条件
                 var dtA1 = await Db.Ado.GetDataTableAsync(sql);//批退率
@@ -2029,7 +2029,7 @@ order by VALUE DESC", sqlWhere); //  批退条件
                             END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE {0} SUPP.SUPPNAME Is not null
+WHERE {0} AND SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
                 var dtA2 = await Db.Ado.GetDataTableAsync(sql);//不良率
@@ -2037,7 +2037,7 @@ order by VALUE DESC", sqlWhere);
                 sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE {0} SUPP.SUPPNAME Is not null
+WHERE {0} AND SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
                 var dtA3 = await Db.Ado.GetDataTableAsync(sql);//进料批数
@@ -2045,7 +2045,7 @@ order by VALUE DESC", sqlWhere);
                 sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE {0} SUPP.SUPPNAME Is not null and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' 
+WHERE {0} AND SUPP.SUPPNAME Is not null and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' 
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
                 var dtA4 = await Db.Ado.GetDataTableAsync(sql); //批退批数
