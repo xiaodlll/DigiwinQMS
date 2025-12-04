@@ -1902,7 +1902,7 @@ LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
 WHERE YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
                 if (!string.IsNullOrEmpty(input.SuppID)) {
-                    sql += $" AND SUPP.SUPP ='{input.SuppID}'";
+                    sql += $" AND SUPP.SUPPID ='{input.SuppID}'";
                 }
                 var result = await Db.Ado.GetDataTableAsync(sql);
                 string jsonData = JsonConvert.SerializeObject(result);

@@ -936,8 +936,7 @@
 
         // 图表状态
         yearComingQualified: {
-            type: 'year',
-            projects: []
+            type: 'year'
         },
         comingQualified: {
             type: 'day',
@@ -958,7 +957,7 @@
 
         // 供应商排行状态
         supplierRank: {
-            type: 'day', 
+            type: 'day',
             startDate: null,
             endDate: null,
             projects: []
@@ -974,60 +973,6 @@
         rd: ['机器人', '骨刀', '通用']
     };
 
-    // 供应商数据（按批退率排序前5）
-    const supplierData = [
-        {
-            id: 'A001',
-            name: '供应商A',
-            materialType: '电子元器件',
-            defectRate: '0.8%',
-            incomingBatches: 23441,
-            rejectBatches: 3323,
-            qualityRate: '99.2%',
-            rank: 1
-        },
-        {
-            id: 'B002',
-            name: '供应商B',
-            materialType: '塑料件',
-            defectRate: '1.3%',
-            incomingBatches: 442344,
-            rejectBatches: 234,
-            qualityRate: '98.7%',
-            rank: 2
-        },
-        {
-            id: 'C003',
-            name: '供应商C',
-            materialType: '金属加工件',
-            defectRate: '4.7%',
-            incomingBatches: 23455,
-            rejectBatches: 23,
-            qualityRate: '95.3%',
-            rank: 3
-        },
-        {
-            id: 'D004',
-            name: '供应商D',
-            materialType: '包装材料',
-            defectRate: '8.5%',
-            incomingBatches: 12345,
-            rejectBatches: 456,
-            qualityRate: '91.5%',
-            rank: 4
-        },
-        {
-            id: 'E005',
-            name: '供应商E',
-            materialType: '电子元器件',
-            defectRate: '2.1%',
-            incomingBatches: 56789,
-            rejectBatches: 789,
-            qualityRate: '97.9%',
-            rank: 5
-        }
-    ];
-
     // 初始化ECharts实例
     const charts = {
         yearComingQualified: echarts.init(document.getElementById('yearComingQualified')),
@@ -1041,14 +986,14 @@
         // 累计进料/累计合格率日期选择器
         flatpickr("#comingQualified-start-date", {
             dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
+            onChange: function (selectedDates, dateStr) {
                 viewState.comingQualified.startDate = dateStr;
             }
         });
 
         flatpickr("#comingQualified-end-date", {
             dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
+            onChange: function (selectedDates, dateStr) {
                 viewState.comingQualified.endDate = dateStr;
             }
         });
@@ -1056,14 +1001,14 @@
         // 累计进料/累计合格率（按项目）日期选择器
         flatpickr("#comingProject-start-date", {
             dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
+            onChange: function (selectedDates, dateStr) {
                 viewState.comingProject.startDate = dateStr;
             }
         });
 
         flatpickr("#comingProject-end-date", {
             dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
+            onChange: function (selectedDates, dateStr) {
                 viewState.comingProject.endDate = dateStr;
             }
         });
@@ -1071,14 +1016,14 @@
         // 供应商排行日期选择器
         flatpickr("#supplier-rank-start-date", {
             dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
+            onChange: function (selectedDates, dateStr) {
                 viewState.supplierRank.startDate = dateStr;
             }
         });
 
         flatpickr("#supplier-rank-end-date", {
             dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
+            onChange: function (selectedDates, dateStr) {
                 viewState.supplierRank.endDate = dateStr;
             }
         });
@@ -1139,9 +1084,9 @@
                 body: JSON.stringify({
                     MaterialType: params.MaterialType || "",
                     CardType: params.CardType || "",
-                    SumType: params.type || "",
-                    StartDate: params.startDate || "",
-                    EndDate: params.endDate || "",
+                    SumType: params.SumType || params.type || "",
+                    StartDate: params.StartDate || params.startDate || "",
+                    EndDate: params.EndDate || params.endDate || "",
                     MeterialNames: params.materials || "",
                     SuppID: params.SuppID || ""
                 }),
@@ -1357,13 +1302,13 @@
                     border-radius: 4px;
                     position: relative;
                 }
-                
+
                 .sticky-table {
                     width: 100%;
                     border-collapse: collapse;
                     min-width: 1200px;
                 }
-                
+
                 .sticky-table thead {
                     position: sticky;
                     top: 0;
@@ -1512,7 +1457,7 @@
                 applyBtn.textContent = '确定';
                 applyBtn.style.width = '100%';
                 applyBtn.style.marginTop = '10px';
-                applyBtn.onclick = function() {
+                applyBtn.onclick = function () {
                     updateChartBySelector(selectorId);
                     dropdown.style.display = 'none';
                 };
@@ -1538,7 +1483,10 @@
         const checkboxes = document.querySelectorAll(`#${selectorId}-dropdown input[type="checkbox"]:checked`);
         checkboxes.forEach(cb => projects.push(cb.value));
 
-        if (selectorId.includes('comingQualified')) {
+        if (selectorId.includes('yearComingQualified')) {
+            viewState.comingQualified.projects = projects;
+            loadYearComingQualifiedChart();
+        } else if (selectorId.includes('comingQualified')) {
             viewState.comingQualified.projects = projects;
             loadComingQualifiedChart();
         } else if (selectorId.includes('yearComingProject')) {
@@ -1553,20 +1501,1004 @@
         }
     }
 
-    // 更新数据来源说明
+    // 更新年累计进料/累计合格率图表
+    async function loadYearComingQualifiedChart() {
+        // 准备请求参数
+        const params = {
+            MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+            SumType: 'year',
+            StartDate: '',
+            EndDate: '',
+            MeterialNames: '',
+            SuppID: ''
+        };
+
+        // 调用后端接口
+        const data = await fetchData('/api/erp/GetComingQualifiedData', params);
+
+        if (data && Array.isArray(data)) {
+            // 处理数据为柱状+折线图表格式
+            const xAxisData = [];
+            const okData = [];
+            const vipData = [];
+            const ngData = [];
+            const rateData = [];
+
+            // 处理返回的数据
+            data.forEach(item => {
+                if (item.YearMonth) {
+                    xAxisData.push(item.YearMonth);
+                } else {
+                    xAxisData.push(item.month || '');
+                }
+
+                if (item.Statistics) {
+                    okData.push(item.Statistics.OK || 0);
+                    vipData.push(item.Statistics.VIP || 0);
+                    ngData.push(item.Statistics.NG || 0);
+                } else {
+                    okData.push(item.OK || 0);
+                    vipData.push(item.VIP || 0);
+                    ngData.push(item.NG || 0);
+                }
+
+                rateData.push(item.Rate || 0);
+            });
+
+            // 如果数据为空，使用默认数据
+            if (xAxisData.length === 0) {
+                // 生成1-12月的数据
+                for (let i = 1; i <= 12; i++) {
+                    xAxisData.push(`${new Date().getFullYear()}年${i}月`);
+                    okData.push(0);
+                    vipData.push(0);
+                    ngData.push(0);
+                    rateData.push(0);
+                }
+            }
+
+            // 配置图表选项（柱状+折线）
+            const option = {
+                title: {
+                    text: '年累计进料/累计合格率',
+                    left: 'center'
+                },
+                grid: {
+                    left: 50,
+                    right: 50,
+                    top: 60,
+                    bottom: 60
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    },
+                    formatter: function (params) {
+                        let result = params[0].name + '<br/>';
+                        for (let i = 0; i < params.length; i++) {
+                            const param = params[i];
+                            if (param.seriesType === 'line') {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                            } else {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
+                            }
+                        }
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['合格', '特采', '批退', '累计合格率'],
+                    top: 30
+                },
+                xAxis: [{
+                    type: 'category',
+                    name: '月份',
+                    data: xAxisData,
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45
+                    }
+                }],
+                yAxis: [{
+                    type: 'value',
+                    name: '累计进料',
+                    alignTicks: true,
+                }, {
+                    type: 'value',
+                    name: '累计合格率',
+                    min: 0,
+                    max: 100,
+                    axisLabel: {
+                        formatter: '{value}%'
+                    }
+                }],
+                series: [
+                    {
+                        name: '合格',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: okData,
+                        itemStyle: {
+                            color: '#1abc9c'
+                        }
+                    },
+                    {
+                        name: '特采',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: vipData,
+                        itemStyle: {
+                            color: '#f1c40f'
+                        }
+                    },
+                    {
+                        name: '批退',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: ngData,
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '累计合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        smooth: true,
+                        smoothness: 0.5, // 可选：平滑度，0-1，默认0.5
+                        tooltip: {
+                            valueFormatter: function (value) {
+                                return value + '%';
+                            }
+                        },
+                        data: rateData,
+                        itemStyle: {
+                            color: '#3498db'
+                        },
+                        lineStyle: {
+                            width: 3
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            };
+
+            // 设置图表选项
+            charts.yearComingQualified.setOption(option, true);
+        } else {
+            // 显示错误信息，不显示模拟数据
+            const errorOption = {
+                graphic: {
+                    type: 'text',
+                    left: 'center',
+                    top: 'middle',
+                    style: {
+                        text: '暂无数据或数据加载失败',
+                        fontSize: 16,
+                        fill: '#999'
+                    }
+                },
+                xAxis: { show: false },
+                yAxis: { show: false },
+                series: []
+            };
+
+            charts.yearComingQualified.setOption(errorOption, true);
+        }
+    }
+
+    // 更新累计进料/累计合格率图表
+    async function loadComingQualifiedChart() {
+        // 准备请求参数
+        let sumType = viewState.comingQualified.type;
+        let startDate = viewState.comingQualified.startDate;
+        let endDate = viewState.comingQualified.endDate;
+
+        // 如果不是自定义类型，设置默认日期范围
+        if (sumType !== 'custom') {
+            const end = new Date();
+            const start = new Date();
+
+            switch (sumType) {
+                case 'day':
+                    start.setDate(start.getDate() - 1);
+                    break;
+                case 'week':
+                    start.setDate(start.getDate() - 7);
+                    break;
+                case 'month':
+                    start.setDate(start.getDate() - 30);
+                    break;
+            }
+
+            startDate = start.toISOString().split('T')[0];
+            endDate = end.toISOString().split('T')[0];
+        }
+
+        const params = {
+            MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+            SumType: sumType,
+            StartDate: startDate,
+            EndDate: endDate,
+            MeterialNames: viewState.comingQualified.projects.join(','),
+            SuppID: ''
+        };
+
+        // 调用后端接口
+        const data = await fetchData('/api/erp/GetComingQualifiedData', params);
+
+        if (data && Array.isArray(data)) {
+            // 处理数据为柱状+折线图表格式
+            const xAxisData = [];
+            const okData = [];
+            const vipData = [];
+            const ngData = [];
+            const rateData = [];
+
+            // 处理返回的数据
+            data.forEach(item => {
+                if (item.YearMonth) {
+                    xAxisData.push(item.YearMonth);
+                } else {
+                    xAxisData.push(item.date || '');
+                }
+
+                if (item.Statistics) {
+                    okData.push(item.Statistics.OK || 0);
+                    vipData.push(item.Statistics.VIP || 0);
+                    ngData.push(item.Statistics.NG || 0);
+                } else {
+                    okData.push(item.OK || 0);
+                    vipData.push(item.VIP || 0);
+                    ngData.push(item.NG || 0);
+                }
+
+                rateData.push(item.Rate || 0);
+            });
+
+            // 如果数据为空，使用默认数据
+            if (xAxisData.length === 0) {
+                // 根据时间范围生成标签
+                let labels = [];
+                const end = new Date(endDate);
+                const start = new Date(startDate);
+
+                if (sumType === 'day') {
+                    labels = ['今日'];
+                } else if (sumType === 'week') {
+                    // 过去7天
+                    for (let i = 6; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
+                    }
+                } else if (sumType === 'month') {
+                    // 过去30天，按周分组
+                    for (let i = 3; i >= 0; i--) {
+                        labels.push(`第${4 - i}周`);
+                    }
+                } else {
+                    // 自定义范围，按周分组
+                    const weeks = Math.ceil((end - start) / (7 * 24 * 60 * 60 * 1000));
+                    for (let i = 1; i <= weeks; i++) {
+                        labels.push(`第${i}周`);
+                    }
+                }
+
+                xAxisData.push(...labels);
+                okData.push(...Array(labels.length).fill(0));
+                vipData.push(...Array(labels.length).fill(0));
+                ngData.push(...Array(labels.length).fill(0));
+                rateData.push(...Array(labels.length).fill(0));
+            }
+
+            // 配置图表选项（柱状+折线）
+            const option = {
+                title: {
+                    text: '累计进料/累计合格率',
+                    left: 'center'
+                },
+                grid: {
+                    left: 50,
+                    right: 50,
+                    top: 60,
+                    bottom: 60
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    },
+                    formatter: function (params) {
+                        let result = params[0].name + '<br/>';
+                        for (let i = 0; i < params.length; i++) {
+                            const param = params[i];
+                            if (param.seriesType === 'line') {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                            } else {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
+                            }
+                        }
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['合格', '特采', '批退', '累计合格率'],
+                    top: 30
+                },
+                xAxis: [{
+                    type: 'category',
+                    name: '时间',
+                    data: xAxisData,
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45
+                    }
+                }],
+                yAxis: [{
+                    type: 'value',
+                    name: '累计进料',
+                    alignTicks: true,
+                }, {
+                    type: 'value',
+                    name: '累计合格率',
+                    min: 0,
+                    max: 100,
+                    axisLabel: {
+                        formatter: '{value}%'
+                    }
+                }],
+                series: [
+                    {
+                        name: '合格',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: okData,
+                        itemStyle: {
+                            color: '#1abc9c'
+                        }
+                    },
+                    {
+                        name: '特采',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: vipData,
+                        itemStyle: {
+                            color: '#f1c40f'
+                        }
+                    },
+                    {
+                        name: '批退',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: ngData,
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '累计合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        smooth: true,
+                        smoothness: 0.5, // 可选：平滑度，0-1，默认0.5
+                        tooltip: {
+                            valueFormatter: function (value) {
+                                return value + '%';
+                            }
+                        },
+                        data: rateData,
+                        itemStyle: {
+                            color: '#3498db'
+                        },
+                        lineStyle: {
+                            width: 3
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            };
+
+            // 设置图表选项
+            charts.comingQualified.setOption(option, true);
+        } else {
+            // 显示错误信息，不显示模拟数据
+            const errorOption = {
+                graphic: {
+                    type: 'text',
+                    left: 'center',
+                    top: 'middle',
+                    style: {
+                        text: '暂无数据或数据加载失败',
+                        fontSize: 16,
+                        fill: '#999'
+                    }
+                },
+                xAxis: { show: false },
+                yAxis: { show: false },
+                series: []
+            };
+
+            charts.comingQualified.setOption(errorOption, true);
+        }
+    }
+
+    // 更新年累计进料（按项目）图表
+    async function loadYearComingProjectChart() {
+        // 准备请求参数
+        const params = {
+            MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+            SumType: 'year',
+            StartDate: '',
+            EndDate: '',
+            MeterialNames: viewState.yearComingProject.projects.join(','),
+            SuppID: ''
+        };
+
+        // 调用后端接口
+        const data = await fetchData('/api/erp/GetComingProjectData', params);
+
+        if (data && Array.isArray(data)) {
+            // 处理数据为柱状图表格式
+            const xAxisData = [];
+            const projectData = {};
+
+            // 处理返回的数据
+            data.forEach(item => {
+                if (item.YearMonth && !xAxisData.includes(item.YearMonth)) {
+                    xAxisData.push(item.YearMonth);
+                }
+
+                // 这里需要根据实际数据结构调整
+                // 假设返回数据中有项目信息
+                if (item.Project) {
+                    if (!projectData[item.Project]) {
+                        projectData[item.Project] = [];
+                    }
+                    // 根据数据结构调整获取数量的方式
+                    const count = item.Total || item.count || 0;
+                    projectData[item.Project].push(count);
+                }
+            });
+
+            // 如果数据为空，使用默认数据
+            if (xAxisData.length === 0) {
+                // 生成1-12月的数据
+                for (let i = 1; i <= 12; i++) {
+                    xAxisData.push(`${new Date().getFullYear()}年${i}月`);
+                }
+
+                // 默认项目数据
+                const defaultProjects = ['超乳', '超声刀', '电刀', '通用'];
+                defaultProjects.forEach(project => {
+                    projectData[project] = Array(12).fill(0);
+                });
+            }
+
+            // 确保每个项目都有足够的数据点
+            Object.keys(projectData).forEach(project => {
+                while (projectData[project].length < xAxisData.length) {
+                    projectData[project].push(0);
+                }
+            });
+
+            // 配置图表选项（柱状图）
+            const option = {
+                title: {
+                    text: '年累计进料（按项目）',
+                    left: 'center'
+                },
+                grid: {
+                    left: 50,
+                    right: 100,
+                    top: 60,
+                    bottom: 60
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    type: 'scroll',
+                    orient: 'vertical',
+                    right: 10,
+                    top: 20,
+                    bottom: 20,
+                },
+                xAxis: {
+                    type: 'category',
+                    name: '月份',
+                    data: xAxisData,
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '累计进料',
+                    min: 0
+                },
+                series: Object.keys(projectData).map(project => ({
+                    name: project,
+                    type: 'bar',
+                    data: projectData[project],
+                    label: {
+                        show: true,
+                        position: 'top'
+                    }
+                }))
+            };
+
+            // 设置图表选项
+            charts.yearComingProject.setOption(option, true);
+        } else {
+            // 显示错误信息，不显示模拟数据
+            const errorOption = {
+                graphic: {
+                    type: 'text',
+                    left: 'center',
+                    top: 'middle',
+                    style: {
+                        text: '暂无数据或数据加载失败',
+                        fontSize: 16,
+                        fill: '#999'
+                    }
+                },
+                xAxis: { show: false },
+                yAxis: { show: false },
+                series: []
+            };
+
+            charts.yearComingProject.setOption(errorOption, true);
+        }
+    }
+
+    // 更新累计进料/累计合格率（按项目）图表
+    async function loadComingProjectChart() {
+        // 准备请求参数
+        let sumType = viewState.comingProject.type;
+        let startDate = viewState.comingProject.startDate;
+        let endDate = viewState.comingProject.endDate;
+
+        // 如果不是自定义类型，设置默认日期范围
+        if (sumType !== 'custom') {
+            const end = new Date();
+            const start = new Date();
+
+            switch (sumType) {
+                case 'day':
+                    start.setDate(start.getDate() - 1);
+                    break;
+                case 'week':
+                    start.setDate(start.getDate() - 7);
+                    break;
+                case 'month':
+                    start.setDate(start.getDate() - 30);
+                    break;
+            }
+
+            startDate = start.toISOString().split('T')[0];
+            endDate = end.toISOString().split('T')[0];
+        }
+
+        const params = {
+            MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+            SumType: sumType,
+            StartDate: startDate,
+            EndDate: endDate,
+            MeterialNames: viewState.comingProject.projects.join(','),
+            SuppID: ''
+        };
+
+        // 调用后端接口
+        const data = await fetchData('/api/erp/GetComingProjectData', params);
+
+        if (data && Array.isArray(data)) {
+            // 处理数据为柱状+折线图表格式
+            const xAxisData = [];
+            const okData = [];
+            const vipData = [];
+            const ngData = [];
+            const rateData = [];
+
+            // 处理返回的数据
+            data.forEach(item => {
+                if (item.YearMonth) {
+                    xAxisData.push(item.YearMonth);
+                } else {
+                    xAxisData.push(item.date || '');
+                }
+
+                if (item.Statistics) {
+                    okData.push(item.Statistics.OK || 0);
+                    vipData.push(item.Statistics.VIP || 0);
+                    ngData.push(item.Statistics.NG || 0);
+                } else {
+                    okData.push(item.OK || 0);
+                    vipData.push(item.VIP || 0);
+                    ngData.push(item.NG || 0);
+                }
+
+                rateData.push(item.Rate || 0);
+            });
+
+            // 如果数据为空，使用默认数据
+            if (xAxisData.length === 0) {
+                // 根据时间范围生成标签
+                let labels = [];
+                const end = new Date(endDate);
+                const start = new Date(startDate);
+
+                if (sumType === 'day') {
+                    labels = ['今日'];
+                } else if (sumType === 'week') {
+                    // 过去7天
+                    for (let i = 6; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
+                    }
+                } else if (sumType === 'month') {
+                    // 过去30天，按周分组
+                    for (let i = 3; i >= 0; i--) {
+                        labels.push(`第${4 - i}周`);
+                    }
+                } else {
+                    // 自定义范围，按周分组
+                    const weeks = Math.ceil((end - start) / (7 * 24 * 60 * 60 * 1000));
+                    for (let i = 1; i <= weeks; i++) {
+                        labels.push(`第${i}周`);
+                    }
+                }
+
+                xAxisData.push(...labels);
+                okData.push(...Array(labels.length).fill(0));
+                vipData.push(...Array(labels.length).fill(0));
+                ngData.push(...Array(labels.length).fill(0));
+                rateData.push(...Array(labels.length).fill(0));
+            }
+
+            // 配置图表选项（柱状+折线）
+            const option = {
+                title: {
+                    text: '累计进料/累计合格率（按项目）',
+                    left: 'center'
+                },
+                grid: {
+                    left: 50,
+                    right: 50,
+                    top: 60,
+                    bottom: 60
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    },
+                    formatter: function (params) {
+                        let result = params[0].name + '<br/>';
+                        for (let i = 0; i < params.length; i++) {
+                            const param = params[i];
+                            if (param.seriesType === 'line') {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                            } else {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
+                            }
+                        }
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['合格', '特采', '批退', '累计合格率'],
+                    top: 30
+                },
+                xAxis: [{
+                    type: 'category',
+                    name: '时间',
+                    data: xAxisData,
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45
+                    }
+                }],
+                yAxis: [{
+                    type: 'value',
+                    name: '累计进料',
+                    alignTicks: true,
+                }, {
+                    type: 'value',
+                    name: '累计合格率',
+                    min: 0,
+                    max: 100,
+                    axisLabel: {
+                        formatter: '{value}%'
+                    }
+                }],
+                series: [
+                    {
+                        name: '合格',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: okData,
+                        itemStyle: {
+                            color: '#1abc9c'
+                        }
+                    },
+                    {
+                        name: '特采',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: vipData,
+                        itemStyle: {
+                            color: '#f1c40f'
+                        }
+                    },
+                    {
+                        name: '批退',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'inside'
+                        },
+                        data: ngData,
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '累计合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        smooth: true,
+                        smoothness: 0.5, // 可选：平滑度，0-1，默认0.5
+                        tooltip: {
+                            valueFormatter: function (value) {
+                                return value + '%';
+                            }
+                        },
+                        data: rateData,
+                        itemStyle: {
+                            color: '#3498db'
+                        },
+                        lineStyle: {
+                            width: 3
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            };
+
+            // 设置图表选项
+            charts.comingProject.setOption(option, true);
+        } else {
+            // 显示错误信息，不显示模拟数据
+            const errorOption = {
+                graphic: {
+                    type: 'text',
+                    left: 'center',
+                    top: 'middle',
+                    style: {
+                        text: '暂无数据或数据加载失败',
+                        fontSize: 16,
+                        fill: '#999'
+                    }
+                },
+                xAxis: { show: false },
+                yAxis: { show: false },
+                series: []
+            };
+
+            charts.comingProject.setOption(errorOption, true);
+        }
+    }
+
+    // 获取供应商排行数据
+    async function loadSupplierRankData() {
+        try {
+            // 准备请求参数
+            const params = {
+                MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+                SumType: viewState.supplierRank.type,
+                StartDate: viewState.supplierRank.startDate || '',
+                EndDate: viewState.supplierRank.endDate || '',
+                MeterialNames: viewState.supplierRank.projects.join(','),
+                SuppID: ''
+            };
+
+            // 调用后端接口获取供应商排行数据
+            const data = await fetchData('/api/erp/GetSuppBatchRejectionData', params);
+
+            if (data &&
+                (Array.isArray(data.RejectionRate) ||
+                    Array.isArray(data.DefectRate) ||
+                    Array.isArray(data.FeedLotQty) ||
+                    Array.isArray(data.ReturnLotQty))) {
+                // 处理返回的数据
+                const supplierRankData = processSupplierRankData(data);
+                // 渲染供应商排行数据
+                renderSupplierRankData(supplierRankData);
+                return supplierRankData;
+            } else {
+                // 显示供应商排行暂无数据
+                renderNoSupplierData();
+                return null;
+            }
+        } catch (error) {
+            console.error('加载供应商排行数据失败:', error);
+            renderNoSupplierData();
+            return null;
+        }
+    }
+
+    // 处理供应商排行数据
+    function processSupplierRankData(data) {
+        const supplierData = {
+            nameList: [],     // 供应商名称（来自 RejectionRate）
+            defectRateList: [], // 不良率（来自 DefectRate）
+            incomingBatchesList: [], // 进料批数（来自 FeedLotQty）
+            rejectBatchesList: []    // 批退批数（来自 ReturnLotQty）
+        };
+
+        // 供应商名称 - 对应 RejectionRate
+        if (data.RejectionRate && Array.isArray(data.RejectionRate)) {
+            data.RejectionRate.forEach((row, index) => {
+                const suppId = row.SUPPID || '';
+                const suppName = row.SUPPNAME || '';
+                const value = row.VALUE || 0;
+
+                supplierData.nameList.push({
+                    rank: index + 1,
+                    id: suppId,
+                    name: suppName,
+                    value: value
+                });
+            });
+        }
+
+        // 不良率 - 对应 DefectRate
+        if (data.DefectRate && Array.isArray(data.DefectRate)) {
+            data.DefectRate.forEach((row, index) => {
+                const suppId = row.SUPPID || '';
+                const suppName = row.SUPPNAME || '';
+                const value = row.VALUE || 0;
+
+                supplierData.defectRateList.push({
+                    rank: index + 1,
+                    id: suppId,
+                    name: suppName,
+                    value: value
+                });
+            });
+        }
+
+        // 进料批数 - 对应 FeedLotQty
+        if (data.FeedLotQty && Array.isArray(data.FeedLotQty)) {
+            data.FeedLotQty.forEach((row, index) => {
+                const suppId = row.SUPPID || '';
+                const suppName = row.SUPPNAME || '';
+                const value = row.VALUE || 0;
+
+                supplierData.incomingBatchesList.push({
+                    rank: index + 1,
+                    id: suppId,
+                    name: suppName,
+                    value: value
+                });
+            });
+        }
+
+        // 批退批数 - 对应 ReturnLotQty
+        if (data.ReturnLotQty && Array.isArray(data.ReturnLotQty)) {
+            data.ReturnLotQty.forEach((row, index) => {
+                const suppId = row.SUPPID || '';
+                const suppName = row.SUPPNAME || '';
+                const value = row.VALUE || 0;
+
+                supplierData.rejectBatchesList.push({
+                    rank: index + 1,
+                    id: suppId,
+                    name: suppName,
+                    value: value
+                });
+            });
+        }
+
+        // 只取前5名
+        return {
+            nameList: supplierData.nameList.slice(0, 5),
+            defectRateList: supplierData.defectRateList.slice(0, 5),
+            incomingBatchesList: supplierData.incomingBatchesList.slice(0, 5),
+            rejectBatchesList: supplierData.rejectBatchesList.slice(0, 5)
+        };
+    }
+
+    // 更新供应商数据来源说明
     function updateDataSourceNote() {
         const noteElement = document.getElementById('supplier-data-note');
         let noteText = '';
 
         switch (viewState.supplierRank.type) {
             case 'day':
-                noteText = '显示最近1日数据';
-                break;
-            case 'week':
                 noteText = '显示最近7日数据';
                 break;
+            case 'week':
+                noteText = '显示最近7周数据';
+                break;
             case 'month':
-                noteText = '显示最近30日数据';
+                noteText = '显示最近7月数据';
                 break;
             case 'custom':
                 if (viewState.supplierRank.startDate && viewState.supplierRank.endDate) {
@@ -1576,225 +2508,580 @@
                 }
                 break;
             default:
-                noteText = '显示最近30日数据';
+                noteText = '显示最近7日数据';
         }
 
         noteElement.innerHTML = `<i class="fas fa-info-circle"></i><span>${noteText}</span>`;
     }
 
+    // 渲染供应商排行暂无数据
+    function renderNoSupplierData() {
+        // 供应商名称列表
+        const nameList = document.getElementById('supplier-name-list');
+        nameList.innerHTML = `
+        <li class="supplier-item" style="justify-content: center; color: #999;">
+            暂无数据
+        </li>
+    `;
+
+        // 不良率列表
+        const defectRateList = document.getElementById('defect-rate-list');
+        defectRateList.innerHTML = `
+        <li class="supplier-item" style="justify-content: center; color: #999;">
+            暂无数据
+        </li>
+    `;
+
+        // 进料批数列表
+        const incomingBatchesList = document.getElementById('incoming-batches-list');
+        incomingBatchesList.innerHTML = `
+        <li class="supplier-item" style="justify-content: center; color: #999;">
+            暂无数据
+        </li>
+    `;
+
+        // 批退批数列表
+        const rejectBatchesList = document.getElementById('reject-batches-list');
+        rejectBatchesList.innerHTML = `
+        <li class="supplier-item" style="justify-content: center; color: #999;">
+            暂无数据
+        </li>
+    `;
+    }
+
     // 渲染供应商排行数据
-    function renderSupplierRankData() {
+    function renderSupplierRankData(supplierData) {
+        if (!supplierData ||
+            (!supplierData.nameList || supplierData.nameList.length === 0) &&
+            (!supplierData.defectRateList || supplierData.defectRateList.length === 0) &&
+            (!supplierData.incomingBatchesList || supplierData.incomingBatchesList.length === 0) &&
+            (!supplierData.rejectBatchesList || supplierData.rejectBatchesList.length === 0)) {
+            renderNoSupplierData();
+            return;
+        }
         // 渲染供应商名称列表
         const nameList = document.getElementById('supplier-name-list');
         nameList.innerHTML = '';
 
-        supplierData.forEach((supplier, index) => {
-            const li = document.createElement('li');
-            li.className = 'supplier-item';
-            li.innerHTML = `
-                <span class="supplier-rank-number">${index + 1}</span>
+        if (supplierData.nameList && supplierData.nameList.length > 0) {
+            supplierData.nameList.forEach((supplier, index) => {
+                const li = document.createElement('li');
+                li.className = 'supplier-item';
+                li.innerHTML = `
+                <span class="supplier-rank-number">${supplier.rank}</span>
                 <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
+                <span class="supplier-value">${supplier.value}%</span>
             `;
-            nameList.appendChild(li);
-        });
+                nameList.appendChild(li);
+            });
+        } else {
+            nameList.innerHTML = `
+            <li class="supplier-item" style="justify-content: center; color: #999;">
+                暂无数据
+            </li>
+        `;
+        }
 
         // 渲染不良率列表
         const defectRateList = document.getElementById('defect-rate-list');
         defectRateList.innerHTML = '';
 
-        supplierData.forEach((supplier, index) => {
-            const li = document.createElement('li');
-            li.className = 'supplier-item';
-            li.innerHTML = `
-                <span class="supplier-rank-number">${index + 1}</span>
-                <span class="supplier-value defect-rate">${supplier.defectRate}</span>
+        if (supplierData.defectRateList && supplierData.defectRateList.length > 0) {
+            supplierData.defectRateList.forEach((supplier, index) => {
+                const li = document.createElement('li');
+                li.className = 'supplier-item';
+                li.innerHTML = `
+                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
+                <span class="supplier-value defect-rate">${supplier.value}%</span>
             `;
-            defectRateList.appendChild(li);
-        });
+                defectRateList.appendChild(li);
+            });
+        } else {
+            defectRateList.innerHTML = `
+            <li class="supplier-item" style="justify-content: center; color: #999;">
+                暂无数据
+            </li>
+        `;
+        }
 
         // 渲染进料批数列表
         const incomingBatchesList = document.getElementById('incoming-batches-list');
         incomingBatchesList.innerHTML = '';
 
-        supplierData.forEach((supplier, index) => {
-            const li = document.createElement('li');
-            li.className = 'supplier-item';
-            li.innerHTML = `
-                <span class="supplier-rank-number">${index + 1}</span>
-                <span class="supplier-value incoming-batches">${supplier.incomingBatches.toLocaleString()}</span>
+        if (supplierData.incomingBatchesList && supplierData.incomingBatchesList.length > 0) {
+            supplierData.incomingBatchesList.forEach((supplier, index) => {
+                const li = document.createElement('li');
+                li.className = 'supplier-item';
+                li.innerHTML = `
+                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
+                <span class="supplier-value incoming-batches">${supplier.value.toLocaleString()}</span>
             `;
-            incomingBatchesList.appendChild(li);
-        });
+                incomingBatchesList.appendChild(li);
+            });
+        } else {
+            incomingBatchesList.innerHTML = `
+            <li class="supplier-item" style="justify-content: center; color: #999;">
+                暂无数据
+            </li>
+        `;
+        }
 
         // 渲染批退批数列表
         const rejectBatchesList = document.getElementById('reject-batches-list');
         rejectBatchesList.innerHTML = '';
 
-        supplierData.forEach((supplier, index) => {
-            const li = document.createElement('li');
-            li.className = 'supplier-item';
-            li.innerHTML = `
-                <span class="supplier-rank-number">${index + 1}</span>
-                <span class="supplier-value reject-batches">${supplier.rejectBatches.toLocaleString()}</span>
+        if (supplierData.rejectBatchesList && supplierData.rejectBatchesList.length > 0) {
+            supplierData.rejectBatchesList.forEach((supplier, index) => {
+                const li = document.createElement('li');
+                li.className = 'supplier-item';
+                li.innerHTML = `
+                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
+                <span class="supplier-value reject-batches">${supplier.value.toLocaleString()}</span>
             `;
-            rejectBatchesList.appendChild(li);
-        });
+                rejectBatchesList.appendChild(li);
+            });
+        } else {
+            rejectBatchesList.innerHTML = `
+            <li class="supplier-item" style="justify-content: center; color: #999;">
+                暂无数据
+            </li>
+        `;
+        }
 
         // 更新数据来源说明
         updateDataSourceNote();
+
+        // 保存当前供应商数据到全局状态
+        viewState.currentSupplierData = supplierData;
     }
 
     // 显示供应商详情
-    function showSupplierDetail(supplierId) {
-        const supplier = supplierData.find(s => s.id === supplierId);
-        if (!supplier) return;
+    async function showSupplierDetail(supplierId) {
+        try {
+            // 准备请求参数
+            const params = {
+                MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+                SumType: viewState.supplierRank.type,
+                StartDate: viewState.supplierRank.startDate || '',
+                EndDate: viewState.supplierRank.endDate || '',
+                MeterialNames: viewState.supplierRank.projects.join(','),
+                SuppID: supplierId
+            };
 
-        const modal = document.getElementById('supplier-detail-modal');
-        const content = document.getElementById('supplier-detail-content');
+            const modal = document.getElementById('supplier-detail-modal');
+            const content = document.getElementById('supplier-detail-content');
 
-        content.innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px;">${supplier.name} - 质量分析报告</h3>
-                <p style="color: #666; margin-bottom: 15px;">物料类型：${supplier.materialType}</p>
-            </div>
+            // 显示加载状态
+            content.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+            modal.classList.add('active');
 
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px;">
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px;">
-                    <h4 style="margin-bottom: 10px; color: #333;">质量指标</h4>
-                    <p>合格率：<strong style="color: #1abc9c;">${supplier.qualityRate}</strong></p>
-                    <p>不良率：<strong style="color: #e74c3c;">${supplier.defectRate}</strong></p>
+            // 调用后端接口获取供应商详情
+            const detailData = await fetchData('/api/erp/GetSuppBatchRejectionDetailData', params);
+
+            // 渲染详情数据
+            if (detailData && Array.isArray(detailData)) {
+                renderSupplierDetailContent(detailData, content, supplierId);
+            } else {
+                content.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #f39c12; margin-bottom: 15px;"></i>
+                    <p style="color: #666; margin-bottom: 10px;">暂无数据</p>
                 </div>
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px;">
-                    <h4 style="margin-bottom: 10px; color: #333;">进料统计</h4>
-                    <p>进料批数：<strong style="color: #3498db;">${supplier.incomingBatches.toLocaleString()}</strong></p>
-                    <p>批退批数：<strong style="color: #f39c12;">${supplier.rejectBatches.toLocaleString()}</strong></p>
-                </div>
+            `;
+            }
+        } catch (error) {
+            console.error('加载供应商详情失败:', error);
+            const modal = document.getElementById('supplier-detail-modal');
+            const content = document.getElementById('supplier-detail-content');
+            content.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;"></i>
+                <p style="color: #666; margin-bottom: 10px;">数据加载失败</p>
+                <p style="color: #999; font-size: 14px;">${error.message}</p>
             </div>
-
-            <h4 style="margin-bottom: 15px;">近期异常记录</h4>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="padding: 10px; background: #f5f5f5; text-align: left;">日期</th>
-                        <th style="padding: 10px; background: #f5f5f5; text-align: left;">异常类型</th>
-                        <th style="padding: 10px; background: #f5f5f5; text-align: left;">处理状态</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">2023-06-15</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">外观缺陷</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;"><span style="color: #f39c12;">处理中</span></td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">2023-06-10</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">尺寸超差</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;"><span style="color: #1abc9c;">已解决</span></td>
-                    </tr>
-                </tbody>
-            </table>
         `;
-
-        modal.classList.add('active');
+        }
     }
 
-    // 显示全部供应商数据
-    function showAllSuppliers() {
-        const modal = document.getElementById('all-suppliers-modal');
-        const content = document.getElementById('all-suppliers-content');
+    // 渲染供应商详情内容
+    function renderSupplierDetailContent(detailData, contentElement, supplierId) {
+        let html = '';
 
-        let tableHtml = `
-            <div style="margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px;">全部供应商批退率数据</h3>
-                <p style="color: #666;">统计时间：${new Date().toLocaleDateString()}</p>
+        // 检查数据格式
+        if (!detailData || !Array.isArray(detailData) || detailData.length === 0) {
+            html = `
+            <div style="padding: 20px; background: #f5f7fa; border-radius: 6px;">
+                <p style="color: #666; text-align: center;">暂无数据</p>
             </div>
+        `;
+            contentElement.innerHTML = html;
+            return;
+        }
 
-            <table style="width: 100%; border-collapse: collapse;">
+        // 获取供应商名称（从第一条记录中获取）
+        const supplierName = detailData[0]?.SUPPNAME || '未知供应商';
+        const totalRecords = detailData.length;
+
+        html = `
+        <div style="margin-bottom: 20px;">
+            <h3 style="margin-bottom: 10px;">${supplierName} - 质量明细</h3>
+            <p style="color: #666; margin-bottom: 15px;">记录总数：${totalRecords}</p>
+        </div>
+    `;
+
+        // 添加数据表格
+        const style = `
+        <style>
+            .table-container {
+                height: 500px;
+                overflow-y: auto;
+                overflow-x: auto;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                position: relative;
+            }
+
+            .sticky-table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 1200px;
+            }
+
+            .sticky-table thead {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+
+            .sticky-table thead tr {
+                background: #f5f5f5 !important;
+            }
+
+            .sticky-table th {
+                position: sticky;
+                top: 0;
+                background: #f5f5f5;
+                box-shadow: 0 1px 0 #ddd;
+                z-index: 10;
+            }
+
+            .sticky-table th,
+            .sticky-table td {
+                padding: 12px;
+                text-align: left;
+                border: 1px solid #ddd;
+                white-space: nowrap;
+                vertical-align: middle;
+            }
+
+            .sticky-table tbody tr:nth-child(even) {
+                background: #f9f9f9;
+            }
+
+            .sticky-table tbody tr:nth-child(odd) {
+                background: #fff;
+            }
+
+            .sticky-table tbody tr:hover {
+                background: #f0f7ff;
+            }
+        </style>
+    `;
+
+        html += style;
+        html += `
+        <div class="table-container">
+            <table class="sticky-table">
                 <thead>
                     <tr>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">排名</th>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">供应商名称</th>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">物料类型</th>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">合格率</th>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">不良率</th>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">进料批数</th>
-                        <th style="padding: 12px; background: #f5f5f5; text-align: left;">批退批数</th>
+                        <th>检验单号</th>
+                        <th>供应商</th>
+                        <th>品号</th>
+                        <th>材料名称</th>
+                        <th>到货单号</th>
+                        <th>批号</th>
+                        <th>到货数量</th>
+                        <th>进料日期</th>
+                        <th>创建时间</th>
+                        <th>备注</th>
                     </tr>
                 </thead>
                 <tbody>
+    `;
+
+        detailData.forEach((item, index) => {
+            html += `
+            <tr>
+                <td>${item.INSPECT_IQCCODE || ''}</td>
+                <td>${item.SUPPNAME || ''}</td>
+                <td>${item.ITEMID || ''}</td>
+                <td>${item.ITEMNAME || ''}</td>
+                <td>${item.ERP_ARRIVEDID || ''}</td>
+                <td>${item.LOTNO || ''}</td>
+                <td>${item.LOT_QTY || ''}</td>
+                <td>${item.APPLY_DATE || ''}</td>
+                <td>${item.INSPECT_IQCCREATEDATE || ''}</td>
+                <td>${item.ALL_REMARK3 || ''}</td>
+            </tr>
         `;
-
-        // 假设有更多供应商数据
-        const allSuppliers = [
-            ...supplierData,
-            {
-                id: 'F006',
-                name: '供应商F',
-                materialType: '电子元器件',
-                defectRate: '1.5%',
-                incomingBatches: 34567,
-                rejectBatches: 234,
-                qualityRate: '98.5%',
-                rank: 6
-            },
-            {
-                id: 'G007',
-                name: '供应商G',
-                materialType: '塑料件',
-                defectRate: '2.3%',
-                incomingBatches: 45678,
-                rejectBatches: 345,
-                qualityRate: '97.7%',
-                rank: 7
-            },
-            {
-                id: 'H008',
-                name: '供应商H',
-                materialType: '金属加工件',
-                defectRate: '3.8%',
-                incomingBatches: 56789,
-                rejectBatches: 456,
-                qualityRate: '96.2%',
-                rank: 8
-            }
-        ];
-
-        allSuppliers.forEach(supplier => {
-            tableHtml += `
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${supplier.rank}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${supplier.name}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${supplier.materialType}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee; color: #1abc9c;">${supplier.qualityRate}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee; color: #e74c3c;">${supplier.defectRate}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${supplier.incomingBatches.toLocaleString()}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${supplier.rejectBatches.toLocaleString()}</td>
-                </tr>
-            `;
         });
 
-        tableHtml += `
+        html += `
                 </tbody>
             </table>
+        </div>
+    `;
 
-            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 6px;">
-                <h4 style="margin-bottom: 10px;">统计说明</h4>
-                <ul style="color: #666; font-size: 14px;">
-                    <li>数据统计范围：${viewState.supplierRank.startDate || '最近30日'} 至 ${viewState.supplierRank.endDate || '今日'}</li>
-                    <li>排名依据：按批退率从低到高排序（批退率越低排名越靠前）</li>
-                    <li>数据更新时间：${new Date().toLocaleString()}</li>
-                </ul>
+        contentElement.innerHTML = html;
+    }
+
+    // 全部供应商数据
+    async function showAllSuppliers() {
+        try {
+            const modal = document.getElementById('all-suppliers-modal');
+            const content = document.getElementById('all-suppliers-content');
+
+            // 显示加载状态
+            content.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+            modal.classList.add('active');
+
+            // 准备请求参数
+            const params = {
+                MaterialType: viewState.materialType === 'massProduction' ? 1 : 2,
+                SumType: viewState.supplierRank.type,
+                StartDate: viewState.supplierRank.startDate || '',
+                EndDate: viewState.supplierRank.endDate || '',
+                MeterialNames: viewState.supplierRank.projects.join(','),
+                SuppID: ''
+            };
+
+            // 调用后端接口获取所有供应商数据
+            const data = await fetchData('/api/erp/GetSuppBatchRejectionDetailData', params);
+
+            if (data) {
+                // 处理返回的数据（可能是JSON字符串或已经解析的对象）
+                let detailData = data;
+
+                // 如果返回的是字符串，尝试解析
+                if (typeof detailData === 'string') {
+                    try {
+                        detailData = JSON.parse(detailData);
+                    } catch (e) {
+                        console.warn('解析数据字符串失败:', e);
+                    }
+                }
+
+                // 确保是数组格式
+                if (Array.isArray(detailData)) {
+                    renderAllSuppliersDetailContent(detailData, content);
+                } else {
+                    content.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #f39c12; margin-bottom: 15px;"></i>
+                    <p style="color: #666; margin-bottom: 10px;">数据格式不正确</p>
+                </div>
+            `;
+                }
+            } else {
+                content.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <i class="fas fa-database" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+                <p style="color: #999; font-size: 16px;">暂无数据</p>
             </div>
         `;
+            }
+        } catch (error) {
+            console.error('加载全部供应商数据失败:', error);
+            const content = document.getElementById('all-suppliers-content');
+            content.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;"></i>
+                <p style="color: #666; margin-bottom: 10px;">数据加载失败</p>
+                <p style="color: #999; font-size: 14px;">${error.message}</p>
+            </div>
+        `;
+        }
+    }
 
-        content.innerHTML = tableHtml;
-        modal.classList.add('active');
+    // 渲染全部供应商明细内容
+    function renderAllSuppliersDetailContent(detailData, contentElement) {
+        if (!detailData || !Array.isArray(detailData) || detailData.length === 0) {
+            contentElement.innerHTML = `
+        <div style="padding: 40px; background: #f5f7fa; border-radius: 6px; text-align: center;">
+            <i class="fas fa-database" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+            <p style="color: #999; font-size: 16px;">暂无数据</p>
+        </div>
+    `;
+            return;
+        }
+
+        // 统计信息
+        const totalRecords = detailData.length;
+        const suppliers = [...new Set(detailData.map(item => item.SUPPNAME || ''))].filter(name => name);
+        const supplierCount = suppliers.length;
+
+        let html = '';
+        // 添加数据表格样式
+        const style = `
+    <style>
+        .detail-table-container {
+            height: 500px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+
+        .detail-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .detail-table thead tr {
+            background: #f5f5f5 !important;
+        }
+
+        .detail-table th {
+            position: sticky;
+            top: 0;
+            background: #f5f5f5;
+            box-shadow: 0 1px 0 #ddd;
+            z-index: 10;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .detail-table th,
+        .detail-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .detail-table tbody tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .detail-table tbody tr:nth-child(odd) {
+            background: #fff;
+        }
+
+        .detail-table tbody tr:hover {
+            background: #f0f7ff !important;
+        }
+
+        .supplier-cell {
+            cursor: pointer;
+            color: #409eff;
+            text-decoration: underline;
+        }
+
+        .supplier-cell:hover {
+            color: #337ecc;
+        }
+    </style>
+`;
+
+        html += style;
+
+        // 开始表格
+        html += `
+    <div class="detail-table-container">
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 120px;">检验单号</th>
+                    <th style="min-width: 150px;">供应商</th>
+                    <th style="min-width: 100px;">品号</th>
+                    <th style="min-width: 150px;">材料名称</th>
+                    <th style="min-width: 120px;">到货单号</th>
+                    <th style="min-width: 100px;">批号</th>
+                    <th style="min-width: 80px;">到货数量</th>
+                    <th style="min-width: 100px;">进料日期</th>
+                    <th style="min-width: 100px;">创建时间</th>
+                    <th style="min-width: 200px;">备注</th>
+                </tr>
+            </thead>
+            <tbody>
+`;
+
+        // 添加表格数据行
+        detailData.forEach((item, index) => {
+            // 处理日期格式
+            const applyDate = item.APPLY_DATE ? formatDate(item.APPLY_DATE) : '';
+            const createDate = item.INSPECT_IQCCREATEDATE ? formatDate(item.INSPECT_IQCCREATEDATE) : '';
+
+            html += `
+        <tr>
+            <td>${item.INSPECT_IQCCODE || ''}</td>
+            <td>
+                <span class="supplier-cell" data-supplier-id="${item.SUPPID || ''}"
+                      onclick="showSupplierDetail('${item.SUPPID || ''}')">
+                    ${item.SUPPNAME || ''}
+                </span>
+            </td>
+            <td>${item.ITEMID || ''}</td>
+            <td>${item.ITEMNAME || ''}</td>
+            <td>${item.ERP_ARRIVEDID || ''}</td>
+            <td>${item.LOTNO || ''}</td>
+            <td>${item.LOT_QTY || ''}</td>
+            <td>${applyDate}</td>
+            <td>${createDate}</td>
+            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;"
+                title="${item.ALL_REMARK3 || ''}">
+                ${item.ALL_REMARK3 || ''}
+            </td>
+        </tr>
+    `;
+        });
+
+        html += `
+            </tbody>
+        </table>
+    </div>
+`;
+
+        contentElement.innerHTML = html;
+    }
+
+    // 辅助函数：格式化日期
+    function formatDate(dateString) {
+        if (!dateString) return '';
+
+        try {
+            // 处理各种可能的日期格式
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return dateString;
+            }
+
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        } catch (e) {
+            return dateString;
+        }
     }
 
     // 事件处理
     function initEventListeners() {
         // 物料类型切换
-        document.getElementById('mass-production-btn').addEventListener('click', function() {
+        document.getElementById('mass-production-btn').addEventListener('click', function () {
             if (viewState.materialType !== 'massProduction') {
                 document.getElementById('mass-production-btn').classList.add('active');
                 document.getElementById('rd-btn').classList.remove('active');
@@ -1807,11 +3094,12 @@
                 updateProjectSelectors();
                 // 重新加载统计数据
                 loadStatsData();
+                // 重新加载所有图表数据
                 reloadAllData();
             }
         });
 
-        document.getElementById('rd-btn').addEventListener('click', function() {
+        document.getElementById('rd-btn').addEventListener('click', function () {
             if (viewState.materialType !== 'rd') {
                 document.getElementById('rd-btn').classList.add('active');
                 document.getElementById('mass-production-btn').classList.remove('active');
@@ -1824,13 +3112,14 @@
                 updateProjectSelectors();
                 // 重新加载统计数据
                 loadStatsData();
+                // 重新加载所有图表数据
                 reloadAllData();
             }
         });
 
         // 统计卡片点击事件
         document.querySelectorAll('.stats-container li').forEach(li => {
-            li.addEventListener('click', function() {
+            li.addEventListener('click', function () {
                 const statType = this.getAttribute('data-type');
                 const statName = this.textContent.split('：')[0];
                 showStatDetail(statType, statName);
@@ -1839,7 +3128,7 @@
 
         // 项目选择器点击事件
         document.querySelectorAll('.selector-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const selectorId = this.id.replace('-btn', '');
                 const dropdown = document.getElementById(`${selectorId}-dropdown`);
                 if (dropdown) {
@@ -1850,7 +3139,7 @@
 
         // 图表类型切换
         document.querySelectorAll('.btn[data-chart][data-type]').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const chartId = this.getAttribute('data-chart');
                 const type = this.getAttribute('data-type');
 
@@ -1867,17 +3156,24 @@
                     document.getElementById(`${chartId}-date-picker`).classList.remove('hidden');
                 } else {
                     document.getElementById(`${chartId}-date-picker`).classList.add('hidden');
-                    // 如果是供应商排行，更新显示
-                    if (chartId === 'supplierRank') {
-                        updateDataSourceNote();
-                        renderSupplierRankData();
+                    // 重新加载对应图表
+                    if (chartId === 'yearComingQualified') {
+                        loadYearComingQualifiedChart();
+                    } else if (chartId === 'comingQualified') {
+                        loadComingQualifiedChart();
+                    } else if (chartId === 'yearComingProject') {
+                        loadYearComingProjectChart();
+                    } else if (chartId === 'comingProject') {
+                        loadComingProjectChart();
+                    } else if (chartId === 'supplierRank') {
+                        loadSupplierRankData();
                     }
                 }
             });
         });
 
         // 日期范围应用按钮
-        document.getElementById('comingQualified-apply').addEventListener('click', function() {
+        document.getElementById('comingQualified-apply').addEventListener('click', function () {
             if (!viewState.comingQualified.startDate || !viewState.comingQualified.endDate) {
                 alert('请选择开始日期和结束日期');
                 return;
@@ -1886,7 +3182,7 @@
             loadComingQualifiedChart();
         });
 
-        document.getElementById('comingProject-apply').addEventListener('click', function() {
+        document.getElementById('comingProject-apply').addEventListener('click', function () {
             if (!viewState.comingProject.startDate || !viewState.comingProject.endDate) {
                 alert('请选择开始日期和结束日期');
                 return;
@@ -1895,14 +3191,13 @@
             loadComingProjectChart();
         });
 
-        document.getElementById('supplier-rank-apply').addEventListener('click', function() {
+        document.getElementById('supplier-rank-apply').addEventListener('click', function () {
             if (!viewState.supplierRank.startDate || !viewState.supplierRank.endDate) {
                 alert('请选择开始日期和结束日期');
                 return;
             }
             document.getElementById('supplier-rank-date-picker').classList.add('hidden');
-            updateDataSourceNote();
-            renderSupplierRankData();
+            loadSupplierRankData();
         });
 
         // 显示全部供应商按钮
@@ -1914,7 +3209,7 @@
         });
 
         // 供应商名称点击事件（委托事件处理）
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             // 供应商名称点击
             if (e.target.classList.contains('supplier-name')) {
                 const supplierId = e.target.getAttribute('data-supplier-id');
@@ -1932,21 +3227,33 @@
         });
 
         // 模态框关闭按钮
-        document.getElementById('supplier-modal-close').addEventListener('click', function() {
+        document.getElementById('supplier-modal-close').addEventListener('click', function () {
             document.getElementById('supplier-detail-modal').classList.remove('active');
         });
 
-        document.getElementById('all-suppliers-modal-close').addEventListener('click', function() {
+        document.getElementById('all-suppliers-modal-close').addEventListener('click', function () {
             document.getElementById('all-suppliers-modal').classList.remove('active');
         });
 
         // 点击模态框背景关闭
         document.querySelectorAll('.modal, .stat-modal').forEach(modal => {
-            modal.addEventListener('click', function(e) {
+            modal.addEventListener('click', function (e) {
                 if (e.target === this) {
                     this.classList.remove('active');
                 }
             });
+        });
+
+        // 全部供应商表格中的供应商名称点击也可以跳到详情
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('supplier-cell')) {
+                const supplierId = e.target.getAttribute('data-supplier-id');
+                if (supplierId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showSupplierDetail(supplierId);
+                }
+            }
         });
     }
 
@@ -1954,6 +3261,8 @@
     function reloadAllData() {
         // 重新加载统计数据
         loadStatsData();
+        // 重新加载图表数据
+        loadChartsData();
         // 重新渲染供应商排行
         renderSupplierRankData();
 
@@ -1966,20 +3275,44 @@
         }
     }
 
+    // 加载所有图表数据
+    function loadChartsData() {
+        loadYearComingQualifiedChart();
+        loadComingQualifiedChart();
+        loadYearComingProjectChart();
+        loadComingProjectChart();
+    }
+
     // 初始化
-    document.addEventListener('DOMContentLoaded', function() {
-        initDatePickers();
+    document.addEventListener('DOMContentLoaded', function () {
+        // 设置默认日期范围
         setDefaultDateRange();
+        // 初始化日期选择器
+        initDatePickers();
+        // 根据选择器更新图表
         updateProjectSelectors();
+        // 事件处理
         initEventListeners();
+
         // 加载统计数据
-        loadStatsData();
-        renderSupplierRankData();
-        updateDataSourceNote();
+        loadStatsData().then(() => {
+            // 加载图表数据
+            loadChartsData();
+            // 加载供应商排行数据
+            loadSupplierRankData();
+            // 更新供应商数据来源说明
+            updateDataSourceNote();
+        });
+
+        // 初始加载完成后显示图表
+        setTimeout(() => {
+            // 确保图表在数据加载后正确渲染
+            Object.values(charts).forEach(chart => chart.resize());
+        }, 100);
     });
 
     // 窗口大小变化时调整图表
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         Object.values(charts).forEach(chart => chart.resize());
     });
 </script>
