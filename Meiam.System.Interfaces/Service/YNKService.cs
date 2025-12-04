@@ -5,6 +5,7 @@ using Meiam.System.Model.Dto;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NPOI.OpenXmlFormats.Spreadsheet;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -968,7 +969,8 @@ namespace Meiam.System.Interfaces.Service {
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                     remark = dataMain.Rows[0]["ALL_REMARK3"].ToString();
                 }
-                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESS.INSPECT_CNT,CASE 
+                var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESS.INSPECT_CNT,
+        INSPECT_PROGRESSNAME, INSPECT_TYPE, CASE 
         WHEN STD_VALUE IS NULL OR STD_VALUE='' THEN 'N/A'
         ELSE STD_VALUE + '+' + MAX_VALUE + '/-' + replace(MIN_VALUE,'-','')
     END AS  PROGRESSNAME1,
@@ -1005,11 +1007,15 @@ namespace Meiam.System.Interfaces.Service {
                         ProgressName = row["PROGRESSNAME1"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
                         InspectResult = row["INSPECT_RESULT"]?.ToString(),
-                        InspectType = row["COUNTTYPE"]?.ToString(),
+                        CountType = row["COUNTTYPE"]?.ToString(),
+                        InspectType = row["INSPECT_TYPE"]?.ToString(),
                         InspectCnt = inspectCnt,
                         NGS = row["NGS"]?.ToString(),
                         Values = new List<object>()
                     };
+                    if (data.InspectType == "INSPECT_TYPE_000" || data.InspectType == "INSPECT_TYPE_003" || data.InspectType == "INSPECT_TYPE_999") {
+                        data.ProgressName = row["PROGRESSNAME"]?.ToString();
+                    }
 
                     // 收集A1-A64的值（跳过空值）
                     for (int i = 1; i <= 64; i++) {
@@ -1118,7 +1124,7 @@ namespace Meiam.System.Interfaces.Service {
                     columnData.Add(data.InspectCode ?? "");   // 检测编码
 
                     // 处理检测值
-                    if (data.InspectType == "COUNTTYPE_001") {
+                    if (data.CountType == "COUNTTYPE_001") {
                         // 计数类型处理
                         for (int j = 1; j <= data.InspectCnt; j++) {
                             string resultValue = "OK";
@@ -1227,6 +1233,7 @@ namespace Meiam.System.Interfaces.Service {
             public string ProgressName { get; set; }
             public string InspectCode { get; set; }
             public string InspectResult { get; set; }
+            public string CountType { get; set; }
             public string InspectType { get; set; }
             public int InspectCnt { get; set; }
             public string NGS { get; set; }
@@ -1594,7 +1601,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <returns></returns>
         public async Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input) {
             try {
-                string sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+                string sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'  --已完成
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 var count = await Db.Ado.GetIntAsync(sql);
                 object A1 = new {
@@ -1602,7 +1609,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_001'  --待检验
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'  --待检验
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
                 object A2 = new {
@@ -1610,7 +1617,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_004'  --待判定
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_004'  --待判定
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
                 object A3 = new {
@@ -1618,27 +1625,27 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')=''  --待维护
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
                 object A4 = new {
-                    name = "PendingMaterialMaintenance",
-                    value = count
-                };
-
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
-                count = await Db.Ado.GetIntAsync(sql);
-                object A5 = new {
                     name = "MonthlyLotRejections",
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and [STATE]='PSTATE_003'  --已完成
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007'  --当月批退数
+  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
+                count = await Db.Ado.GetIntAsync(sql);
+                object A5 = new {
+                    name = "InspectionDelay",
+                    value = count
+                };
+
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and dbo.GetWorkDaysBetweenDates_SQL2008(INSPECT_IQCCREATEDATE,INSPECT_IQCNAME) >5  --检验延迟
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
                 object A6 = new {
-                    name = "InspectionDelay",
+                    name = "PendingMaterialMaintenance",
                     value = count
                 };
 
@@ -1670,25 +1677,25 @@ from INSPECT_IQC
 LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
-WHERE YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
+WHERE ISNULL(DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
                 switch (input.CardType) {
                     case "VerifiedQty":
-                        sql += "";
+                        sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'";
                         break;
                     case "PendingInspectionQty":
-                        sql += "";
+                        sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'";
                         break;
                     case "QtyAwaitingDisposition":
-                        sql += "";
+                        sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_004'";
                         break;
                     case "PendingMaterialMaintenance":
-                        sql += "";
+                        sql += " and ISNULL(INSPECT_IQC.[STATE],'')=''";
                         break;
                     case "MonthlyLotRejections":
-                        sql += "";
+                        sql += " and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007'";
                         break;
                     case "InspectionDelay":
-                        sql += "";
+                        sql += " and dbo.GetWorkDaysBetweenDates_SQL2008(INSPECT_IQCCREATEDATE,INSPECT_IQCNAME) >5";
                         break;
                     default:
                         break;
@@ -1725,7 +1732,24 @@ WHERE [STATE]='PSTATE_003'";
                 sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
             }
             else if (input.SumType.ToLower() == "month") {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.Year}-{DateTime.Today.Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+            }
+            else if (input.SumType.ToLower() == "week") {
+                //本周的周一到周日
+                DateTime today = DateTime.Today;
+                // 计算本周周一的日期（如果今天是周一，则返回今天）
+                int delta = DayOfWeek.Monday - today.DayOfWeek;
+                DateTime monday = today.AddDays(delta);
+                // 如果今天是周日，delta会是-6，需要修正
+                if (delta > 0) monday = today.AddDays(delta - 7);
+                // 本周周日 = 周一 + 6天
+                DateTime sunday = monday.AddDays(6);
+                sql += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
+            }
+            else if (input.SumType.ToLower() == "day") {
+                DateTime endDate = DateTime.Today.AddDays(1); // 明天
+                DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
+                sql += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
             }
             else {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
@@ -1765,10 +1789,14 @@ WHERE [STATE]='PSTATE_003'";
                         LotQty = row.IsNull("LOT_QTY") ? 0 : Convert.ToDecimal(row.Field<object>("LOT_QTY"))
                     })
                     .Where(x => !string.IsNullOrEmpty(x.OQC_STATE) && x.CreateDate != DateTime.MinValue)
-                    .ToList();
+                .ToList();
 
-                // 按月分组统计
-                var monthlyStats = dataList
+                object result = null;
+
+                string sumType = input.SumType?.ToLower() ?? "";
+                if (sumType == "year") {
+                    // 按月统计：每个人1-12月的数据（固定12元素数组）
+                    var yearStats = dataList
                     .GroupBy(x => new {
                         Year = x.CreateDate.Year,
                         Month = x.CreateDate.Month
@@ -1781,9 +1809,8 @@ WHERE [STATE]='PSTATE_003'";
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
                         var totalBatches = g.Count();
-
                         return new {
-                            YearMonth = $"{g.Key.Year}-{g.Key.Month:D2}",
+                            XValue = $"{g.Key.Month:D2}",
                             Statistics = new {
                                 OK = qualifiedCount,
                                 VIP = specialAdoptionCount,
@@ -1794,10 +1821,128 @@ WHERE [STATE]='PSTATE_003'";
                                 ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
                                 : 0
                         };
+                    }).ToList();
+                    result = yearStats;
+                }
+                else if (sumType == "month") {
+                    // 近7个月，按月分组
+                    var monthStats = dataList
+                    .GroupBy(x => new {
+                        Year = x.CreateDate.Year,
+                        Month = x.CreateDate.Month
                     })
-                    .ToList();
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => {
+                        var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                        var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                        var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var totalBatches = g.Count();
+                        return new {
+                            XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
+                            Statistics = new {
+                                OK = qualifiedCount,
+                                VIP = specialAdoptionCount,
+                                NG = rejectedCount,
+                                Total = totalBatches
+                            },
+                            Rate = totalBatches > 0
+                                ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                : 0
+                        };
+                    }).ToList();
 
-                var result = monthlyStats;
+                    result = monthStats;
+                }
+                else if (sumType == "week") {
+                    // 近7周，按周分组
+                    var weekStats = dataList
+                    .GroupBy(x => new {
+                        Week = x.CreateDate.DayOfWeek
+                    })
+                    .OrderBy(g => g.Key.Week)
+                    .Select(g => {
+                        var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                        var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                        var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var totalBatches = g.Count();
+                        return new {
+                            XValue = $"{g.Key.Week:D2}",
+                            Statistics = new {
+                                OK = qualifiedCount,
+                                VIP = specialAdoptionCount,
+                                NG = rejectedCount,
+                                Total = totalBatches
+                            },
+                            Rate = totalBatches > 0
+                                ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                : 0
+                        };
+                    }).ToList();
+
+                    result = weekStats;
+                }
+                else if (sumType == "day") {
+                    // 近7天，按日分组
+                    var dayStats = dataList
+                     .GroupBy(x => new {
+                         Day = x.CreateDate.Date
+                     })
+                     .OrderBy(g => g.Key.Day)
+                     .Select(g => {
+                         var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                         var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                         var totalBatches = g.Count();
+                         return new {
+                             XValue = $"{g.Key.Day:D2}",
+                             Statistics = new {
+                                 OK = qualifiedCount,
+                                 VIP = specialAdoptionCount,
+                                 NG = rejectedCount,
+                                 Total = totalBatches
+                             },
+                             Rate = totalBatches > 0
+                                 ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                 : 0
+                         };
+                     }).ToList();
+
+                    result = dayStats;
+                }
+                else if (sumType == "custom") {
+                    var monthStats = dataList
+                    .GroupBy(x => new {
+                        Year = x.CreateDate.Year,
+                        Month = x.CreateDate.Month
+                    })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => {
+                        var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                        var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                        var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var totalBatches = g.Count();
+                        return new {
+                            XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
+                            Statistics = new {
+                                OK = qualifiedCount,
+                                VIP = specialAdoptionCount,
+                                NG = rejectedCount,
+                                Total = totalBatches
+                            },
+                            Rate = totalBatches > 0
+                                ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                : 0
+                        };
+                    }).ToList();
+
+                    result = monthStats;
+                }
                 string jsonData = JsonConvert.SerializeObject(result, Formatting.Indented);
 
                 return new ApiResponse {
@@ -1835,36 +1980,74 @@ WHERE [STATE]='PSTATE_003'";
         /// </summary>
         public async Task<ApiResponse> GetSuppBatchRejectionDataAsync(INSPECT_PERSONNELDATA input) {
             try {
-                string sql = @"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
+                string sqlWhere = "1=1";
+                if (input.SumType.ToLower() == "year") {
+                    sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+                }
+                else if (input.SumType.ToLower() == "month") {
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                }
+                else if (input.SumType.ToLower() == "week") {
+                    //本周的周一到周日
+                    DateTime today = DateTime.Today;
+                    // 计算本周周一的日期（如果今天是周一，则返回今天）
+                    int delta = DayOfWeek.Monday - today.DayOfWeek;
+                    DateTime monday = today.AddDays(delta);
+                    // 如果今天是周日，delta会是-6，需要修正
+                    if (delta > 0) monday = today.AddDays(delta - 7);
+                    // 本周周日 = 周一 + 6天
+                    DateTime sunday = monday.AddDays(6);
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
+                }
+                else if (input.SumType.ToLower() == "day") {
+                    DateTime endDate = DateTime.Today.AddDays(1); // 明天
+                    DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+                }
+                else {
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+                }
+
+                string sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,
+                           SUM(CASE 
+                                WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
+                                ELSE 0
+                            END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE SUPP.SUPPNAME Is not null
+WHERE {0} SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
-order by VALUE DESC";
+order by VALUE DESC", sqlWhere); //  批退条件
                 var dtA1 = await Db.Ado.GetDataTableAsync(sql);//批退率
 
-                sql = @"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
+                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,
+                           SUM(CASE 
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN 1
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN 0
+                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN 1
+                                ELSE 0
+                            END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE SUPP.SUPPNAME Is not null
+WHERE {0} SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
-order by VALUE DESC";
+order by VALUE DESC", sqlWhere);
                 var dtA2 = await Db.Ado.GetDataTableAsync(sql);//不良率
 
-                sql = @"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
+                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE SUPP.SUPPNAME Is not null
+WHERE {0} SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
-order by VALUE DESC";
+order by VALUE DESC", sqlWhere);
                 var dtA3 = await Db.Ado.GetDataTableAsync(sql);//进料批数
 
-                sql = @"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
+                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
-WHERE SUPP.SUPPNAME Is not null
+WHERE {0} SUPP.SUPPNAME Is not null and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' 
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
-order by VALUE DESC";
+order by VALUE DESC", sqlWhere);
                 var dtA4 = await Db.Ado.GetDataTableAsync(sql); //批退批数
 
                 object result = new {
@@ -1894,13 +2077,40 @@ order by VALUE DESC";
         /// </summary>
         public async Task<ApiResponse> GetSuppBatchRejectionDetailDataAsync(INSPECT_PERSONNELDATA input) {
             try {
-                string sql = @"select INSPECT_IQCCODE,SUPP.SUPPNAME,ITEMID,ITEMNAME,ERP_ARRIVEDID,
+                string sqlWhere = "1=1";
+                if (input.SumType.ToLower() == "year") {
+                    sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+                }
+                else if (input.SumType.ToLower() == "month") {
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                }
+                else if (input.SumType.ToLower() == "week") {
+                    //本周的周一到周日
+                    DateTime today = DateTime.Today;
+                    // 计算本周周一的日期（如果今天是周一，则返回今天）
+                    int delta = DayOfWeek.Monday - today.DayOfWeek;
+                    DateTime monday = today.AddDays(delta);
+                    // 如果今天是周日，delta会是-6，需要修正
+                    if (delta > 0) monday = today.AddDays(delta - 7);
+                    // 本周周日 = 周一 + 6天
+                    DateTime sunday = monday.AddDays(6);
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
+                }
+                else if (input.SumType.ToLower() == "day") {
+                    DateTime endDate = DateTime.Today.AddDays(1); // 明天
+                    DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+                }
+                else {
+                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+                }
+                string sql = string.Format(@"select INSPECT_IQCCODE,SUPP.SUPPNAME,ITEMID,ITEMNAME,ERP_ARRIVEDID,
 LOTNO,LOT_QTY,APPLY_DATE,INSPECT_IQCCREATEDATE,ALL_REMARK3
 from INSPECT_IQC 
 LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
-WHERE YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
+WHERE {0}", sqlWhere);
                 if (!string.IsNullOrEmpty(input.SuppID)) {
                     sql += $" AND SUPP.SUPPID ='{input.SuppID}'";
                 }
