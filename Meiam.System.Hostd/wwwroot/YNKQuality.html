@@ -281,7 +281,7 @@
         }
 
         /* 供应商质量排行样式 - 根据图片设计 */
-        .supplier-rank-container {
+        .supplierRank-container {
             width: 100%;
             background: white;
             border-radius: 8px;
@@ -290,7 +290,7 @@
             margin-bottom: 20px;
         }
 
-        .supplier-rank-header {
+        .supplierRank-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -299,7 +299,7 @@
             border-bottom: 1px solid #eee;
         }
 
-        .supplier-rank-title {
+        .supplierRank-title {
             font-size: 18px;
             font-weight: bold;
             color: #333;
@@ -308,25 +308,25 @@
             gap: 10px;
         }
 
-            .supplier-rank-title i {
+            .supplierRank-title i {
                 color: #409eff;
             }
 
-        .supplier-rank-content {
+        .supplierRank-content {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
 
-        .supplier-rank-block {
+        .supplierRank-block {
             border: 1px solid #e4e7ed;
             border-radius: 6px;
             padding: 15px;
             background: white;
         }
 
-        .supplier-rank-block-title {
+        .supplierRank-block-title {
             font-size: 14px;
             font-weight: 600;
             color: #333;
@@ -357,7 +357,7 @@
                 border-bottom: none;
             }
 
-        .supplier-rank-number {
+        .supplierRank-number {
             font-size: 14px;
             color: #666;
             margin-right: 8px;
@@ -647,7 +647,7 @@
 
         /* 响应式调整 */
         @media (max-width: 1200px) {
-            .supplier-rank-content {
+            .supplierRank-content {
                 grid-template-columns: repeat(2, 1fr);
             }
 
@@ -657,7 +657,7 @@
         }
 
         @media (max-width: 768px) {
-            .supplier-rank-content {
+            .supplierRank-content {
                 grid-template-columns: 1fr;
             }
 
@@ -798,18 +798,18 @@
         </div>
 
         <!-- 供应商质量排行 -->
-        <div class="supplier-rank-container">
-            <div class="supplier-rank-header">
-                <div class="supplier-rank-title">
+        <div class="supplierRank-container">
+            <div class="supplierRank-header">
+                <div class="supplierRank-title">
                     <i class="fas fa-trophy"></i>
                     供应商质量排行
                 </div>
                 <div class="chart-controls">
                     <div class="project-selector">
-                        <button class="selector-btn" id="supplier-rank-project-btn">
+                        <button class="selector-btn" id="supplierRank-project-btn">
                             选择项目 ▼
                         </button>
-                        <div class="selector-dropdown" id="supplier-rank-project-dropdown">
+                        <div class="selector-dropdown" id="supplierRank-project-dropdown">
                             <!-- 项目选项将通过JS动态生成 -->
                         </div>
                     </div>
@@ -822,11 +822,11 @@
                 </div>
             </div>
 
-            <div class="date-range-picker hidden" id="supplier-rank-date-picker">
-                <input type="text" class="date-input" id="supplier-rank-start-date" placeholder="开始日期">
+            <div class="date-range-picker hidden" id="supplierRank-date-picker">
+                <input type="text" class="date-input" id="supplierRank-start-date" placeholder="开始日期">
                 <span>至</span>
-                <input type="text" class="date-input" id="supplier-rank-end-date" placeholder="结束日期">
-                <button class="btn" id="supplier-rank-apply">应用</button>
+                <input type="text" class="date-input" id="supplierRank-end-date" placeholder="结束日期">
+                <button class="btn" id="supplierRank-apply">应用</button>
             </div>
 
             <!-- 数据来源说明 -->
@@ -835,34 +835,34 @@
                 <span>显示最近7日/周/月数据或自定义数据</span>
             </div>
 
-            <div class="supplier-rank-content">
+            <div class="supplierRank-content">
                 <!-- 供应商名称 -->
-                <div class="supplier-rank-block">
-                    <div class="supplier-rank-block-title">供应商名称</div>
+                <div class="supplierRank-block">
+                    <div class="supplierRank-block-title">供应商名称</div>
                     <ul class="supplier-list" id="supplier-name-list">
                         <!-- 供应商名称数据将通过JS动态生成 -->
                     </ul>
                 </div>
 
                 <!-- 不良率 -->
-                <div class="supplier-rank-block">
-                    <div class="supplier-rank-block-title">不良率</div>
+                <div class="supplierRank-block">
+                    <div class="supplierRank-block-title">不良率</div>
                     <ul class="supplier-list" id="defect-rate-list">
                         <!-- 不良率数据将通过JS动态生成 -->
                     </ul>
                 </div>
 
                 <!-- 进料批数 -->
-                <div class="supplier-rank-block">
-                    <div class="supplier-rank-block-title">进料批数</div>
+                <div class="supplierRank-block">
+                    <div class="supplierRank-block-title">进料批数</div>
                     <ul class="supplier-list" id="incoming-batches-list">
                         <!-- 进料批数数据将通过JS动态生成 -->
                     </ul>
                 </div>
 
                 <!-- 批退批数 -->
-                <div class="supplier-rank-block">
-                    <div class="supplier-rank-block-title">批退批数</div>
+                <div class="supplierRank-block">
+                    <div class="supplierRank-block-title">批退批数</div>
                     <ul class="supplier-list" id="reject-batches-list">
                         <!-- 批退批数数据将通过JS动态生成 -->
                     </ul>
@@ -1014,14 +1014,14 @@
         });
 
         // 供应商排行日期选择器
-        flatpickr("#supplier-rank-start-date", {
+        flatpickr("#supplierRank-start-date", {
             dateFormat: "Y-m-d",
             onChange: function (selectedDates, dateStr) {
                 viewState.supplierRank.startDate = dateStr;
             }
         });
 
-        flatpickr("#supplier-rank-end-date", {
+        flatpickr("#supplierRank-end-date", {
             dateFormat: "Y-m-d",
             onChange: function (selectedDates, dateStr) {
                 viewState.supplierRank.endDate = dateStr;
@@ -1057,8 +1057,8 @@
         document.getElementById('comingProject-start-date').value = dayRange.start;
         document.getElementById('comingProject-end-date').value = dayRange.end;
 
-        document.getElementById('supplier-rank-start-date').value = monthRange.start;
-        document.getElementById('supplier-rank-end-date').value = monthRange.end;
+        document.getElementById('supplierRank-start-date').value = monthRange.start;
+        document.getElementById('supplierRank-end-date').value = monthRange.end;
 
         // 更新状态
         viewState.comingQualified.startDate = dayRange.start;
@@ -1436,7 +1436,7 @@
         const projects = projectOptions[viewState.materialType];
 
         // 更新所有项目选择器
-        ['comingQualified-project', 'yearComingProject', 'comingProject', 'supplier-rank-project'].forEach(selectorId => {
+        ['comingQualified-project', 'yearComingProject', 'comingProject', 'supplierRank-project'].forEach(selectorId => {
             const dropdown = document.getElementById(`${selectorId}-dropdown`);
             if (dropdown) {
                 dropdown.innerHTML = '';
@@ -1470,7 +1470,7 @@
                     viewState.yearComingProject.projects = [...projects];
                 } else if (selectorId.includes('comingProject')) {
                     viewState.comingProject.projects = [...projects];
-                } else if (selectorId.includes('supplier-rank')) {
+                } else if (selectorId.includes('supplierRank')) {
                     viewState.supplierRank.projects = [...projects];
                 }
             }
@@ -1495,9 +1495,9 @@
         } else if (selectorId.includes('comingProject')) {
             viewState.comingProject.projects = projects;
             loadComingProjectChart();
-        } else if (selectorId.includes('supplier-rank')) {
+        } else if (selectorId.includes('supplierRank')) {
             viewState.supplierRank.projects = projects;
-            renderSupplierRankData();
+            loadSupplierRankData();
         }
     }
 
@@ -2327,7 +2327,7 @@
             data.RejectionRate.forEach((row, index) => {
                 const suppId = row.SUPPID || '';
                 const suppName = row.SUPPNAME || '';
-                const value = row.VALUE || 0;
+                const value = Number((row.VALUE || 0).toFixed(2));
 
                 supplierData.nameList.push({
                     rank: index + 1,
@@ -2343,7 +2343,7 @@
             data.DefectRate.forEach((row, index) => {
                 const suppId = row.SUPPID || '';
                 const suppName = row.SUPPNAME || '';
-                const value = row.VALUE || 0;
+                const value = Number((row.VALUE || 0).toFixed(2));
 
                 supplierData.defectRateList.push({
                     rank: index + 1,
@@ -2478,7 +2478,7 @@
                 const li = document.createElement('li');
                 li.className = 'supplier-item';
                 li.innerHTML = `
-                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplierRank-number">${supplier.rank}</span>
                 <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
                 <span class="supplier-value">${supplier.value}%</span>
             `;
@@ -2501,7 +2501,7 @@
                 const li = document.createElement('li');
                 li.className = 'supplier-item';
                 li.innerHTML = `
-                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplierRank-number">${supplier.rank}</span>
                 <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
                 <span class="supplier-value defect-rate">${supplier.value}%</span>
             `;
@@ -2524,7 +2524,7 @@
                 const li = document.createElement('li');
                 li.className = 'supplier-item';
                 li.innerHTML = `
-                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplierRank-number">${supplier.rank}</span>
                 <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
                 <span class="supplier-value incoming-batches">${supplier.value.toLocaleString()}</span>
             `;
@@ -2547,7 +2547,7 @@
                 const li = document.createElement('li');
                 li.className = 'supplier-item';
                 li.innerHTML = `
-                <span class="supplier-rank-number">${supplier.rank}</span>
+                <span class="supplierRank-number">${supplier.rank}</span>
                 <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
                 <span class="supplier-value reject-batches">${supplier.value.toLocaleString()}</span>
             `;
@@ -2937,12 +2937,7 @@
             html += `
         <tr>
             <td>${item.INSPECT_IQCCODE || ''}</td>
-            <td>
-                <span class="supplier-cell" data-supplier-id="${item.SUPPID || ''}"
-                      onclick="showSupplierDetail('${item.SUPPID || ''}')">
-                    ${item.SUPPNAME || ''}
-                </span>
-            </td>
+            <td>${item.SUPPNAME || ''}</td>
             <td>${item.ITEMID || ''}</td>
             <td>${item.ITEMNAME || ''}</td>
             <td>${item.ERP_ARRIVEDID || ''}</td>
@@ -3101,12 +3096,12 @@
             loadComingProjectChart();
         });
 
-        document.getElementById('supplier-rank-apply').addEventListener('click', function () {
+        document.getElementById('supplierRank-apply').addEventListener('click', function () {
             if (!viewState.supplierRank.startDate || !viewState.supplierRank.endDate) {
                 alert('请选择开始日期和结束日期');
                 return;
             }
-            document.getElementById('supplier-rank-date-picker').classList.add('hidden');
+            document.getElementById('supplierRank-date-picker').classList.add('hidden');
             loadSupplierRankData();
         });
 
@@ -3173,8 +3168,8 @@
         loadStatsData();
         // 重新加载图表数据
         loadChartsData();
-        // 重新渲染供应商排行
-        renderSupplierRankData();
+        // 重新加载供应商排行数据
+        loadSupplierRankData();
 
         // 根据物料类型设置卡片显示状态
         const inspectionDelayCard = document.getElementById('inspection-delay');
