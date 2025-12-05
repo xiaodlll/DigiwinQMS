@@ -39,6 +39,7 @@ namespace Meiam.System.Interfaces.IService
         Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input);
         Task<ApiResponse> GetIQCDetailDataAsync(INSPECT_PERSONNELDATA input);
         Task<ApiResponse> GetComingQualifiedDataAsync(INSPECT_PERSONNELDATA input);
+        Task<ApiResponse> GetYearComingProjectDataAsync(INSPECT_PERSONNELDATA input);
         Task<ApiResponse> GetComingProjectDataAsync(INSPECT_PERSONNELDATA input);
         Task<ApiResponse> GetSuppBatchRejectionDataAsync(INSPECT_PERSONNELDATA input);
         Task<ApiResponse> GetSuppBatchRejectionDetailDataAsync(INSPECT_PERSONNELDATA input);

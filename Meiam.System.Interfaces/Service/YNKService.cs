@@ -16,9 +16,12 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Meiam.System.Interfaces.Service {
-    public class YNKService : BaseService<INSPECT_TENSILE_D>, IYNKService {
-        public YNKService(IUnitOfWork unitOfWork) : base(unitOfWork) {
+namespace Meiam.System.Interfaces.Service
+{
+    public class YNKService : BaseService<INSPECT_TENSILE_D>, IYNKService
+    {
+        public YNKService(IUnitOfWork unitOfWork) : base(unitOfWork)
+        {
         }
 
         private readonly ILogger<YNKService> _logger;
@@ -26,11 +29,13 @@ namespace Meiam.System.Interfaces.Service {
         private readonly ERPApiConfigYNK _config;
         private readonly HttpClient _httpClient;
 
-        public YNKService(IUnitOfWork unitOfWork, HttpClient httpClient, IConfiguration configuration, ILogger<YNKService> logger) : base(unitOfWork) {
+        public YNKService(IUnitOfWork unitOfWork, HttpClient httpClient, IConfiguration configuration, ILogger<YNKService> logger) : base(unitOfWork)
+        {
             _logger = logger;
 
             _httpClient = httpClient;
-            _config = new ERPApiConfigYNK {
+            _config = new ERPApiConfigYNK
+            {
                 BaseUrl = configuration["ERP:BaseUrl"] ?? "http://kingdeeapp/K3Cloud/",
                 LoginUrl = configuration["ERP:LoginUrl"] ?? "Kingdee.BOS.WebApi.ServicesStub.AuthService.ValidateUser.common.kdsvc",
                 Username = configuration["ERP:Username"] ?? "Administrator",
@@ -46,23 +51,29 @@ namespace Meiam.System.Interfaces.Service {
         }
 
         #region ERP收料通知单
-        public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequestYNK> requests) {
+        public async Task<ApiResponse> ProcessLotNoticeAsync(List<LotNoticeRequestYNK> requests)
+        {
             _logger.LogInformation("开始处理收料通知单");
-            try {
-                foreach (var request in requests) {
+            try
+            {
+                foreach (var request in requests)
+                {
                     // 验证数据
-                    if (request.LOT_QTY <= 0) {
+                    if (request.LOT_QTY <= 0)
+                    {
                         _logger.LogWarning("到货数量无效: {LotQty}", request.LOT_QTY);
                         throw new ArgumentException("到货数量必须大于0");
                     }
 
-                    if (request.ITEMID.StartsWith("Z") || request.ITEMID.StartsWith("H")) {
+                    if (request.ITEMID.StartsWith("Z") || request.ITEMID.StartsWith("H"))
+                    {
                         _logger.LogWarning($"过滤Z和H开头的物料: {request.ITEMID}");
                         continue;
                     }
                     //判断重复
                     bool isExist = Db.Ado.GetInt($@"SELECT count(*) FROM INSPECT_IQC WHERE KEEID = '{request.KEEID}'") > 0;
-                    if (isExist) {
+                    if (isExist)
+                    {
                         _logger.LogWarning($"收料通知单已存在: {request.KEEID}");
                         continue;
                     }
@@ -73,10 +84,12 @@ namespace Meiam.System.Interfaces.Service {
 
                     // 保存到数据库
                     _logger.LogDebug("正在保存收料通知单到数据库...");
-                    try {
+                    try
+                    {
                         SaveToDatabase(request, inspectionId);
                     }
-                    catch (Exception ex) {
+                    catch (Exception ex)
+                    {
                         _logger.LogError("保存收料通知单到数据库异常:" + ex.ToString());
                         throw;
                     }
@@ -85,20 +98,24 @@ namespace Meiam.System.Interfaces.Service {
 
                 _logger.LogInformation("收料通知单处理成功");
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "收料通知单接收成功",
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"收料通知单接收失败，原因：{ex.Message}"
                 };
             }
         }
 
-        private string GenerateInspectionId() {
+        private string GenerateInspectionId()
+        {
             string INSPECT_CODE = "";//检验单号
 
             const string sql = @"
@@ -119,24 +136,29 @@ namespace Meiam.System.Interfaces.Service {
 
             // 执行 SQL 命令
             var dataTable = Db.Ado.GetDataTable(sql);
-            if (dataTable.Rows.Count > 0) {
+            if (dataTable.Rows.Count > 0)
+            {
                 INSPECT_CODE = dataTable.Rows[0]["INSPECT_CODE"].ToString().Trim();
             }
             return INSPECT_CODE;
         }
 
-        public void SaveToDatabase(LotNoticeRequestYNK request, string inspectionId) {
+        public void SaveToDatabase(LotNoticeRequestYNK request, string inspectionId)
+        {
             // 保存数据
             SaveMainInspection(request, inspectionId);
         }
 
-        private void SaveMainInspection(LotNoticeRequestYNK request, string inspectionId) {
+        private void SaveMainInspection(LotNoticeRequestYNK request, string inspectionId)
+        {
             //更新供应商SUPP
             string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString().Trim();
 
-            if (string.IsNullOrEmpty(SuppID)) {
+            if (string.IsNullOrEmpty(SuppID))
+            {
                 SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString().Trim();
-                if (string.IsNullOrEmpty(SuppID)) {
+                if (string.IsNullOrEmpty(SuppID))
+                {
                     SuppID = "1001";
                 }
                 Db.Ado.ExecuteCommand($@"INSERT INTO SUPP (
@@ -185,7 +207,8 @@ namespace Meiam.System.Interfaces.Service {
                     VALUES (source.TENID, source.ITEMID, source.ITEM0A17, source.ITEMCREATEUSER, 
                             source.ITEMCREATEDATE, source.ITEMMODIFYDATE, source.ITEMMODIFYUSER, 
                             source.ITEMCODE, source.ITEMNAME);",
-            new {
+            new
+            {
                 ITEMID = request.ITEMID,
                 ITEMNAME = request.ITEMNAME,
                 CreateDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
@@ -236,16 +259,20 @@ namespace Meiam.System.Interfaces.Service {
         #endregion
 
         #region 金蝶云登录接口,获取KDSVCSessionId 的值
-        public async Task<ERPLoginResponseYNK> LoginAsync() {
+        public async Task<ERPLoginResponseYNK> LoginAsync()
+        {
             return await LoginAsync(_config.Username, _config.Password, _config.AcctID, _config.Lcid);
         }
 
-        public async Task<ERPLoginResponseYNK> LoginAsync(string username, string password, string acctID, int lcid = 2052) {
+        public async Task<ERPLoginResponseYNK> LoginAsync(string username, string password, string acctID, int lcid = 2052)
+        {
             var response = new ERPLoginResponseYNK();
 
-            try {
+            try
+            {
                 // 创建请求参数
-                var requestData = new ERPLoginRequestYNK {
+                var requestData = new ERPLoginRequestYNK
+                {
                     Username = username,
                     Password = password,
                     AcctID = acctID,
@@ -264,13 +291,17 @@ namespace Meiam.System.Interfaces.Service {
                 response.StatusCode = (int)httpResponse.StatusCode;
 
                 // 检查响应状态
-                if (httpResponse.IsSuccessStatusCode) {
+                if (httpResponse.IsSuccessStatusCode)
+                {
                     var responseContent = await httpResponse.Content.ReadAsStringAsync();
 
                     // 从响应头中获取KDSVCSessionId
-                    if (httpResponse.Headers.TryGetValues("Set-Cookie", out var cookies)) {
-                        foreach (var cookie in cookies) {
-                            if (cookie.Contains("KDSVCSessionId")) {
+                    if (httpResponse.Headers.TryGetValues("Set-Cookie", out var cookies))
+                    {
+                        foreach (var cookie in cookies)
+                        {
+                            if (cookie.Contains("KDSVCSessionId"))
+                            {
                                 response.KDSVCSessionId = ExtractSessionIdFromCookie(cookie);
                                 response.IsSuccess = true;
                                 break;
@@ -279,24 +310,29 @@ namespace Meiam.System.Interfaces.Service {
                     }
 
                     // 如果没有在cookie中找到，尝试从响应体中解析
-                    if (string.IsNullOrEmpty(response.KDSVCSessionId)) {
+                    if (string.IsNullOrEmpty(response.KDSVCSessionId))
+                    {
                         response.KDSVCSessionId = ParseSessionIdFromResponse(responseContent);
                         response.IsSuccess = !string.IsNullOrEmpty(response.KDSVCSessionId);
                     }
 
-                    if (!response.IsSuccess) {
+                    if (!response.IsSuccess)
+                    {
                         response.ErrorMessage = "登录成功但未找到KDSVCSessionId";
                     }
                 }
-                else {
+                else
+                {
                     response.ErrorMessage = $"HTTP错误: {httpResponse.StatusCode}";
                     var errorContent = await httpResponse.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrEmpty(errorContent)) {
+                    if (!string.IsNullOrEmpty(errorContent))
+                    {
                         response.ErrorMessage += $", 错误信息: {errorContent}";
                     }
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 response.ErrorMessage = $"登录失败: {ex.Message}";
                 response.StatusCode = 500;
             }
@@ -304,33 +340,40 @@ namespace Meiam.System.Interfaces.Service {
             return response;
         }
 
-        private string ExtractSessionIdFromCookie(string cookieHeader) {
+        private string ExtractSessionIdFromCookie(string cookieHeader)
+        {
             // 从Set-Cookie头中提取KDSVCSessionId
             var cookies = cookieHeader.Split(';');
-            foreach (var cookie in cookies) {
+            foreach (var cookie in cookies)
+            {
                 var trimmedCookie = cookie.Trim();
-                if (trimmedCookie.StartsWith("KDSVCSessionId=")) {
+                if (trimmedCookie.StartsWith("KDSVCSessionId="))
+                {
                     return trimmedCookie.Substring("KDSVCSessionId=".Length);
                 }
             }
             return null;
         }
 
-        private string ParseSessionIdFromResponse(string responseContent) {
+        private string ParseSessionIdFromResponse(string responseContent)
+        {
             // 根据金蝶云API的实际响应格式解析SessionId
-            try {
+            try
+            {
                 // 假设响应格式为: {"LoginResultType":1,"Message":"","KDSVCSessionId":"session-id-here"}
                 dynamic responseObj = JsonConvert.DeserializeObject(responseContent);
                 return responseObj?.KDSVCSessionId?.ToString();
             }
-            catch {
+            catch
+            {
                 return null;
             }
         }
         #endregion
 
         #region 回写ERP MES方法
-        public List<LotNoticeResultRequestYNK> GetQmsLotNoticeResultRequest() {
+        public List<LotNoticeResultRequestYNK> GetQmsLotNoticeResultRequest()
+        {
             var sql = @"SELECT 
                             ERP_ARRIVEDID AS ERP_ARRIVEDID, 
                             INSPECT_IQCCODE AS INSPECT_IQCCODE,
@@ -354,7 +397,8 @@ namespace Meiam.System.Interfaces.Service {
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
-            foreach (var item in list) {
+            foreach (var item in list)
+            {
                 item.FCheckQty = Db.Ado.GetDecimal(@$"SELECT COALESCE((
     SELECT TOP 1 
         MAX(CAST(INSPECT_CNT AS INT)) OVER (PARTITION BY INSPECT_TYPE) AS INSPECT_CNT
@@ -374,12 +418,14 @@ namespace Meiam.System.Interfaces.Service {
             return list;
         }
 
-        public void CallBackQmsLotNoticeResult(LotNoticeResultRequestYNK request) {
+        public void CallBackQmsLotNoticeResult(LotNoticeResultRequestYNK request)
+        {
             var sql = string.Format(@"update INSPECT_IQC set ISSY='1' where KEEID='{0}' ", request.FEntryID);
             Db.Ado.ExecuteCommand(sql);
         }
 
-        public List<AttachmentResultRequestYNK> GetAttachmentResultRequest() {
+        public List<AttachmentResultRequestYNK> GetAttachmentResultRequest()
+        {
             var sql = @"SELECT TOP 10 SCANDOC.SCANDOCID,
                             ERP_ARRIVEDID AS ERP_ARRIVEDID,
                             INSPECT_IQCCODE AS INSPECT_IQCCODE,
@@ -392,19 +438,23 @@ namespace Meiam.System.Interfaces.Service {
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<AttachmentResultRequestYNK>(sql);
-            foreach (var item in list) {
+            foreach (var item in list)
+            {
                 string filePath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], item.FilePath.TrimStart('\\'));
-                if (File.Exists(filePath)) {
+                if (File.Exists(filePath))
+                {
                     item.SendBytes = File.ReadAllBytes(filePath);
                 }
-                else {
+                else
+                {
                     throw new Exception("找不到文件:" + filePath);
                 }
             }
             return list;
         }
 
-        public void CallBackAttachmentResult(AttachmentResultRequestYNK request) {
+        public void CallBackAttachmentResult(AttachmentResultRequestYNK request)
+        {
             var sql = string.Format(@"update SCANDOC set ISSY='1' where SCANDOC='{0}' ", request.SCANDOCID);
             Db.Ado.ExecuteCommand(sql);
         }
@@ -412,8 +462,10 @@ namespace Meiam.System.Interfaces.Service {
         #endregion
 
         #region 工具API
-        public async Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input) {
-            try {
+        public async Task<ApiResponse> GetAOIInspectInfoByDocCodeAsync(INSPECT_REQCODE input)
+        {
+            try
+            {
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
@@ -422,22 +474,27 @@ namespace Meiam.System.Interfaces.Service {
                     parameters
                 );
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = JsonConvert.SerializeObject(data.FirstOrDefault())
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input) {
-            try {
+        public async Task<ApiResponse> GetAOIProgressDataByDocCodeAsync(INSPECT_REQCODE input)
+        {
+            try
+            {
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
@@ -446,23 +503,29 @@ namespace Meiam.System.Interfaces.Service {
                     parameters
                 );
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = JsonConvert.SerializeObject(data)
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input) {
-            try {
-                foreach (var item in input) {
+        public async Task<ApiResponse> ProcessUploadAOIDataAsync(List<InspectAoi> input)
+        {
+            try
+            {
+                foreach (var item in input)
+                {
                     // 1. 检查主表是否存在相同数据
                     var checkSql = @"SELECT COUNT(1) FROM INSPECT_AOI 
                                 WHERE DOC_CODE = @DOC_CODE 
@@ -489,7 +552,8 @@ namespace Meiam.System.Interfaces.Service {
                     var exists = await Db.Ado.GetIntAsync(checkSql, checkParams) > 0;
 
                     // 2数据处理
-                    if (!exists) {
+                    if (!exists)
+                    {
                         // 构建插入SQL语句
                         var mainSql = @"INSERT INTO INSPECT_AOI 
                             (DOC_CODE, INSPECT_PROGRESSID, INSPECT_AOIID, INSPECT_AOICREATEDATE, 
@@ -552,43 +616,55 @@ namespace Meiam.System.Interfaces.Service {
                     }
                 }
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "Aoi数据保存成功"
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"Aoi数据保存失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input) {
-            try {
-                if (input.Count == 0) {
-                    return new ApiResponse {
+        public async Task<ApiResponse> ProcessUploadAOIImageDataAsync(List<InspectImageAoi> input)
+        {
+            try
+            {
+                if (input.Count == 0)
+                {
+                    return new ApiResponse
+                    {
                         Success = false,
                         Message = $"传入数据为空!"
                     };
                 }
                 string baseDirPath = Path.Combine(AppSettings.Configuration["AppSettings:FileServerPath"], @"AOI");
-                foreach (var item in input) {
+                foreach (var item in input)
+                {
                     // 1. 验证必要数据
-                    if (string.IsNullOrEmpty(item.DOC_CODE)) {
+                    if (string.IsNullOrEmpty(item.DOC_CODE))
+                    {
                         throw new ArgumentException("DOC_CODE不能为空，无法存储图片");
                     }
-                    if (string.IsNullOrEmpty(item.ImageName)) {
+                    if (string.IsNullOrEmpty(item.ImageName))
+                    {
                         throw new ArgumentException("ImageName不能为空，无法确定文件名");
                     }
-                    if (string.IsNullOrEmpty(item.ImageData)) {
+                    if (string.IsNullOrEmpty(item.ImageData))
+                    {
                         throw new ArgumentException($"DOC_CODE: {item.DOC_CODE} 的图片数据为空，无法存储");
                     }
 
                     // 2. 创建DOC_CODE对应的文件夹
                     string docCodeDirPath = Path.Combine(baseDirPath, item.DOC_CODE);
-                    if (!Directory.Exists(docCodeDirPath)) {
+                    if (!Directory.Exists(docCodeDirPath))
+                    {
                         Directory.CreateDirectory(docCodeDirPath);
                     }
 
@@ -598,9 +674,11 @@ namespace Meiam.System.Interfaces.Service {
                     string targetFilePath = Path.Combine(docCodeDirPath, item.ImageName);
 
                     // 检查文件是否存在，存在则生成新文件名
-                    if (File.Exists(targetFilePath)) {
+                    if (File.Exists(targetFilePath))
+                    {
                         int counter = 1;
-                        do {
+                        do
+                        {
                             string newFileName = $"{fileNameWithoutExt}_{counter}{fileExtension}";
                             targetFilePath = Path.Combine(docCodeDirPath, newFileName);
                             counter++;
@@ -615,24 +693,31 @@ namespace Meiam.System.Interfaces.Service {
                     item.ImageName = Path.GetFileName(targetFilePath);
                 }
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "AOI图片保存成功",
                     Data = JsonConvert.SerializeObject(input)
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"AOI图片数据保存失败：{ex.Message}"
                 };
             }
         }
 
-        public async Task<ApiResponse> ProcessYNKInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input) {
-            try {
-                if (input.Count == 0) {
-                    return new ApiResponse {
+        public async Task<ApiResponse> ProcessYNKInpectProcessDataAsync(List<INSPECT_PROGRESSDto> input)
+        {
+            try
+            {
+                if (input.Count == 0)
+                {
+                    return new ApiResponse
+                    {
                         Success = false,
                         Message = $"传入数据为空!"
                     };
@@ -654,7 +739,8 @@ namespace Meiam.System.Interfaces.Service {
                 int lastMaxVer = 0;   // 上一版本号（数字形式）
 
                 // 2. 处理版本号逻辑
-                if (dtOldData.Rows.Count > 0) {
+                if (dtOldData.Rows.Count > 0)
+                {
                     lastMaxVer = dtEnum
                         .Select(row => {
                             int.TryParse(row["VER"].ToString().TrimStart('0'), out int v);
@@ -663,21 +749,27 @@ namespace Meiam.System.Interfaces.Service {
                         .Max();
                     newVer = (lastMaxVer + 1).ToString("00");
                 }
-                if (newVer == "01") {
+                if (newVer == "01")
+                {
                     int oIdIndex = 1;
                     int INSPECT_CNT = 0;
                     var entityType = firstEntity.GetType();
                     // 遍历A1到A64的所有属性
-                    for (int i = 1; i <= 64; i++) {
+                    for (int i = 1; i <= 64; i++)
+                    {
                         // 构造属性名（A1, A2, ..., A64）
                         string propertyName = $"A{i}";
                         // 获取属性信息
                         var property = entityType.GetProperty(propertyName);
-                        if (property != null) {
+                        if (property != null)
+                        {
                             var value = property.GetValue(firstEntity);
-                            if (value != null) {
-                                if (value is string strValue) {
-                                    if (!string.IsNullOrEmpty(strValue.Trim())) {
+                            if (value != null)
+                            {
+                                if (value is string strValue)
+                                {
+                                    if (!string.IsNullOrEmpty(strValue.Trim()))
+                                    {
                                         INSPECT_CNT++;
                                     }
                                 }
@@ -692,16 +784,18 @@ namespace Meiam.System.Interfaces.Service {
                         @"select INSPECT_PLANID from INSPECT_PLAN where SPOT_CNT = @SPOT_CNT", // 条件：样本数量匹配
                         planParameters
                     );
-                    foreach (var item in input) {
+                    foreach (var item in input)
+                    {
                         item.VER = newVer; // 设置新版本号
                         item.OID = (oIdIndex++).ToString("00");
                         item.INSPECT_CNT = INSPECT_CNT.ToString();
                         item.INSPECT_PLANID = planId;
                     }
                 }
-                else {//第二次上传
-                      // 非首次上传：处理OID逻辑
-                      // 2.1 提取历史数据中每个检验项目最近出现的OID（按版本倒序取最近）
+                else
+                {//第二次上传
+                 // 非首次上传：处理OID逻辑
+                 // 2.1 提取历史数据中每个检验项目最近出现的OID（按版本倒序取最近）
                     var lastestOidMap = dtEnum
                         .GroupBy(row => row["INSPECT_PROGRESSNAME"].ToString(), StringComparer.OrdinalIgnoreCase)
                         .ToDictionary(
@@ -716,7 +810,8 @@ namespace Meiam.System.Interfaces.Service {
                                     .FirstOrDefault();
 
                                 // 转换OID为整数（默认0）
-                                if (latestRow != null && int.TryParse(latestRow["OID"].ToString(), out int oid)) {
+                                if (latestRow != null && int.TryParse(latestRow["OID"].ToString(), out int oid))
+                                {
                                     return oid;
                                 }
                                 return 0;
@@ -736,16 +831,19 @@ namespace Meiam.System.Interfaces.Service {
 
                     // 2.3 遍历输入项分配OID
                     int currentMaxOid = maxHistoryOid; // 当前最大OID（用于累加）
-                    foreach (var item in input) {
+                    foreach (var item in input)
+                    {
                         item.VER = newVer;
                         item.INSPECT_CNT = firstVerRow["INSPECT_CNT"].ToString();
                         item.INSPECT_PLANID = firstVerRow["INSPECT_PLANID"].ToString();
                         // 检查当前检验项目是否在历史记录中存在
-                        if (lastestOidMap.TryGetValue(item.INSPECT_PROGRESSNAME, out int existOid) && existOid > 0) {
+                        if (lastestOidMap.TryGetValue(item.INSPECT_PROGRESSNAME, out int existOid) && existOid > 0)
+                        {
                             // 规则2：存在则使用最近版本的OID
                             item.OID = existOid.ToString("00");
                         }
-                        else {
+                        else
+                        {
                             // 规则1：不存在则从最大OID累加
                             currentMaxOid++;
                             item.OID = currentMaxOid.ToString("00");
@@ -757,14 +855,17 @@ namespace Meiam.System.Interfaces.Service {
                 await SaveInspectProgressList(input);
                 #endregion
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据保存成功",
                     Data = JsonConvert.SerializeObject(input)
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"二次元数据保存失败：{ex.Message}"
                 };
@@ -776,7 +877,8 @@ namespace Meiam.System.Interfaces.Service {
         /// </summary>
         /// <param name="input">检验进度实体数组</param>
         /// <returns>是否保存成功</returns>
-        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input) {
+        private async Task SaveInspectProgressList(List<INSPECT_PROGRESSDto> input)
+        {
             if (input == null || input.Count == 0)
                 return;
 
@@ -785,7 +887,8 @@ namespace Meiam.System.Interfaces.Service {
             int parametersPerItem = 82;
             int maxBatchSize = 2100 / parametersPerItem; // 仍保持分批处理基础逻辑
 
-            for (int i = 0; i < input.Count; i += maxBatchSize) {
+            for (int i = 0; i < input.Count; i += maxBatchSize)
+            {
                 var batchItems = input.Skip(i).Take(maxBatchSize).ToList();
                 if (batchItems.Count == 0)
                     continue;
@@ -795,7 +898,8 @@ namespace Meiam.System.Interfaces.Service {
             }
         }
 
-        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems) {
+        private (string Sql, List<SugarParameter> Parameters) BuildBatchSqlWithReusedParameters(List<INSPECT_PROGRESSDto> batchItems)
+        {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("INSERT INTO INSPECT_PROGRESS (");
             sqlBuilder.Append("INSPECT_PROGRESSID, DOC_CODE, ITEMID,INSPECT02CODE, VER, OID, COC_ATTR, ");
@@ -803,7 +907,8 @@ namespace Meiam.System.Interfaces.Service {
             sqlBuilder.Append("INSPECT_CNT, STD_VALUE, MAX_VALUE, MIN_VALUE, UP_VALUE, DOWN_VALUE, ");
 
             // 拼接A1-A64样本字段
-            for (int i = 1; i <= 64; i++) {
+            for (int i = 1; i <= 64; i++)
+            {
                 sqlBuilder.Append($"A{i}, ");
             }
 
@@ -814,7 +919,8 @@ namespace Meiam.System.Interfaces.Service {
             var parameterCache = new Dictionary<string, string>(); // 缓存值与参数名的映射
             int paramIndex = 0;
 
-            foreach (var item in batchItems) {
+            foreach (var item in batchItems)
+            {
                 sqlBuilder.Append("(");
 
                 // 处理主键ID（通常唯一，难以复用）
@@ -874,7 +980,8 @@ namespace Meiam.System.Interfaces.Service {
                     "DOWN_VALUE", item.DOWN_VALUE, ref paramIndex, parameters, parameterCache) + ", ");
 
                 // 处理A1-A64样本字段
-                for (int j = 1; j <= 64; j++) {
+                for (int j = 1; j <= 64; j++)
+                {
                     var propName = $"A{j}";
                     var propValue = item.GetType().GetProperty(propName)?.GetValue(item);
                     var paramKey = $"{propName}_{propValue}";
@@ -897,7 +1004,8 @@ namespace Meiam.System.Interfaces.Service {
             }
 
             // 移除最后一个逗号
-            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',') {
+            if (sqlBuilder.Length > 0 && sqlBuilder[sqlBuilder.Length - 1] == ',')
+            {
                 sqlBuilder.Length--;
             }
 
@@ -906,12 +1014,14 @@ namespace Meiam.System.Interfaces.Service {
 
         // 复用参数的核心方法：相同值使用同一个参数
         private string AddReusableParameter(string fieldName, object value, ref int paramIndex,
-            List<SugarParameter> parameters, Dictionary<string, string> parameterCache) {
+            List<SugarParameter> parameters, Dictionary<string, string> parameterCache)
+        {
             // 创建唯一键：字段名+值（处理null情况）
             var cacheKey = $"{fieldName}_{(value ?? "NULL").ToString()}";
 
             // 如果已有相同值的参数，直接返回已存在的参数名
-            if (parameterCache.TryGetValue(cacheKey, out var existingParamName)) {
+            if (parameterCache.TryGetValue(cacheKey, out var existingParamName))
+            {
                 return existingParamName;
             }
 
@@ -926,8 +1036,10 @@ namespace Meiam.System.Interfaces.Service {
         #endregion
 
         #region 报表相关
-        public async Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input) {
-            try {
+        public async Task<ApiResponse> GetInspectionRecordReportDataAsync(INSPECT_REQCODE input)
+        {
+            try
+            {
                 var parameters = new SugarParameter[] {
                   new SugarParameter("@DOC_CODE", input.DOC_CODE) };
 
@@ -935,12 +1047,14 @@ namespace Meiam.System.Interfaces.Service {
                 string docCreateDate = string.Empty;
                 string orgMoa02 = string.Empty;
                 var data1 = await Db.Ado.GetDataTableAsync("select TOP 1 DOC_NO,DOC_CREATEDATE from INSPECT_DOC_INFO where IS_NEW='1' and DOC_TYPE='图纸尺寸文件'");
-                if (data1 != null && data1.Rows.Count > 0) {
+                if (data1 != null && data1.Rows.Count > 0)
+                {
                     docNo = data1.Rows[0]["DOC_NO"].ToString();
                     docCreateDate = data1.Rows[0]["DOC_CREATEDATE"].ToString();
                 }
                 var data2 = await Db.Ado.GetDataTableAsync("select TOP 1 ORGM0A02 from ORGM001 where ORGM0A01='001'");
-                if (data2 != null && data2.Rows.Count > 0) {
+                if (data2 != null && data2.Rows.Count > 0)
+                {
                     orgMoa02 = data2.Rows[0]["ORGM0A02"].ToString();
                 }
                 var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ALL_REMARK3,ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
@@ -960,7 +1074,8 @@ namespace Meiam.System.Interfaces.Service {
                 string Inspector = string.Empty;
                 string InspectorDate = string.Empty;
                 string remark = string.Empty;
-                if (dataMain != null && dataMain.Rows.Count > 0) {
+                if (dataMain != null && dataMain.Rows.Count > 0)
+                {
                     ITEMID = dataMain.Rows[0]["ITEMID"].ToString();
                     ITEMNAME = dataMain.Rows[0]["ITEMNAME"].ToString();
                     LOTNO = dataMain.Rows[0]["LOTNO"].ToString();
@@ -998,12 +1113,15 @@ namespace Meiam.System.Interfaces.Service {
                 // 将原始数据转换为对象列表
                 var dataList = new List<InspectData>();
 
-                foreach (DataRow row in originalData.Rows) {
-                    if (!string.IsNullOrEmpty(row["INSPECTOR"].ToString())) {
+                foreach (DataRow row in originalData.Rows)
+                {
+                    if (!string.IsNullOrEmpty(row["INSPECTOR"].ToString()))
+                    {
                         Inspector = row["INSPECTOR"].ToString();
                     }
                     int.TryParse(row["INSPECT_CNT"]?.ToString(), out int inspectCnt);
-                    var data = new InspectData {
+                    var data = new InspectData
+                    {
                         ProgressName = row["PROGRESSNAME1"]?.ToString(),
                         InspectCode = row["INSPECT02CODE"]?.ToString(),
                         InspectResult = row["INSPECT_RESULT"]?.ToString(),
@@ -1013,15 +1131,18 @@ namespace Meiam.System.Interfaces.Service {
                         NGS = row["NGS"]?.ToString(),
                         Values = new List<object>()
                     };
-                    if (data.InspectType == "INSPECT_TYPE_000" || data.InspectType == "INSPECT_TYPE_003" || data.InspectType == "INSPECT_TYPE_999") {
+                    if (data.InspectType == "INSPECT_TYPE_000" || data.InspectType == "INSPECT_TYPE_003" || data.InspectType == "INSPECT_TYPE_999")
+                    {
                         data.ProgressName = row["INSPECT_PROGRESSNAME"]?.ToString();
                     }
 
                     // 收集A1-A64的值（跳过空值）
-                    for (int i = 1; i <= 64; i++) {
+                    for (int i = 1; i <= 64; i++)
+                    {
                         string fieldName = $"A{i}";
                         object value = row[fieldName];
-                        if (value != null && !string.IsNullOrEmpty(value.ToString())) {
+                        if (value != null && !string.IsNullOrEmpty(value.ToString()))
+                        {
                             data.Values.Add(value);
                         }
                     }
@@ -1034,7 +1155,8 @@ namespace Meiam.System.Interfaces.Service {
                 var groupedData = GroupData(dataList, pageColCount, pageRowCount);
 
                 // 构建最终的JSON结构
-                var result = new {
+                var result = new
+                {
                     PageRowCount = pageRowCount,
                     FormCode = docNo,
                     RecordNo = input.DOC_CODE,
@@ -1053,14 +1175,17 @@ namespace Meiam.System.Interfaces.Service {
                 };
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1068,7 +1193,8 @@ namespace Meiam.System.Interfaces.Service {
         }
 
         // 数据分组方法
-        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount) {
+        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount)
+        {
             var result = new List<Dictionary<string, List<object>>>();
 
             if (dataList == null || dataList.Count == 0)
@@ -1076,25 +1202,33 @@ namespace Meiam.System.Interfaces.Service {
             int maxLength = dataList.Select(d => d.Values?.Count ?? 0).Max();
             if (maxLength < 3) maxLength = 3; // 确保至少有3个基础元素
             Dictionary<int, string> dicColumnsAValues = new Dictionary<int, string>();
-            for (int i = 0; i < maxLength; i++) {
+            for (int i = 0; i < maxLength; i++)
+            {
                 string resultValue = "OK";
                 //横向寻找NG
-                foreach (var data in dataList) {
-                    if (string.IsNullOrEmpty(data.NGS)) {
+                foreach (var data in dataList)
+                {
+                    if (string.IsNullOrEmpty(data.NGS))
+                    {
                         resultValue = data.InspectResult ?? "OK";
                     }
-                    else {
-                        if (!data.NGS.Contains("A")) {
+                    else
+                    {
+                        if (!data.NGS.Contains("A"))
+                        {
                             resultValue = "NG";
                         }
-                        else if (data.NGS.Contains($"A{i + 1};")) {
+                        else if (data.NGS.Contains($"A{i + 1};"))
+                        {
                             resultValue = "NG";
                         }
-                        else {
+                        else
+                        {
                             resultValue = "OK";
                         }
                     }
-                    if (resultValue == "NG") {
+                    if (resultValue == "NG")
+                    {
                         break;
                     }
                 }
@@ -1103,18 +1237,21 @@ namespace Meiam.System.Interfaces.Service {
 
             int columnIndex = 1;
             // 按页分组处理数据
-            for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount) {
+            for (int pageIndex = 0; pageIndex < dataList.Count; pageIndex += pageColCount)
+            {
                 var group = new Dictionary<string, List<object>>();
 
                 // 创建 Column0 - 序号列
                 var column0 = new List<object>();
-                for (int j = 1; j <= maxLength; j++) {
+                for (int j = 1; j <= maxLength; j++)
+                {
                     column0.Add(j);
                 }
                 group.Add("Column0", column0);
 
                 // 处理当前页的每一列数据
-                for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++) {
+                for (int i = pageIndex; i < pageIndex + pageColCount && i < dataList.Count; i++)
+                {
                     var data = dataList[i];
                     var columnData = new List<object>();
 
@@ -1124,34 +1261,44 @@ namespace Meiam.System.Interfaces.Service {
                     columnData.Add(data.InspectCode ?? "");   // 检测编码
 
                     // 处理检测值
-                    if (data.CountType == "COUNTTYPE_001") {
+                    if (data.CountType == "COUNTTYPE_001")
+                    {
                         // 计数类型处理
-                        for (int j = 1; j <= data.InspectCnt; j++) {
+                        for (int j = 1; j <= data.InspectCnt; j++)
+                        {
                             string resultValue = "OK";
-                            if (string.IsNullOrEmpty(data.NGS)) {
+                            if (string.IsNullOrEmpty(data.NGS))
+                            {
                                 resultValue = data.InspectResult ?? "OK";
                             }
-                            else {
-                                if (!data.NGS.Contains("A")) {
+                            else
+                            {
+                                if (!data.NGS.Contains("A"))
+                                {
                                     resultValue = "NG";
                                 }
-                                else if (!data.NGS.Contains($"A{j};")) {
+                                else if (!data.NGS.Contains($"A{j};"))
+                                {
                                     resultValue = "NG";
                                 }
-                                else {
+                                else
+                                {
                                     resultValue = "OK";
                                 }
                             }
                             columnData.Add(resultValue);
                         }
                     }
-                    else {
+                    else
+                    {
                         // 其他类型直接添加值
-                        if (data.Values != null) {
+                        if (data.Values != null)
+                        {
                             columnData.AddRange(data.Values);
                         }
                         // 填充剩余位置
-                        while (columnData.Count < 3 + maxLength) {
+                        while (columnData.Count < 3 + maxLength)
+                        {
                             columnData.Add(""); // 空值填充
                         }
                     }
@@ -1162,15 +1309,18 @@ namespace Meiam.System.Interfaces.Service {
 
                 // 创建 ColumnA - 结果汇总列
                 var columnA = new List<object>();
-                for (int i = 0; i < maxLength; i++) {
+                for (int i = 0; i < maxLength; i++)
+                {
                     columnA.Add(dicColumnsAValues[i]); // 结果
                 }
 
                 // 填充空列以达到页面列数要求
-                while ((columnIndex - 1) % pageColCount != 0) {
+                while ((columnIndex - 1) % pageColCount != 0)
+                {
                     var emptyColumn = new List<object> { columnIndex };
                     // 填充基础结构
-                    for (int i = 1; i < 3 + maxLength; i++) {
+                    for (int i = 1; i < 3 + maxLength; i++)
+                    {
                         emptyColumn.Add(""); // 空值
                     }
                     group.Add($"Column{columnIndex - pageIndex}", emptyColumn);
@@ -1182,28 +1332,35 @@ namespace Meiam.System.Interfaces.Service {
                 int totalRows = group.Values.Max(list => list?.Count ?? 0);
                 int splitCount = (int)Math.Ceiling((double)(totalRows - 3) / pageRowCount);
 
-                for (int splitIndex = 0; splitIndex < splitCount; splitIndex++) {
+                for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
+                {
                     var splitGroup = new Dictionary<string, List<object>>();
 
-                    foreach (var kvp in group) {
+                    foreach (var kvp in group)
+                    {
                         var originalList = kvp.Value ?? new List<object>();
                         var splitList = new List<object>();
 
-                        if (kvp.Key == "Column0" || kvp.Key == "ColumnA") {
+                        if (kvp.Key == "Column0" || kvp.Key == "ColumnA")
+                        {
                             // 序号列和结果列：只拆分数据部分
-                            if (splitIndex == 0 && originalList.Count > 0) {
+                            if (splitIndex == 0 && originalList.Count > 0)
+                            {
                                 splitList.AddRange(originalList);
                             }
-                            else {
+                            else
+                            {
                                 // 后续分组中，Column0和ColumnA只包含当前分页的数据
                                 int startIndex = splitIndex * pageRowCount;
                                 int takeCount = Math.Min(pageRowCount, originalList.Count - startIndex);
-                                if (takeCount > 0) {
+                                if (takeCount > 0)
+                                {
                                     splitList.AddRange(originalList.GetRange(startIndex, takeCount));
                                 }
                             }
                         }
-                        else {
+                        else
+                        {
                             // 数据列：前3个固定元素 + 当前分页的数据
                             // 添加固定元素（序号、名称、编码）
                             if (originalList.Count >= 1) splitList.Add(originalList[0]);
@@ -1213,7 +1370,8 @@ namespace Meiam.System.Interfaces.Service {
                             // 添加当前分页的数据
                             int dataStartIndex = 3 + splitIndex * pageRowCount;
                             int dataTakeCount = Math.Min(pageRowCount, originalList.Count - dataStartIndex);
-                            if (dataTakeCount > 0) {
+                            if (dataTakeCount > 0)
+                            {
                                 splitList.AddRange(originalList.GetRange(dataStartIndex, dataTakeCount));
                             }
                         }
@@ -1229,7 +1387,8 @@ namespace Meiam.System.Interfaces.Service {
         }
 
         // 数据模型类
-        public class InspectData {
+        public class InspectData
+        {
             public string ProgressName { get; set; }
             public string InspectCode { get; set; }
             public string InspectResult { get; set; }
@@ -1242,7 +1401,8 @@ namespace Meiam.System.Interfaces.Service {
         #endregion
 
         #region 看板相关
-        private async Task<DataTable> GetPersonnelData(INSPECT_PERSONNELDATA input) {
+        private async Task<DataTable> GetPersonnelData(INSPECT_PERSONNELDATA input)
+        {
             if (input == null) return null;
             string sql = @"SELECT INSPECT_IQCCREATEDATE,COMP_DATE,LOT_QTY,ITEMKIND,PROGRESS.INSPECTOR
 from INSPECT_IQC 
@@ -1253,20 +1413,25 @@ GROUP by DOC_CODE having (max(USER_.USER_NAME) is not null
 and max(USER_.USER_NAME)!= '管理员' and max(USER_.USER_NAME)!= '管理员1')) PROGRESS ON PROGRESS.DOC_CODE=INSPECT_IQC.INSPECT_IQCCODE
 where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件','辅料','包材','成品外购标准件')";
 
-            if (input.SumType.ToLower() == "year") {
+            if (input.SumType.ToLower() == "year")
+            {
                 sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
             }
-            else if (input.SumType.ToLower() == "month") {
+            else if (input.SumType.ToLower() == "month")
+            {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.Year}-{DateTime.Today.Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
-            else {
+            else
+            {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
-            if (!string.IsNullOrEmpty(input.MeterialNames)) {
+            if (!string.IsNullOrEmpty(input.MeterialNames))
+            {
                 var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                            .Select(item => item.Trim())
                                            .Where(item => !string.IsNullOrWhiteSpace(item));
-                if (materialItems.Any()) {
+                if (materialItems.Any())
+                {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
                     sql += $" and ITEMKIND in ({materialParams})";
                 }
@@ -1278,8 +1443,10 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <summary>
         /// 人员检验批数
         /// </summary>
-        public async Task<ApiResponse> GetPersonnelBatchesDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetPersonnelBatchesDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 //INSPECTOR,INSPECT_IQCCREATEDATE,LOT_QTY
                 DataTable dt = await GetPersonnelData(input);
                 // 转换为可枚举数据并处理空值
@@ -1295,7 +1462,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 object result = null;
 
                 string sumType = input.SumType?.ToLower() ?? "";
-                if (sumType == "month") {
+                if (sumType == "month")
+                {
                     var monthStats = dataList
                         .GroupBy(x => x.Inspector)
                         .Select(g => new {
@@ -1306,7 +1474,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = monthStats;
                 }
-                else if (sumType == "year") {
+                else if (sumType == "year")
+                {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
                     var yearStats = dataList
                         .GroupBy(x => x.Inspector)
@@ -1320,7 +1489,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = yearStats;
                 }
-                else if (sumType == "custom") {
+                else if (sumType == "custom")
+                {
                     // StartDate / EndDate 是 string，需要解析
                     if (string.IsNullOrWhiteSpace(input.StartDate) || string.IsNullOrWhiteSpace(input.EndDate))
                         throw new Exception("自定义时间统计必须提供 StartDate 和 EndDate");
@@ -1340,7 +1510,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     DateTime endMonth = new DateTime(end.Year, end.Month, 1);
 
-                    while (cursor <= endMonth) {
+                    while (cursor <= endMonth)
+                    {
                         months.Add((cursor.Year, cursor.Month));
                         cursor = cursor.AddMonths(1);
                     }
@@ -1362,14 +1533,17 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1379,8 +1553,10 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <summary>
         /// 人员检验效率
         /// </summary>
-        public async Task<ApiResponse> GetPersonnelEfficiencyDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetPersonnelEfficiencyDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 //INSPECTOR,INSPECT_IQCCREATEDATE,LOT_QTY
                 DataTable dt = await GetPersonnelData(input);
                 // 转换为可枚举数据并处理空值
@@ -1396,7 +1572,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 object result = null;
 
                 string sumType = input.SumType?.ToLower() ?? "";
-                if (sumType == "month") {
+                if (sumType == "month")
+                {
                     var monthStats = dataList
                         .GroupBy(x => x.Inspector)
                         .Select(g => new {
@@ -1407,7 +1584,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = monthStats;
                 }
-                else if (sumType == "year") {
+                else if (sumType == "year")
+                {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
                     var yearStats = dataList
                         .GroupBy(x => x.Inspector)
@@ -1421,7 +1599,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = yearStats;
                 }
-                else if (sumType == "custom") {
+                else if (sumType == "custom")
+                {
                     // StartDate / EndDate 是 string，需要解析
                     if (string.IsNullOrWhiteSpace(input.StartDate) || string.IsNullOrWhiteSpace(input.EndDate))
                         throw new Exception("自定义时间统计必须提供 StartDate 和 EndDate");
@@ -1441,7 +1620,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     DateTime endMonth = new DateTime(end.Year, end.Month, 1);
 
-                    while (cursor <= endMonth) {
+                    while (cursor <= endMonth)
+                    {
                         months.Add((cursor.Year, cursor.Month));
                         cursor = cursor.AddMonths(1);
                     }
@@ -1463,14 +1643,17 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1480,8 +1663,10 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <summary>
         /// 人员总检验时长
         /// </summary>
-        public async Task<ApiResponse> GetPersonnelDurationDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetPersonnelDurationDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 //INSPECTOR,ITEMKIND,LOT_QTY
                 DataTable dt = await GetPersonnelData(input);
                 // 定义ITEMKIND对应的检验时长系数（严格匹配名称）
@@ -1514,7 +1699,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 object result = null;
 
                 string sumType = input.SumType?.ToLower() ?? "";
-                if (sumType == "month") {
+                if (sumType == "month")
+                {
                     var monthStats = dataList
                         .GroupBy(x => x.Inspector)
                         .Select(g => new {
@@ -1525,7 +1711,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = monthStats;
                 }
-                else if (sumType == "year") {
+                else if (sumType == "year")
+                {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
                     var yearStats = dataList
                         .GroupBy(x => x.Inspector)
@@ -1539,7 +1726,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     result = yearStats;
                 }
-                else if (sumType == "custom") {
+                else if (sumType == "custom")
+                {
                     // StartDate / EndDate 是 string，需要解析
                     if (string.IsNullOrWhiteSpace(input.StartDate) || string.IsNullOrWhiteSpace(input.EndDate))
                         throw new Exception("自定义时间统计必须提供 StartDate 和 EndDate");
@@ -1559,7 +1747,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                     DateTime endMonth = new DateTime(end.Year, end.Month, 1);
 
-                    while (cursor <= endMonth) {
+                    while (cursor <= endMonth)
+                    {
                         months.Add((cursor.Year, cursor.Month));
                         cursor = cursor.AddMonths(1);
                     }
@@ -1581,14 +1770,17 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
 
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1599,12 +1791,15 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// 质量看板总数
         /// </summary>
         /// <returns></returns>
-        public async Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 string sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'  --已完成
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 var count = await Db.Ado.GetIntAsync(sql);
-                object A1 = new {
+                object A1 = new
+                {
                     name = "VerifiedQty",
                     value = count
                 };
@@ -1612,7 +1807,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'  --待检验
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
-                object A2 = new {
+                object A2 = new
+                {
                     name = "PendingInspectionQty",
                     value = count
                 };
@@ -1620,7 +1816,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_004'  --待判定
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
-                object A3 = new {
+                object A3 = new
+                {
                     name = "QtyAwaitingDisposition",
                     value = count
                 };
@@ -1628,7 +1825,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')=''  --待维护
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
-                object A4 = new {
+                object A4 = new
+                {
                     name = "MonthlyLotRejections",
                     value = count
                 };
@@ -1636,7 +1834,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007'  --当月批退数
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
-                object A5 = new {
+                object A5 = new
+                {
                     name = "InspectionDelay",
                     value = count
                 };
@@ -1644,7 +1843,8 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and dbo.GetWorkDaysBetweenDates_SQL2008(INSPECT_IQCCREATEDATE,INSPECT_IQCNAME) >5  --检验延迟
   AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())";
                 count = await Db.Ado.GetIntAsync(sql);
-                object A6 = new {
+                object A6 = new
+                {
                     name = "PendingMaterialMaintenance",
                     value = count
                 };
@@ -1652,14 +1852,17 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 object result = new object[] { A1, A2, A3, A4, A5, A6 };
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1669,8 +1872,10 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <summary>
         /// 质量看板明细
         /// </summary>
-        public async Task<ApiResponse> GetIQCDetailDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetIQCDetailDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 string sql = @"select INSPECT_IQCCODE,PROJECT.PROJECTNAME,SUPP.SUPPNAME,ERP_ARRIVEDID,SYSM002.SYSM002NAME PSTATE,ISSY,ITEMID,ITEMNAME, 
 LOTNO,LOT_QTY,APPLY_DATE,INSPECT_IQCCREATEDATE,ALL_REMARK3
 from INSPECT_IQC 
@@ -1678,7 +1883,8 @@ LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
 WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
-                switch (input.CardType) {
+                switch (input.CardType)
+                {
                     case "VerifiedQty":
                         sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'";
                         break;
@@ -1703,21 +1909,25 @@ WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR
                 var result = await Db.Ado.GetDataTableAsync(sql);
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
         }
 
-        private async Task<DataTable> GetQualifiedData(INSPECT_PERSONNELDATA input) {
+        private async Task<DataTable> GetComingQualifiedData(INSPECT_PERSONNELDATA input)
+        {
             if (input == null) return null;
             string sql = @"SELECT CASE 
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
@@ -1728,13 +1938,16 @@ WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR
 from INSPECT_IQC 
 WHERE [STATE]='PSTATE_003'";
 
-            if (input.SumType.ToLower() == "year") {
+            if (input.SumType.ToLower() == "year")
+            {
                 sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
             }
-            else if (input.SumType.ToLower() == "month") {
+            else if (input.SumType.ToLower() == "month")
+            {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
-            else if (input.SumType.ToLower() == "week") {
+            else if (input.SumType.ToLower() == "week")
+            {
                 //本周的周一到周日
                 DateTime today = DateTime.Today;
                 // 计算本周周一的日期（如果今天是周一，则返回今天）
@@ -1746,28 +1959,100 @@ WHERE [STATE]='PSTATE_003'";
                 DateTime sunday = monday.AddDays(6);
                 sql += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
             }
-            else if (input.SumType.ToLower() == "day") {
+            else if (input.SumType.ToLower() == "day")
+            {
                 DateTime endDate = DateTime.Today.AddDays(1); // 明天
                 DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
                 sql += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
             }
-            else {
+            else
+            {
                 sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
-            if (!string.IsNullOrEmpty(input.MeterialNames)) {
+            if (!string.IsNullOrEmpty(input.MeterialNames))
+            {
                 var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                            .Select(item => item.Trim())
                                            .Where(item => !string.IsNullOrWhiteSpace(item));
-                if (materialItems.Any()) {
+                if (materialItems.Any())
+                {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
                     sql += $" and ITEMKIND in ({materialParams})";
                 }
             }
-            if (!string.IsNullOrEmpty(input.MaterialType)) {
-                if (input.MaterialType == "1") {
+            if (!string.IsNullOrEmpty(input.MaterialType))
+            {
+                if (input.MaterialType == "1")
+                {
                     sql += " and LOTNO LIKE '%RD%'";
                 }
-                else if (input.MaterialType == "2") {
+                else if (input.MaterialType == "2")
+                {
+                    sql += " and LOTNO NOT LIKE '%RD%'";
+                }
+            }
+            var originalData = await Db.Ado.GetDataTableAsync(sql);
+            return originalData;
+        }
+
+
+        private async Task<DataTable> GetComingProjectData(INSPECT_PERSONNELDATA input)
+        {
+            if (input == null) return null;
+            string sql = @"SELECT ITEMKIND,LOT_QTY,INSPECT_IQCCREATEDATE
+from INSPECT_IQC 
+WHERE [STATE]='PSTATE_003'";
+
+            if (input.SumType.ToLower() == "year")
+            {
+                sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+            }
+            else if (input.SumType.ToLower() == "month")
+            {
+                sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+            }
+            else if (input.SumType.ToLower() == "week")
+            {
+                //本周的周一到周日
+                DateTime today = DateTime.Today;
+                // 计算本周周一的日期（如果今天是周一，则返回今天）
+                int delta = DayOfWeek.Monday - today.DayOfWeek;
+                DateTime monday = today.AddDays(delta);
+                // 如果今天是周日，delta会是-6，需要修正
+                if (delta > 0) monday = today.AddDays(delta - 7);
+                // 本周周日 = 周一 + 6天
+                DateTime sunday = monday.AddDays(6);
+                sql += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
+            }
+            else if (input.SumType.ToLower() == "day")
+            {
+                DateTime endDate = DateTime.Today.AddDays(1); // 明天
+                DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
+                sql += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+            }
+            else
+            {
+                sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+            }
+            if (!string.IsNullOrEmpty(input.MeterialNames))
+            {
+                var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                           .Select(item => item.Trim())
+                                           .Where(item => !string.IsNullOrWhiteSpace(item));
+                if (materialItems.Any())
+                {
+                    var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
+                    sql += $" and ITEMKIND in ({materialParams})";
+                }
+            }
+            if (!string.IsNullOrEmpty(input.MaterialType))
+            {
+                if (input.MaterialType == "1")
+                {
+                    sql += " and LOTNO LIKE '%RD%'";
+                }
+                else if (input.MaterialType == "2")
+                {
                     sql += " and LOTNO NOT LIKE '%RD%'";
                 }
             }
@@ -1778,9 +2063,11 @@ WHERE [STATE]='PSTATE_003'";
         /// <summary>
         /// 累计进料/累计合格率
         /// </summary>
-        public async Task<ApiResponse> GetComingQualifiedDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
-                DataTable dt = await GetQualifiedData(input);
+        public async Task<ApiResponse> GetComingQualifiedDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
+                DataTable dt = await GetComingQualifiedData(input);
                 // 转换为可枚举数据并处理空值
                 var dataList = dt.AsEnumerable()
                     .Select(row => new {
@@ -1794,7 +2081,8 @@ WHERE [STATE]='PSTATE_003'";
                 object result = null;
 
                 string sumType = input.SumType?.ToLower() ?? "";
-                if (sumType == "year") {
+                if (sumType == "year")
+                {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
                     var yearStats = dataList
                     .GroupBy(x => new {
@@ -1809,9 +2097,11 @@ WHERE [STATE]='PSTATE_003'";
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
                         var totalBatches = g.Count();
-                        return new {
+                        return new
+                        {
                             XValue = $"{g.Key.Month:D2}",
-                            Statistics = new {
+                            Statistics = new
+                            {
                                 OK = qualifiedCount,
                                 VIP = specialAdoptionCount,
                                 NG = rejectedCount,
@@ -1824,7 +2114,8 @@ WHERE [STATE]='PSTATE_003'";
                     }).ToList();
                     result = yearStats;
                 }
-                else if (sumType == "month") {
+                else if (sumType == "month")
+                {
                     // 近7个月，按月分组
                     var monthStats = dataList
                     .GroupBy(x => new {
@@ -1839,9 +2130,11 @@ WHERE [STATE]='PSTATE_003'";
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
                         var totalBatches = g.Count();
-                        return new {
+                        return new
+                        {
                             XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
-                            Statistics = new {
+                            Statistics = new
+                            {
                                 OK = qualifiedCount,
                                 VIP = specialAdoptionCount,
                                 NG = rejectedCount,
@@ -1855,7 +2148,8 @@ WHERE [STATE]='PSTATE_003'";
 
                     result = monthStats;
                 }
-                else if (sumType == "week") {
+                else if (sumType == "week")
+                {
                     // 近7周，按周分组
                     var weekStats = dataList
                     .GroupBy(x => new {
@@ -1868,9 +2162,11 @@ WHERE [STATE]='PSTATE_003'";
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
                         var totalBatches = g.Count();
-                        return new {
+                        return new
+                        {
                             XValue = $"{g.Key.Week:D2}",
-                            Statistics = new {
+                            Statistics = new
+                            {
                                 OK = qualifiedCount,
                                 VIP = specialAdoptionCount,
                                 NG = rejectedCount,
@@ -1884,7 +2180,8 @@ WHERE [STATE]='PSTATE_003'";
 
                     result = weekStats;
                 }
-                else if (sumType == "day") {
+                else if (sumType == "day")
+                {
                     // 近7天，按日分组
                     var dayStats = dataList
                      .GroupBy(x => new {
@@ -1897,9 +2194,11 @@ WHERE [STATE]='PSTATE_003'";
                          var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
                          var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
                          var totalBatches = g.Count();
-                         return new {
+                         return new
+                         {
                              XValue = $"{g.Key.Day:D2}",
-                             Statistics = new {
+                             Statistics = new
+                             {
                                  OK = qualifiedCount,
                                  VIP = specialAdoptionCount,
                                  NG = rejectedCount,
@@ -1913,7 +2212,8 @@ WHERE [STATE]='PSTATE_003'";
 
                     result = dayStats;
                 }
-                else if (sumType == "custom") {
+                else if (sumType == "custom")
+                {
                     var monthStats = dataList
                     .GroupBy(x => new {
                         Year = x.CreateDate.Year,
@@ -1927,9 +2227,11 @@ WHERE [STATE]='PSTATE_003'";
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
                         var totalBatches = g.Count();
-                        return new {
+                        return new
+                        {
                             XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
-                            Statistics = new {
+                            Statistics = new
+                            {
                                 OK = qualifiedCount,
                                 VIP = specialAdoptionCount,
                                 NG = rejectedCount,
@@ -1945,14 +2247,17 @@ WHERE [STATE]='PSTATE_003'";
                 }
                 string jsonData = JsonConvert.SerializeObject(result, Formatting.Indented);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1960,15 +2265,244 @@ WHERE [STATE]='PSTATE_003'";
         }
 
         /// <summary>
+        /// 年累计进料（按项目）
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ApiResponse> GetYearComingProjectDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
+                DataTable dt = await GetComingProjectData(input);
+
+                List<string> itemList = new List<string>();
+                if (!string.IsNullOrEmpty(input.MeterialNames))
+                {
+                    var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(item => item.Trim())
+                                               .Where(item => !string.IsNullOrWhiteSpace(item));
+                    if (materialItems.Any())
+                    {
+                        itemList.AddRange(materialItems);
+                    }
+                }
+                else if (!string.IsNullOrEmpty(input.MaterialType))
+                {
+                    if (input.MaterialType == "2")
+                    {
+                        itemList.AddRange(new string[] { "机器人", "骨刀", "通用" });
+                    }
+                    else if (input.MaterialType == "1")
+                    {
+                        itemList.AddRange(new string[] { "超乳", "超声刀", "电刀", "通用" });
+                    }
+                }
+
+                // 转换为可枚举数据并处理空值
+                var dataList = dt.AsEnumerable()
+                    .Select(row => new {
+                        ITEMKIND = row.IsNull("ITEMKIND") ? string.Empty : row.Field<string>("ITEMKIND"),
+                        CreateDate = row.IsNull("INSPECT_IQCCREATEDATE") ? DateTime.MinValue : row.Field<DateTime>("INSPECT_IQCCREATEDATE"),
+                        LotQty = row.IsNull("LOT_QTY") ? 0 : Convert.ToDecimal(row.Field<object>("LOT_QTY"))
+                    })
+                    .Where(x => x.CreateDate != DateTime.MinValue)
+                    .ToList();
+
+                object result = null;
+
+                string sumType = input.SumType?.ToLower() ?? "";
+                if (sumType == "year")
+                {
+                    // 按月统计：每个人1-12月的数据（固定12元素数组）
+                    var yearStats = dataList
+                    .GroupBy(x => new {
+                        Year = x.CreateDate.Year,
+                        Month = x.CreateDate.Month
+                    })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => {
+                        // 动态统计每个项目的数量
+                        var itemCounts = new Dictionary<string, int>();
+                        foreach (var item in itemList)
+                        {
+                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                        }
+                        // 创建包含总数和各项目统计的字典
+                        var statisticsDict = new Dictionary<string, object>();
+                        // 添加每个项目的统计
+                        foreach (var item in itemList)
+                        {
+                            statisticsDict[item] = itemCounts[item];
+                        }
+                        return new
+                        {
+                            XValue = $"{g.Key.Month:D2}",
+                            Statistics = statisticsDict
+                        };
+                    }).ToList();
+                    result = yearStats;
+                }
+                else if (sumType == "month")
+                {
+                    // 近7个月，按月分组
+                    var monthStats = dataList
+                    .GroupBy(x => new {
+                        Year = x.CreateDate.Year,
+                        Month = x.CreateDate.Month
+                    })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => {
+                        // 动态统计每个项目的数量
+                        var itemCounts = new Dictionary<string, int>();
+                        foreach (var item in itemList)
+                        {
+                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                        }
+                        // 创建包含总数和各项目统计的字典
+                        var statisticsDict = new Dictionary<string, object>();
+                        // 添加每个项目的统计
+                        foreach (var item in itemList)
+                        {
+                            statisticsDict[item] = itemCounts[item];
+                        }
+                        return new
+                        {
+                            XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
+                            Statistics = statisticsDict
+                        };
+                    }).ToList();
+
+                    result = monthStats;
+                }
+                else if (sumType == "week")
+                {
+                    // 近7周，按周分组
+                    var weekStats = dataList
+                    .GroupBy(x => new {
+                        Week = x.CreateDate.DayOfWeek
+                    })
+                    .OrderBy(g => g.Key.Week)
+                    .Select(g => {
+                        // 动态统计每个项目的数量
+                        var itemCounts = new Dictionary<string, int>();
+                        foreach (var item in itemList)
+                        {
+                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                        }
+                        // 创建包含总数和各项目统计的字典
+                        var statisticsDict = new Dictionary<string, object>();
+                        // 添加每个项目的统计
+                        foreach (var item in itemList)
+                        {
+                            statisticsDict[item] = itemCounts[item];
+                        }
+                        return new
+                        {
+                            XValue = $"{g.Key.Week:D2}",
+                            Statistics = statisticsDict
+                        };
+                    }).ToList();
+
+                    result = weekStats;
+                }
+                else if (sumType == "day")
+                {
+                    // 近7天，按日分组
+                    var dayStats = dataList
+                     .GroupBy(x => new {
+                         Day = x.CreateDate.Date
+                     })
+                     .OrderBy(g => g.Key.Day)
+                     .Select(g => {
+                         // 动态统计每个项目的数量
+                         var itemCounts = new Dictionary<string, int>();
+                         foreach (var item in itemList)
+                         {
+                             itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                         }
+                         // 创建包含总数和各项目统计的字典
+                         var statisticsDict = new Dictionary<string, object>();
+                         // 添加每个项目的统计
+                         foreach (var item in itemList)
+                         {
+                             statisticsDict[item] = itemCounts[item];
+                         }
+                         return new
+                         {
+                             XValue = $"{g.Key.Day:D2}",
+                             Statistics = statisticsDict
+                         };
+                     }).ToList();
+
+                    result = dayStats;
+                }
+                else if (sumType == "custom")
+                {
+                    var monthStats = dataList
+                    .GroupBy(x => new {
+                        Year = x.CreateDate.Year,
+                        Month = x.CreateDate.Month
+                    })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => {
+                        // 动态统计每个项目的数量
+                        var itemCounts = new Dictionary<string, int>();
+                        foreach (var item in itemList)
+                        {
+                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                        }
+                        // 创建包含总数和各项目统计的字典
+                        var statisticsDict = new Dictionary<string, object>();
+                        // 添加每个项目的统计
+                        foreach (var item in itemList)
+                        {
+                            statisticsDict[item] = itemCounts[item];
+                        }
+                        return new
+                        {
+                            XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
+                            Statistics = statisticsDict
+                        };
+                    }).ToList();
+
+                    result = monthStats;
+                }
+                string jsonData = JsonConvert.SerializeObject(result, Formatting.Indented);
+
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+
+        }
+
+        /// <summary>
         /// 累计进料/累计合格率（按项目）
         /// </summary>
         /// <returns></returns>
-        public async Task<ApiResponse> GetComingProjectDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetComingProjectDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 return await GetComingQualifiedDataAsync(input);
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -1978,16 +2512,21 @@ WHERE [STATE]='PSTATE_003'";
         /// <summary>
         /// 供应商质量排行
         /// </summary>
-        public async Task<ApiResponse> GetSuppBatchRejectionDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetSuppBatchRejectionDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 string sqlWhere = "1=1";
-                if (input.SumType.ToLower() == "year") {
+                if (input.SumType.ToLower() == "year")
+                {
                     sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
                 }
-                else if (input.SumType.ToLower() == "month") {
+                else if (input.SumType.ToLower() == "month")
+                {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
                 }
-                else if (input.SumType.ToLower() == "week") {
+                else if (input.SumType.ToLower() == "week")
+                {
                     //本周的周一到周日
                     DateTime today = DateTime.Today;
                     // 计算本周周一的日期（如果今天是周一，则返回今天）
@@ -1999,12 +2538,14 @@ WHERE [STATE]='PSTATE_003'";
                     DateTime sunday = monday.AddDays(6);
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
                 }
-                else if (input.SumType.ToLower() == "day") {
+                else if (input.SumType.ToLower() == "day")
+                {
                     DateTime endDate = DateTime.Today.AddDays(1); // 明天
                     DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
                 }
-                else {
+                else
+                {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
                 }
 
@@ -2050,7 +2591,8 @@ GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
                 var dtA4 = await Db.Ado.GetDataTableAsync(sql); //批退批数
 
-                object result = new {
+                object result = new
+                {
                     RejectionRate = dtA1,
                     DefectRate = dtA2,
                     FeedLotQty = dtA3,
@@ -2058,14 +2600,17 @@ order by VALUE DESC", sqlWhere);
                 };
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };
@@ -2075,16 +2620,21 @@ order by VALUE DESC", sqlWhere);
         /// <summary>
         /// 供应商质量明细
         /// </summary>
-        public async Task<ApiResponse> GetSuppBatchRejectionDetailDataAsync(INSPECT_PERSONNELDATA input) {
-            try {
+        public async Task<ApiResponse> GetSuppBatchRejectionDetailDataAsync(INSPECT_PERSONNELDATA input)
+        {
+            try
+            {
                 string sqlWhere = "1=1";
-                if (input.SumType.ToLower() == "year") {
+                if (input.SumType.ToLower() == "year")
+                {
                     sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
                 }
-                else if (input.SumType.ToLower() == "month") {
+                else if (input.SumType.ToLower() == "month")
+                {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
                 }
-                else if (input.SumType.ToLower() == "week") {
+                else if (input.SumType.ToLower() == "week")
+                {
                     //本周的周一到周日
                     DateTime today = DateTime.Today;
                     // 计算本周周一的日期（如果今天是周一，则返回今天）
@@ -2096,12 +2646,14 @@ order by VALUE DESC", sqlWhere);
                     DateTime sunday = monday.AddDays(6);
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
                 }
-                else if (input.SumType.ToLower() == "day") {
+                else if (input.SumType.ToLower() == "day")
+                {
                     DateTime endDate = DateTime.Today.AddDays(1); // 明天
                     DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
                 }
-                else {
+                else
+                {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
                 }
                 string sql = string.Format(@"select INSPECT_IQCCODE,SUPP.SUPPNAME,ITEMID,ITEMNAME,ERP_ARRIVEDID,
@@ -2111,20 +2663,24 @@ LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
 WHERE {0}", sqlWhere);
-                if (!string.IsNullOrEmpty(input.SuppID)) {
+                if (!string.IsNullOrEmpty(input.SuppID))
+                {
                     sql += $" AND SUPP.SUPPID ='{input.SuppID}'";
                 }
                 var result = await Db.Ado.GetDataTableAsync(sql);
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse {
+                return new ApiResponse
+                {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
                 };
             }
-            catch (Exception ex) {
-                return new ApiResponse {
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
                     Success = false,
                     Message = $"数据获取失败：{ex.Message}"
                 };

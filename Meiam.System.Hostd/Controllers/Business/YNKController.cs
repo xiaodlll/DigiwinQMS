@@ -1011,6 +1011,32 @@ namespace Meiam.System.Hostd.Controllers.Business
             return BadRequest(result);
         }
 
+        /// <summary>
+        /// 年累计进料/累计合格率（按项目）
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetYearComingProjectData")]
+        public async Task<IActionResult> GetYearComingProjectData([FromBody] INSPECT_PERSONNELDATA input)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetYearComingProjectDataAsync(input);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
         /// <summary>
         /// 累计进料/累计合格率（按项目）

@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SqlSugar;
 using System;
+using System.IO;
 using System.Reflection;
 using static Meiam.System.Interfaces.HMDService;
 
@@ -227,6 +228,33 @@ namespace Meiam.System.Hostd
             app.UseMiddleware<RequestMiddleware>();
             // 使用静态文件
             app.UseForwardedHeaders();
+
+            // 新增：HTML 无后缀访问支持
+            app.Use(async (context, next) =>
+            {
+                var path = context.Request.Path.Value;
+
+                // 排除 API 和 Hangfire 路径
+                if (!path.StartsWith("/api", StringComparison.OrdinalIgnoreCase) &&
+                    !path.StartsWith("/hangfire", StringComparison.OrdinalIgnoreCase))
+                {
+                    // 如果没有扩展名且不是目录
+                    if (string.IsNullOrEmpty(Path.GetExtension(path)) &&
+                        !path.EndsWith("/"))
+                    {
+                        var htmlPath = path + ".html";
+                        var fullPath = Path.Combine(env.WebRootPath, htmlPath.TrimStart('/'));
+
+                        if (File.Exists(fullPath))
+                        {
+                            context.Request.Path = htmlPath;
+                        }
+                    }
+                }
+
+                await next();
+            });
+
             // 使用静态文件
             app.UseStaticFiles();
             // 使用cookie

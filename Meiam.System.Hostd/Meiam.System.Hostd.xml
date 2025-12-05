@@ -367,6 +367,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetYearComingProjectData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
+            <summary>
+            年累计进料/累计合格率（按项目）
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.GetComingProjectData(Meiam.System.Model.Dto.INSPECT_PERSONNELDATA)">
             <summary>
             累计进料/累计合格率（按项目）
