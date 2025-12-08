@@ -2034,7 +2034,7 @@ WHERE [STATE]='PSTATE_003'";
         /// 年累计进料（按项目）
         /// </summary>
         /// <returns></returns>
-        public async Task<ApiResponse> GetYearComingProjectData(INSPECT_PERSONNELDATA input) {
+        public async Task<ApiResponse> GetYearComingProjectDataAsync(INSPECT_PERSONNELDATA input) {
             try {
                 DataTable dt = await GetComingProjectData(input);
 
@@ -2048,10 +2048,10 @@ WHERE [STATE]='PSTATE_003'";
                     }
                 }
                 else if (!string.IsNullOrEmpty(input.MaterialType)) {
-                    if (input.MaterialType == "1") {
+                    if (input.MaterialType == "2") {
                         itemList.AddRange(new string[] { "机器人", "骨刀", "通用" });
                     }
-                    else if (input.MaterialType == "2") {
+                    else if (input.MaterialType == "1") {
                         itemList.AddRange(new string[] { "超乳", "超声刀", "电刀", "通用" });
                     }
                 }
