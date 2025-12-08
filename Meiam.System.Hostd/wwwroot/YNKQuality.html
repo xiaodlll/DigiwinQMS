@@ -1570,7 +1570,7 @@
                         for (let i = 0; i < params.length; i++) {
                             const param = params[i];
                             if (param.seriesType === 'line') {
-                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                                result += `${param.marker} ${param.seriesName}: ${param.value.toFixed(2)}%<br/>`;
                             } else {
                                 result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
                             }
@@ -1658,8 +1658,18 @@
                         smoothness: 0.5, // 可选：平滑度，0-1，默认0.5
                         tooltip: {
                             valueFormatter: function (value) {
-                                return value + '%';
+                                return value.toFixed(2) + '%';
                             }
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            formatter: function (params) {
+                                return params.value.toFixed(2) + '%';
+                            },
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            color: '#3498db'
                         },
                         data: rateData,
                         itemStyle: {
@@ -1792,7 +1802,7 @@
                         for (let i = 0; i < params.length; i++) {
                             const param = params[i];
                             if (param.seriesType === 'line') {
-                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                                result += `${param.marker} ${param.seriesName}: ${param.value.toFixed(2)}%<br/>`;
                             } else {
                                 result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
                             }
@@ -1880,8 +1890,18 @@
                         smoothness: 0.5, // 可选：平滑度，0-1，默认0.5
                         tooltip: {
                             valueFormatter: function (value) {
-                                return value + '%';
+                                return value.toFixed(2) + '%';
                             }
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            formatter: function (params) {
+                                return params.value.toFixed(2) + '%';
+                            },
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            color: '#3498db'
                         },
                         data: rateData,
                         itemStyle: {
@@ -2147,7 +2167,7 @@
                         for (let i = 0; i < params.length; i++) {
                             const param = params[i];
                             if (param.seriesType === 'line') {
-                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                                result += `${param.marker} ${param.seriesName}: ${param.value.toFixed(2)}%<br/>`;
                             } else {
                                 result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
                             }
@@ -2235,8 +2255,18 @@
                         smoothness: 0.5, // 可选：平滑度，0-1，默认0.5
                         tooltip: {
                             valueFormatter: function (value) {
-                                return value + '%';
+                                return value.toFixed(2) + '%';
                             }
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            formatter: function (params) {
+                                return params.value.toFixed(2) + '%';
+                            },
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            color: '#3498db'
                         },
                         data: rateData,
                         itemStyle: {
