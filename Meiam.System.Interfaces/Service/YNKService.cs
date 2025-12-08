@@ -1741,8 +1741,10 @@ WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '特采'
                                 ELSE '不合格'
-                            END AS OQC_STATE,LOT_QTY,ITEMKIND,INSPECT_IQCCREATEDATE
+                            END AS OQC_STATE,LOT_QTY,ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
 WHERE [STATE]='PSTATE_003'";
 
             if (input.SumType.ToLower() == "year") {
@@ -1777,7 +1779,7 @@ WHERE [STATE]='PSTATE_003'";
                                            .Where(item => !string.IsNullOrWhiteSpace(item));
                 if (materialItems.Any()) {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                    sql += $" and ITEMKIND in ({materialParams})";
+                    sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
                 }
             }
             if (!string.IsNullOrEmpty(input.MaterialType)) {
@@ -1795,8 +1797,10 @@ WHERE [STATE]='PSTATE_003'";
 
         private async Task<DataTable> GetComingProjectData(INSPECT_PERSONNELDATA input) {
             if (input == null) return null;
-            string sql = @"SELECT ITEMKIND,LOT_QTY,INSPECT_IQCCREATEDATE
+            string sql = @"SELECT ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,LOT_QTY,INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
 WHERE [STATE]='PSTATE_003'";
 
             if (input.SumType.ToLower() == "year") {
@@ -1831,7 +1835,7 @@ WHERE [STATE]='PSTATE_003'";
                                            .Where(item => !string.IsNullOrWhiteSpace(item));
                 if (materialItems.Any()) {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                    sql += $" and ITEMKIND in ({materialParams})";
+                    sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
                 }
             }
             if (!string.IsNullOrEmpty(input.MaterialType)) {
