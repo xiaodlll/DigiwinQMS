@@ -1087,7 +1087,7 @@
                     SumType: params.SumType || params.type || "",
                     StartDate: params.StartDate || params.startDate || "",
                     EndDate: params.EndDate || params.endDate || "",
-                    MeterialNames: params.materials || "",
+                    MeterialNames: params.MeterialNames || "",
                     SuppID: params.SuppID || ""
                 }),
                 credentials: 'same-origin'
@@ -1955,7 +1955,7 @@
         // 调用后端接口
         const data = await fetchData('/api/erp/GetYearComingProjectData', params);
 
-        if (data && Array.isArray(data)) {
+        if (data && Array.isArray(data) && data.length > 0) {
             // 处理数据为柱状图表格式
             const xAxisData = [];
             const projectData = {};

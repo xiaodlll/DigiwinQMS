@@ -2285,7 +2285,17 @@ WHERE [STATE]='PSTATE_003'";
                         sqlWhere += " and LOTNO NOT LIKE '%RD%'";
                     }
                 }
-
+                if (!string.IsNullOrEmpty(input.MeterialNames))
+                {
+                    var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(item => item.Trim())
+                                               .Where(item => !string.IsNullOrWhiteSpace(item));
+                    if (materialItems.Any())
+                    {
+                        var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
+                        sqlWhere += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
+                    }
+                }
                 string sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,
                            SUM(CASE 
                                 WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
@@ -2293,6 +2303,8 @@ WHERE [STATE]='PSTATE_003'";
                             END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
 WHERE {0} AND SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere); //  批退条件
@@ -2307,6 +2319,8 @@ order by VALUE DESC", sqlWhere); //  批退条件
                             END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
 WHERE {0} AND SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
@@ -2315,6 +2329,8 @@ order by VALUE DESC", sqlWhere);
                 sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
 WHERE {0} AND SUPP.SUPPNAME Is not null
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
@@ -2323,6 +2339,8 @@ order by VALUE DESC", sqlWhere);
                 sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
 WHERE {0} AND SUPP.SUPPNAME Is not null and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' 
 GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
@@ -2382,12 +2400,36 @@ order by VALUE DESC", sqlWhere);
                 else {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
                 }
-                string sql = string.Format(@"select INSPECT_IQCCODE,SUPP.SUPPNAME,ITEMID,ITEMNAME,ERP_ARRIVEDID,
+                if (!string.IsNullOrEmpty(input.MaterialType))
+                {
+                    if (input.MaterialType == "1")
+                    {
+                        sqlWhere += " and LOTNO LIKE '%RD%'";
+                    }
+                    else if (input.MaterialType == "2")
+                    {
+                        sqlWhere += " and LOTNO NOT LIKE '%RD%'";
+                    }
+                }
+                if (!string.IsNullOrEmpty(input.MeterialNames))
+                {
+                    var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(item => item.Trim())
+                                               .Where(item => !string.IsNullOrWhiteSpace(item));
+                    if (materialItems.Any())
+                    {
+                        var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
+                        sqlWhere += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
+                    }
+                }
+                string sql = string.Format(@"select INSPECT_IQCCODE,SUPP.SUPPNAME,INSPECT_IQC.ITEMID,INSPECT_IQC.ITEMNAME,ERP_ARRIVEDID,
 LOTNO,LOT_QTY,APPLY_DATE,INSPECT_IQCCREATEDATE,ALL_REMARK3
 from INSPECT_IQC 
 LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
 WHERE {0}", sqlWhere);
                 if (!string.IsNullOrEmpty(input.SuppID)) {
                     sql += $" AND SUPP.SUPPID ='{input.SuppID}'";
