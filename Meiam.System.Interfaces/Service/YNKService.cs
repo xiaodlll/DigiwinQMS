@@ -1603,10 +1603,10 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
             try {
                 string whereSql = string.Empty;
                 if (!string.IsNullOrEmpty(input.MaterialType)) {
-                    if (input.MaterialType == "1") {
+                    if (input.MaterialType == "2") {
                         whereSql += " and LOTNO LIKE '%RD%'";
                     }
-                    else if (input.MaterialType == "2") {
+                    else if (input.MaterialType == "1") {
                         whereSql += " and LOTNO NOT LIKE '%RD%'";
                     }
                 }
@@ -1710,10 +1710,10 @@ WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR
                         break;
                 }
                 if (!string.IsNullOrEmpty(input.MaterialType)) {
-                    if (input.MaterialType == "1") {
+                    if (input.MaterialType == "2") {
                         sql += " and LOTNO LIKE '%RD%'";
                     }
-                    else if (input.MaterialType == "2") {
+                    else if (input.MaterialType == "1") {
                         sql += " and LOTNO NOT LIKE '%RD%'";
                     }
                 }
@@ -1783,10 +1783,10 @@ WHERE [STATE]='PSTATE_003'";
                 }
             }
             if (!string.IsNullOrEmpty(input.MaterialType)) {
-                if (input.MaterialType == "1") {
+                if (input.MaterialType == "2") {
                     sql += " and LOTNO LIKE '%RD%'";
                 }
-                else if (input.MaterialType == "2") {
+                else if (input.MaterialType == "1") {
                     sql += " and LOTNO NOT LIKE '%RD%'";
                 }
             }
@@ -1839,10 +1839,10 @@ WHERE [STATE]='PSTATE_003'";
                 }
             }
             if (!string.IsNullOrEmpty(input.MaterialType)) {
-                if (input.MaterialType == "1") {
+                if (input.MaterialType == "2") {
                     sql += " and LOTNO LIKE '%RD%'";
                 }
-                else if (input.MaterialType == "2") {
+                else if (input.MaterialType == "1") {
                     sql += " and LOTNO NOT LIKE '%RD%'";
                 }
             }
@@ -2278,10 +2278,10 @@ WHERE [STATE]='PSTATE_003'";
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
                 }
                 if (!string.IsNullOrEmpty(input.MaterialType)) {
-                    if (input.MaterialType == "1") {
+                    if (input.MaterialType == "2") {
                         sqlWhere += " and LOTNO LIKE '%RD%'";
                     }
-                    else if (input.MaterialType == "2") {
+                    else if (input.MaterialType == "1") {
                         sqlWhere += " and LOTNO NOT LIKE '%RD%'";
                     }
                 }
