@@ -282,6 +282,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeNewSync(Meiam.System.Model.QmsLotNoticeResultRequest)">
+            <summary>
+            收料检验结果回传ERP(YNK新)
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.AttachUploadResultYNKSync">
             <summary>
             检验附件回传ERP(YNK)

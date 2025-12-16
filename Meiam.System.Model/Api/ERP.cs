@@ -231,7 +231,7 @@ namespace Meiam.System.Model
     /// </summary>
     public class QmsLotNoticeResultRequest
     {
-    
+        public string INSPECT_IQCCODE { get; set; }
     }
     /// <summary>
     /// 收料检验结果回传ERP
