@@ -1601,7 +1601,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
         /// <returns></returns>
         public async Task<ApiResponse> GetIQCTotalDataAsync(INSPECT_PERSONNELDATA input) {
             try {
-                string whereSql = string.Empty;
+                string whereSql = " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
                 if (!string.IsNullOrEmpty(input.MaterialType)) {
                     if (input.MaterialType == "2") {
                         whereSql += " and LOTNO LIKE '%RD%'";
@@ -1611,7 +1611,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                     }
                 }
                 string sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'  --已完成
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())" + whereSql;
+  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
                 var count = await Db.Ado.GetIntAsync(sql);
                 object A1 = new {
                     name = "VerifiedQty",
@@ -1619,15 +1619,15 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 };
 
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'  --待检验
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())" + whereSql;
+  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A2 = new {
                     name = "PendingInspectionQty",
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_004'  --待判定
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())" + whereSql;
+                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_004'  --待判定
+  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A3 = new {
                     name = "QtyAwaitingDisposition",
@@ -1635,7 +1635,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 };
 
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')=''  --待维护
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())" + whereSql;
+  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A4 = new {
                     name = "PendingMaterialMaintenance",
@@ -1643,7 +1643,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 };
 
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007'  --当月批退数
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())" + whereSql;
+  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A5 = new {
                     name = "MonthlyLotRejections",
@@ -1651,7 +1651,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 };
 
                 sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and dbo.GetWorkDaysBetweenDates_SQL2008(INSPECT_IQCCREATEDATE,INSPECT_IQCNAME) >5  --检验延迟
-  AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE())" + whereSql;
+  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A6 = new {
                     name = "InspectionDelay",
@@ -1686,7 +1686,7 @@ from INSPECT_IQC
 LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
-WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCNAME) = MONTH(GETDATE()) ";
+WHERE INSPECT_IQC.LOTNO <>'' AND ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE()) ";
                 switch (input.CardType) {
                     case "VerifiedQty":
                         sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'";
@@ -1695,7 +1695,7 @@ WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR
                         sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'";
                         break;
                     case "QtyAwaitingDisposition":
-                        sql += " and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_004'";
+                        sql += " and ISNULL(INSPECT_IQC.[OQC_STATE],'')='OQC_STATE_004'";
                         break;
                     case "PendingMaterialMaintenance":
                         sql += " and ISNULL(INSPECT_IQC.[STATE],'')=''";
@@ -1709,6 +1709,7 @@ WHERE ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCNAME) = YEAR
                     default:
                         break;
                 }
+                sql += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
                 if (!string.IsNullOrEmpty(input.MaterialType)) {
                     if (input.MaterialType == "2") {
                         sql += " and LOTNO LIKE '%RD%'";
@@ -1782,6 +1783,7 @@ WHERE [STATE]='PSTATE_003'";
                     sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
                 }
             }
+            sql += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
             if (!string.IsNullOrEmpty(input.MaterialType)) {
                 if (input.MaterialType == "2") {
                     sql += " and LOTNO LIKE '%RD%'";
@@ -1838,6 +1840,7 @@ WHERE [STATE]='PSTATE_003'";
                     sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
                 }
             }
+            sql += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
             if (!string.IsNullOrEmpty(input.MaterialType)) {
                 if (input.MaterialType == "2") {
                     sql += " and LOTNO LIKE '%RD%'";
@@ -1882,7 +1885,7 @@ WHERE [STATE]='PSTATE_003'";
                         var stateGroups = g.GroupBy(x => x.OQC_STATE);
                         var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
                         var totalBatches = g.Count();
                         return new {
                             XValue = $"{g.Key.Month:D2}",
@@ -1912,7 +1915,7 @@ WHERE [STATE]='PSTATE_003'";
                         var stateGroups = g.GroupBy(x => x.OQC_STATE);
                         var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
                         var totalBatches = g.Count();
                         return new {
                             XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
@@ -1941,7 +1944,7 @@ WHERE [STATE]='PSTATE_003'";
                         var stateGroups = g.GroupBy(x => x.OQC_STATE);
                         var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
                         var totalBatches = g.Count();
                         return new {
                             XValue = $"{g.Key.Week}",
@@ -1970,7 +1973,7 @@ WHERE [STATE]='PSTATE_003'";
                          var stateGroups = g.GroupBy(x => x.OQC_STATE);
                          var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
                          var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
                          var totalBatches = g.Count();
                          return new {
                              XValue = $"{g.Key.Day}",
@@ -2000,7 +2003,7 @@ WHERE [STATE]='PSTATE_003'";
                         var stateGroups = g.GroupBy(x => x.OQC_STATE);
                         var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "批退")?.Count() ?? 0;
+                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
                         var totalBatches = g.Count();
                         return new {
                             XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
@@ -2277,6 +2280,7 @@ WHERE [STATE]='PSTATE_003'";
                 else {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
                 }
+                sqlWhere += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
                 if (!string.IsNullOrEmpty(input.MaterialType)) {
                     if (input.MaterialType == "2") {
                         sqlWhere += " and LOTNO LIKE '%RD%'";
@@ -2400,6 +2404,7 @@ order by VALUE DESC", sqlWhere);
                 else {
                     sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
                 }
+                sqlWhere += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
                 if (!string.IsNullOrEmpty(input.MaterialType))
                 {
                     if (input.MaterialType == "1")
