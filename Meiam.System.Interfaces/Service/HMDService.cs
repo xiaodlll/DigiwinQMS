@@ -5,42 +5,27 @@
 //     author MEIAM
 // </auto-generated>
 //------------------------------------------------------------------------------
-using Meiam.System.Model;
-using System.Threading.Tasks;
-using System;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
-using System.Data.Common;
-using Microsoft.Extensions.Configuration;
-using DocumentFormat.OpenXml.Office2013.Word;
 using Meiam.System.Common;
-using SqlSugar;
-using System.Data;
-using System.Linq;
-using Newtonsoft.Json;
-using Meiam.System.Model.Dto;
-using System.Reflection.Emit;
-using Microsoft.IdentityModel.Tokens;
-using Aspose.Pdf.Operators;
-using Microsoft.EntityFrameworkCore.Metadata;
-using System.Numerics;
-using System.Text;
 using Meiam.System.Core;
-using Oracle.ManagedDataAccess.Client;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Meiam.System.Model;
+using Meiam.System.Model.Dto;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using NetTaste;
+using Newtonsoft.Json;
+using SqlSugar;
+using System;
+using System.Collections.Generic;
+using System.Data;
 using System.IO;
-using System.Xml;
+using System.Linq;
 using System.ServiceModel;
-using TiptopService;
-using System.Text.Json;
-using iText.StyledXmlParser.Jsoup.Nodes;
-using DocumentFormat.OpenXml.Spreadsheet;
-using static Meiam.System.Interfaces.HMDService;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
 
-namespace Meiam.System.Interfaces
-{
+namespace Meiam.System.Interfaces {
     /// <summary>
     /// 恒铭达
     /// </summary>
@@ -1470,6 +1455,7 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
         public async Task UpdateReceiveInspectResult() {
             var requestData = GetQmsLotNoticeResultRequest();
             if (requestData != null) {
+                string errorMsg = string.Empty;
                 foreach (var item in requestData) {
                     string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
 <Request>
@@ -1558,7 +1544,9 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                         _logger.LogInformation($"   - ERP入库单号（rvu01）：{erpInboundNo}");
                         _logger.LogInformation($"   - 结果说明：{paramDesc}");
                         _logger.LogInformation("===========================\n");
-
+                        if (statusCode == "apm-721") {
+                            isSuccess = true;
+                        }
                         // 5. 业务逻辑分支（根据成功/失败执行后续操作）
                         if (isSuccess) {
                             CallBackQmsLotNoticeResult(item);
@@ -1566,9 +1554,12 @@ SELECT @prefix + RIGHT('0000' + CAST(@maxNum + 1 AS VARCHAR(4)), 4) AS INSPECT_C
                         }
                         else {
                             _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
-                            throw new Exception($"{item.INSPECT_IQCCODE}：{statusDesc}");
+                            errorMsg += $"{item.INSPECT_IQCCODE}：{statusDesc}";
                         }
                     }
+                }
+                if (!string.IsNullOrEmpty(errorMsg)) {
+                    throw new Exception(errorMsg);
                 }
             }
         }
@@ -1708,6 +1699,7 @@ ORDER BY INSPECT_IQCCREATEDATE DESC;";
         public async Task UpdateFqcResult() {
             var requestData = GetQmsFQCResultRequest();
             if (requestData != null) {
+                string errorMsg = string.Empty;
                 foreach (var item in requestData) {
                     string requestXml = $@"<?xml version='1.0' encoding='utf-8'?>
 <Request>
@@ -1806,9 +1798,12 @@ ORDER BY INSPECT_IQCCREATEDATE DESC;";
                         }
                         else {
                             _logger.LogInformation($"执行失败：错误信息：{statusDesc}");
-                            throw new Exception($"{item.INSPECT_SICODE}：{statusDesc}");
+                            errorMsg += $"{item.INSPECT_SICODE}：{statusDesc}";
                         }
                     }
+                }
+                if (!string.IsNullOrEmpty(errorMsg)) {
+                    throw new Exception(errorMsg);
                 }
             }
         }
