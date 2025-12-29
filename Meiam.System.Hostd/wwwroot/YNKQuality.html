@@ -1379,6 +1379,7 @@
                             <th>到货数量</th>
                             <th>进料日期</th>
                             <th>创建时间</th>
+                            ${statType === 'InspectionDelay' ? '<th>检验日期</th>' : ''}
                             <th>检验项备注合并值</th>
                         </tr>
                     </thead>
@@ -1397,7 +1398,19 @@
 
                 html += `
                 <tr>
-                    <td>${item.INSPECT_IQCCODE || ''}</td>
+                    <td>
+                        ${
+                                        item.INSPECT_IQCCODE
+                                            ? `<a 
+                                    href="http://10.32.11.24:6549/RMBASE/QMS/INSPECT_IQC/INSPECT_IQC_detail.html?COLUM002ID=INSPECT_IQC&TYPE=Q&keyName=INSPECT_IQCID&COLUM0A072_NAME=&COLUM0A49_NAME=&key=${encodeURIComponent(item.INSPECT_IQCCODE)}&MenuName=${encodeURIComponent(item.INSPECT_IQCCODE)}&mode=edit"
+                                    target="_blank"
+                                    style="color:#409EFF; text-decoration:none; font-weight:500;"
+                                  >
+                                    ${item.INSPECT_IQCCODE}
+                                  </a>`
+                                            : ''
+                        }
+                    </td>
                     <td>${item.PROJECTNAME || ''}</td>
                     <td>${item.SUPPNAME || ''}</td>
                     <td>${item.ERP_ARRIVEDID || ''}</td>
@@ -1409,6 +1422,10 @@
                     <td>${item.LOT_QTY || ''}</td>
                     <td>${item.APPLY_DATE || ''}</td>
                     <td>${item.INSPECT_IQCCREATEDATE || ''}</td>
+                    ${statType === 'InspectionDelay'
+                        ? `<td>${item.INSPECT_IQCNAME || ''}</td>`
+                        : ''
+                    }
                     <td>${item.ALL_REMARK3 || ''}</td>
                 </tr>
             `;
