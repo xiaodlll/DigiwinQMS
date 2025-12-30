@@ -1958,7 +1958,7 @@ WHERE INSPECT_IQC.LOTNO <>'' AND ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND Y
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '特采'
                                 ELSE '不合格'
-                            END AS OQC_STATE,LOT_QTY,ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,INSPECT_IQCCREATEDATE
+                            END AS OQC_STATE,LOT_QTY,ITEM.PROJECTID ITEMKIND,INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
 LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
@@ -2003,7 +2003,7 @@ WHERE [STATE]='PSTATE_003'";
                 if (materialItems.Any())
                 {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                    sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
+                    sql += $" and ITEM.PROJECTID in ({materialParams})";
                 }
             }
             sql += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
@@ -2026,7 +2026,7 @@ WHERE [STATE]='PSTATE_003'";
         private async Task<DataTable> GetComingProjectData(INSPECT_PERSONNELDATA input)
         {
             if (input == null) return null;
-            string sql = @"SELECT ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,LOT_QTY,INSPECT_IQCCREATEDATE
+            string sql = @"SELECT ITEM.PROJECTID ITEMKIND,LOT_QTY,INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
 LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
@@ -2071,7 +2071,7 @@ WHERE [STATE]='PSTATE_003'";
                 if (materialItems.Any())
                 {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                    sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
+                    sql += $" and ITEM.PROJECTID in ({materialParams})";
                 }
             }
             sql += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
@@ -2598,7 +2598,7 @@ WHERE [STATE]='PSTATE_003'";
                     if (materialItems.Any())
                     {
                         var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                        sqlWhere += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
+                        sqlWhere += $" and ITEM.PROJECTID in ({materialParams})";
                     }
                 }
                 string sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,
@@ -2736,7 +2736,7 @@ order by VALUE DESC", sqlWhere);
                     if (materialItems.Any())
                     {
                         var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                        sqlWhere += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
+                        sqlWhere += $" and ITEM.PROJECTID in ({materialParams})";
                     }
                 }
                 string sql = string.Format(@"select INSPECT_IQCCODE,SUPP.SUPPNAME,INSPECT_IQC.ITEMID,INSPECT_IQC.ITEMNAME,ERP_ARRIVEDID,
