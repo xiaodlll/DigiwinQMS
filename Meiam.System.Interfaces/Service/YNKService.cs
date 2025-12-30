@@ -1404,14 +1404,16 @@ namespace Meiam.System.Interfaces.Service
         private async Task<DataTable> GetPersonnelData(INSPECT_PERSONNELDATA input)
         {
             if (input == null) return null;
-            string sql = @"SELECT INSPECT_IQCCREATEDATE,COMP_DATE,LOT_QTY,ITEMKIND,PROGRESS.INSPECTOR
+            string sql = @"SELECT INSPECT_IQCCREATEDATE,COMP_DATE,LOT_QTY,ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,PROGRESS.INSPECTOR
 from INSPECT_IQC 
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
 INNER JOIN (SELECT DOC_CODE,max(USER_.USER_NAME) AS INSPECTOR FROM INSPECT_PROGRESS
 LEFT JOIN USER_ on USER_.User_Account=INSPECT_PROGRESS.INSPECT_PROGRESSMODIFYUSER
 WHERE DOC_CODE  is not null
 GROUP by DOC_CODE having (max(USER_.USER_NAME) is not null 
 and max(USER_.USER_NAME)!= '管理员' and max(USER_.USER_NAME)!= '管理员1')) PROGRESS ON PROGRESS.DOC_CODE=INSPECT_IQC.INSPECT_IQCCODE
-where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件','辅料','包材','成品外购标准件')";
+where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金属件','电子件','辅料','包材','成品外购标准件')";
 
             if (input.SumType.ToLower() == "year")
             {
@@ -1433,7 +1435,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                 if (materialItems.Any())
                 {
                     var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                    sql += $" and ITEMKIND in ({materialParams})";
+                    sql += $" and ITEM_GROUP.ITEM_GROUPNAME in ({materialParams})";
                 }
             }
             var originalData = await Db.Ado.GetDataTableAsync(sql);
@@ -1578,7 +1580,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         .GroupBy(x => x.Inspector)
                         .Select(g => new {
                             name = g.Key,
-                            data = new[] { g.Sum(x => x.LotQty) } // 单元素数组
+                            data = new[] { g.Sum(x => 1) } // 单元素数组
                         })
                         .ToList();
 
@@ -1592,7 +1594,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         .Select(g => new {
                             name = g.Key,
                             data = Enumerable.Range(1, 12) // 生成1-12月
-                                .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.LotQty))
+                                .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => 1))
                                 .ToArray() // 转为12元素数组
                         })
                         .ToList();
@@ -1633,7 +1635,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                             name = g.Key,
                             data = months
                                 .Select(m => g.Where(x => x.CreateDate.Year == m.Year && x.CreateDate.Month == m.Month)
-                                              .Sum(x => x.LotQty))
+                                              .Sum(x => 1))
                                 .ToArray()
                         })
                         .ToList();
@@ -1689,8 +1691,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         LotQty = row.IsNull("LOT_QTY") ? 0 : Convert.ToDecimal(row.Field<object>("LOT_QTY")),
                         CreateDate = row.IsNull("INSPECT_IQCCREATEDATE") ? DateTime.MinValue : row.Field<DateTime>("INSPECT_IQCCREATEDATE"),
                         // 计算单条记录的检验时长：LOT_QTY * 对应系数
-                        InspectionTime = row.IsNull("LOT_QTY") ? 0 :
-                            Convert.ToDecimal(row.Field<object>("LOT_QTY")) *
+                        InspectionTime = 
                             (itemKindCoefficient.TryGetValue(row.IsNull("ITEMKIND") ? string.Empty : row.Field<string>("ITEMKIND"), out var coeff) ? coeff : 0)
                     })
                     .Where(x => !string.IsNullOrEmpty(x.Inspector) && x.CreateDate != DateTime.MinValue)
@@ -1705,7 +1706,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         .GroupBy(x => x.Inspector)
                         .Select(g => new {
                             name = g.Key,
-                            data = new[] { g.Sum(x => x.LotQty) } // 单元素数组
+                            data = new[] { g.Sum(x => x.InspectionTime) } // 单元素数组
                         })
                         .ToList();
 
@@ -1719,7 +1720,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                         .Select(g => new {
                             name = g.Key,
                             data = Enumerable.Range(1, 12) // 生成1-12月
-                                .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.LotQty))
+                                .Select(month => g.Where(x => x.CreateDate.Month == month).Sum(x => x.InspectionTime))
                                 .ToArray() // 转为12元素数组
                         })
                         .ToList();
@@ -1760,7 +1761,7 @@ where COMP_DATE is not null and ITEMKIND in ('塑胶件','金属件','电子件'
                             name = g.Key,
                             data = months
                                 .Select(m => g.Where(x => x.CreateDate.Year == m.Year && x.CreateDate.Month == m.Month)
-                                              .Sum(x => x.LotQty))
+                                              .Sum(x => x.InspectionTime))
                                 .ToArray()
                         })
                         .ToList();
