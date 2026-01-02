@@ -169,8 +169,8 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// 收料检验结果回传ERP(YNK)
         /// </summary>
         /// <returns></returns>
-        [HttpPost("UpdateReceiveInspectResultYNK")]
-        public async Task<IActionResult> PostLotNoticeSync()
+        [HttpPost("UpdateReceiveInspectResultYNKOld")]
+        public async Task<IActionResult> PostLotNoticeOldSync()
         {
             List<LotNoticeResultRequestYNK> requests = _ynkService.GetQmsLotNoticeResultRequest();
 
@@ -467,8 +467,8 @@ namespace Meiam.System.Hostd.Controllers.Business
         /// 收料检验结果回传ERP(YNK新)
         /// </summary>
         /// <returns></returns>
-        [HttpPost("UpdateReceiveInspectResultNew")]
-        public async Task<IActionResult> PostLotNoticeNewSync([FromBody] QmsLotNoticeResultRequest resultRequest) {
+        [HttpPost("UpdateReceiveInspectResultYNK")]
+        public async Task<IActionResult> PostLotNoticeSync([FromBody] QmsLotNoticeResultRequest resultRequest) {
             List<LotNoticeResultRequestYNK> requests = _ynkService.GetQmsLotNoticeResultRequest();
             if (resultRequest != null && !string.IsNullOrEmpty(resultRequest.INSPECT_IQCCODE)) {
                 var test = requests.FirstOrDefault(a => a.INSPECT_IQCCODE == resultRequest.INSPECT_IQCCODE);
@@ -509,81 +509,97 @@ namespace Meiam.System.Hostd.Controllers.Business
                     try {
 
                         // 封装成金蝶ERP需要的格式
-                        erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:AuditUrl"];
+                        erpApiUrl = AppSettings.Configuration["ERP:BaseUrl"] + AppSettings.Configuration["ERP:ReceiveUrl"];
                         var erpRequestData = new {
                             formid = "QM_InspectBill",
                             data = new {
                                 IsVerifyBaseDataField = true,
                                 IsAutoAdjustField = true,
+                                IsAutoSubmitAndAudit = true,
                                 Model = new {
-                                    FID = fid, // 传进来的FID
+                                    FID = 0, // 传进来的FID
                                     FBillTypeID = new {
                                         FNUMBER = "JYD001_SYS",
                                     },
                                     FBusinessType = "1",
                                     FDate = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss"),
                                     FSourceOrgId = new {
-                                        FNumber = "100",//组织
+                                        FNumber = "1",//组织
                                     },
                                     FInspectOrgId = new {
-                                        FNumber = "100",//组织
+                                        FNumber = "1",//组织
                                     },
-                                    FEntity = entries.Select(entry => new {
-                                        FMaterialId = new {
-                                            FNUMBER = entry.ITEMID
-                                        },
-                                        FUnitID = new {
-                                            FNUMBER = entry.UNIT
-                                        },
-                                        FInspectQty = entry.FCheckQty, //检验数量
-                                        FQualifiedQty = entry.FReceiveQty, // 合格数量
-                                        FUnqualifiedQty = entry.FRefuseQty, // 不合格数量
-                                        FSrcBillType0 = "PUR_ReceiveBill",
-                                        FSrcBillNo0 = entry.ERP_ARRIVEDID,
-                                        FBaseInspectQty = entry.FCheckQty, //检验数量
-                                        FSupplierId = new {
-                                            FNUMBER = entry.SUPPNAME
-                                        },
-                                        FStockId = new {
-                                            FNumber = "CK001"
-                                        },
-                                        FBaseUnqualifiedQty = entry.FRefuseQty, // 不合格数量
-                                        FBaseQualifiedQty = entry.FReceiveQty, // 合格数量
-                                        FPolicyDetail = new object[]{
-                                            new {
-                                                FPolicyMaterialId =new {
+                                    FEntity = entries.Select(entry => {
+                                        // 1. 先创建政策详情的列表，默认添加合格项（必传项）
+                                        var policyDetails = new List<object>();
+                                        // 添加合格项
+                                        if (entry.FReceiveQty != 0) 
+                                        {
+                                            policyDetails.Add(new {
+                                                FPolicyMaterialId = new {
                                                     FNUMBER = entry.ITEMID
                                                 },
                                                 FPolicyStatus = "1",
                                                 FPolicyQty = entry.FReceiveQty, // 合格数量
                                                 FBasePolicyQty = entry.FReceiveQty, // 合格数量
-                                                FUsePolicy  = "A",
-                                                FIBUsePolicy  = "A",
-                                            },
-                                            new {
-                                                FPolicyMaterialId =new {
+                                                FUsePolicy = "A",
+                                                FIBUsePolicy = "A",
+                                            });
+                                        }
+                                        // 2. 判断：只有当 FRefuseQty 不等于 0 时，才添加不合格项
+                                        if (entry.FRefuseQty != 0)
+                                        {
+                                            policyDetails.Add(new {
+                                                FPolicyMaterialId = new {
                                                     FNUMBER = entry.ITEMID
                                                 },
                                                 FPolicyStatus = "2",
-                                                FPolicyQty = entry.FRefuseQty, // 合格数量
-                                                FBasePolicyQty = entry.FRefuseQty, // 合格数量
-                                                FUsePolicy  = "F",
-                                                FIBUsePolicy  = "F",
+                                                FPolicyQty = entry.FRefuseQty, // 不合格数量
+                                                FBasePolicyQty = entry.FRefuseQty, // 不合格数量
+                                                FUsePolicy = "F",
+                                                FIBUsePolicy = "F",
+                                            });
+                                        }
+
+                                        // 3. 返回当前 entry 对应的匿名对象
+                                        return new {
+                                            FMaterialId = new {
+                                                FNUMBER = entry.ITEMID
                                             },
-                                        },
-                                        FReferDetail = new object[]{
-                                            new {
-                                                PUR_ReceiveBill = "PUR_ReceiveBill",
-                                                FSrcBillNo = entry.ERP_ARRIVEDID,
-                                                FSrcInterId = entry.FID,
-                                                FSrcEntryId= entry.FEntryID,
-                                            }
-                                        },
-                                        FEntity_Link = new object[]{
+                                            FUnitID = new {
+                                                FNUMBER = entry.UNIT
+                                            },
+                                            FInspectQty = entry.FCheckQty, //检验数量
+                                            FQualifiedQty = entry.FReceiveQty, // 合格数量
+                                            FUnqualifiedQty = entry.FRefuseQty, // 不合格数量
+                                            FSampleDamageQty = entry.DESQTY,
+                                            FSrcBillType0 = "PUR_ReceiveBill",
+                                            FSrcBillNo0 = entry.ERP_ARRIVEDID,
+                                            FBaseInspectQty = entry.FCheckQty, //检验数量
+                                            FSupplierId = new {
+                                                FNUMBER = entry.SUPPNAME
+                                            },
+                                            FStockId = new {
+                                                FNumber = ""
+                                            },
+                                            FBaseUnqualifiedQty = entry.FRefuseQty, // 不合格数量
+                                            FBaseQualifiedQty = entry.FReceiveQty, // 合格数量
+                                            FBaseSampleDamageQty = entry.DESQTY,
+                                            // 4. 将列表转为 object 数组（对应原来的 FPolicyDetail 类型）
+                                            FPolicyDetail = policyDetails.ToArray(),
+                                            FReferDetail = new object[]{
+                                                new {
+                                                    PUR_ReceiveBill = "PUR_ReceiveBill",
+                                                    FSrcBillNo = entry.ERP_ARRIVEDID,
+                                                    FSrcInterId = entry.FID,
+                                                    FSrcEntryId= entry.FEntryID,
+                                                }
+                                            },
+                                            FEntity_Link = new object[]{
                                             new {
                                                 FEntity_Link_FRuleId = "QM_PURReceive2Inspect",
                                                 FEntity_Link_FSTableName = "T_PUR_ReceiveEntry",
-                                                FEntity_Link_FSBillId = entry.ERP_ARRIVEDID,
+                                                FEntity_Link_FSBillId = fid,
                                                 FEntity_Link_FSId= entry.FEntryID,
                                                 FEntity_Link_FBaseInspectQty = entry.FCheckQty,
                                                 FEntity_Link_FBaseInspectQtyOld = entry.FCheckQty,
@@ -593,11 +609,11 @@ namespace Meiam.System.Hostd.Controllers.Business
                                                 FEntity_Link_FBaseDefectQtyOld = entry.FRefuseQty
                                             }
                                         }
+                                        };
                                     }).ToList()
                                 }
                             }
                         };
-
                         _logger.LogInformation(@$"请求金蝶ERP接口: FID: {fid}, 包含 {entries.Count} 个明细行");
 
                         string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
@@ -645,7 +661,7 @@ namespace Meiam.System.Hostd.Controllers.Business
 
                 return StatusCode(500, new ApiResponse {
                     Success = false,
-                    Message = $"系统异常：{erpApiUrl} : {ex.Message}"
+                    Message = $"系统异常：{erpApiUrl} : {ex.ToString()}"
                 });
             }
         }

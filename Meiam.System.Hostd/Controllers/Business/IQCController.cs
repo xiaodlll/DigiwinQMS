@@ -22,6 +22,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Data;
 using System.Linq;
+using OfficeOpenXml.Drawing;
+using OfficeOpenXml;
+using System.Xml;
 
 namespace Meiam.System.Hostd.Controllers.Bisuness {
     /// <summary>
@@ -223,9 +226,10 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             string filePath = @"C:\Users\Administrator\Desktop\Temp\222.xlsx";
             string filePath2 = @"C:\Users\Administrator\Desktop\Temp\22.doc";
             string[] sourceExcelPaths = new string[] {
-                @"C:/Users/Administrator/Desktop/Temp/3.pdf" };
+                @"C:/Users/Administrator/Desktop/Temp/22.doc" ,@"C:/Users/Administrator/Desktop/Temp/2.5.xlsx"};
             List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
             excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[0] });
+            excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[1] });
 
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
@@ -241,7 +245,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                     //excelHelper.CopyRows("原材料COC", "A6:O6", 3);
                     //string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
                     //string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
-                    //excelHelper.AddAttachsToCell("Peeling Force", "D7", excelAttechFilesList.ToArray(), true);
+                    excelHelper.AddAttachsToCell("FTIR", "D7", excelAttechFilesList.ToArray(), true);
                     //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {
@@ -249,13 +253,13 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                     //}
                     #endregion
                 }
+
                 return toResponse(StatusCodeType.Success, "测试成功!");
             }
             catch (Exception ex) {
                 return toResponse(StatusCodeType.Error, ex.ToString());
             }
         }
-
         /// <summary>
         /// FTIR报告PDF
         /// </summary>

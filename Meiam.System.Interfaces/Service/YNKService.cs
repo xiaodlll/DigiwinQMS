@@ -152,40 +152,55 @@ namespace Meiam.System.Interfaces.Service
         private void SaveMainInspection(LotNoticeRequestYNK request, string inspectionId)
         {
             //更新供应商SUPP
-            string SuppID = Db.Ado.GetScalar($@"SELECT TOP 1 SUPPID FROM SUPP WHERE SUPPNAME = '{request.SUPPNAME}'")?.ToString().Trim();
+            string SuppID = request.SUPPID;
+            if (!string.IsNullOrEmpty(SuppID)) {
+                // 1. 参数化查询：根据SuppID获取数据库中已存在的供应商名称（避免SQL注入）
+                string querySql = "SELECT TOP 1 SUPPNAME FROM SUPP WHERE SUPPID = @SuppID";
+                object dbSuppNameObj = Db.Ado.GetScalar(querySql, new { SuppID = SuppID });
+                string dbSuppName = dbSuppNameObj?.ToString().Trim() ?? string.Empty;
+                string newSuppName = request.SUPPNAME?.Trim() ?? string.Empty;
+                string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
-            if (string.IsNullOrEmpty(SuppID))
-            {
-                SuppID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(SUPPID) AS DECIMAL)+1 as char) from SUPP order by SUPPID desc")?.ToString().Trim();
-                if (string.IsNullOrEmpty(SuppID))
-                {
-                    SuppID = "1001";
+                // 2. 判断逻辑：先判断记录是否存在
+                if (string.IsNullOrEmpty(dbSuppName)) {
+                    // 情况1：记录不存在（dbSuppName为空），执行插入操作
+                    string insertSql = $@"INSERT INTO SUPP (
+                                    TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
+                                    SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME)
+                                VALUES (
+                                    @TENID, @SuppID, @SUPP0A17, @SUPPCREATEUSER, @CurrentTime,
+                                    @CurrentTime, @SUPPMODIFYUSER, @SuppCode, @NewSuppName)";
+                    // 参数化执行插入，杜绝SQL注入
+                    Db.Ado.ExecuteCommand(insertSql, new {
+                        TENID = "001",
+                        SuppID = SuppID,
+                        SUPP0A17 = "001",
+                        SUPPCREATEUSER = "system",
+                        CurrentTime = currentTime,
+                        SUPPMODIFYUSER = "system",
+                        SuppCode = SuppID,
+                        NewSuppName = newSuppName
+                    });
                 }
-                Db.Ado.ExecuteCommand($@"INSERT INTO SUPP (
-                                            TENID, SUPPID, SUPP0A17, SUPPCREATEUSER, SUPPCREATEDATE,
-                                            SUPPMODIFYDATE, SUPPMODIFYUSER, SUPPCODE, SUPPNAME)
-                                        VALUES (
-                                            '001', '{SuppID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-                                            '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{SuppID}', '{request.SUPPNAME}')");
+                else {
+                    // 情况2：记录存在，判断供应商名称是否不一致
+                    if (!string.Equals(dbSuppName, newSuppName, StringComparison.Ordinal)) {
+                        // 名称不一致，执行更新操作（只更新需要变动的字段）
+                        string updateSql = $@"UPDATE SUPP SET 
+                                        SUPPNAME = @NewSuppName,
+                                        SUPPMODIFYDATE = @CurrentTime,
+                                        SUPPMODIFYUSER = @SUPPMODIFYUSER
+                                    WHERE SUPPID = @SuppID";
+                        // 参数化执行更新
+                        Db.Ado.ExecuteCommand(updateSql, new {
+                            NewSuppName = newSuppName,
+                            CurrentTime = currentTime,
+                            SUPPMODIFYUSER = "system",
+                            SuppID = SuppID
+                        });
+                    }
+                }
             }
-
-            //更新物料ITEM
-            //string ItemID = Db.Ado.GetScalar($@"SELECT TOP 1 ITEMID FROM ITEM WHERE ITEMNAME = '{request.ITEMNAME}'")?.ToString().Trim();
-
-            //if (string.IsNullOrEmpty(ItemID))
-            //{
-            //    ItemID = Db.Ado.GetScalar($@"select TOP 1 cast(cast(dbo.getNumericValue(ITEMID) AS DECIMAL)+1 as char) from ITEM order by ITEMID desc")?.ToString().Trim();
-            //    if (string.IsNullOrEmpty(ItemID))
-            //    {
-            //        ItemID = "1001";
-            //    }
-            //    Db.Ado.ExecuteCommand($@"INSERT INTO ITEM (
-            //                                TENID, ITEMID, ITEM0A17, ITEMCREATEUSER, ITEMCREATEDATE,
-            //                                ITEMMODIFYDATE, ITEMMODIFYUSER, ITEMCODE, ITEMNAME)
-            //                            VALUES (
-            //                                '001', '{ItemID}', '001', 'system', '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}',
-            //                                '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}', 'system', '{ItemID}', '{request.ITEMNAME}')");
-            //}
 
             Db.Ado.ExecuteCommand($@"
                 MERGE INTO ITEM AS target
@@ -381,7 +396,7 @@ namespace Meiam.System.Interfaces.Service
                             ITEMNAME AS ITEMNAME,
                             LOTNO AS LOTNO,
                             FID AS FID,
-                            UNIT,SUPPNAME,
+                            UNIT,SUPPID as SUPPNAME,
                             KEEID AS FEntryID,
                             CASE 
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
@@ -390,7 +405,8 @@ namespace Meiam.System.Interfaces.Service
                                 ELSE '不合格'
                             END AS OQC_STATE,
                             ISNULL(TRY_CAST(FQC_CNT AS DECIMAL), 0) AS FReceiveQty,       -- 不可转换时返回0
-                            ISNULL(TRY_CAST(FQC_NOT_CNT AS DECIMAL), 0) AS FRefuseQty     -- 不可转换时返回0
+                            ISNULL(TRY_CAST(FQC_NOT_CNT AS DECIMAL), 0) AS FRefuseQty,     -- 不可转换时返回0
+                            ISNULL(TRY_CAST(DESQTY AS DECIMAL), 0) AS DESQTY     -- 不可转换时返回0
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
                             AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
@@ -399,21 +415,22 @@ namespace Meiam.System.Interfaces.Service
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
             foreach (var item in list)
             {
-                item.FCheckQty = Db.Ado.GetDecimal(@$"SELECT COALESCE((
-    SELECT TOP 1 
-        MAX(CAST(INSPECT_CNT AS INT)) OVER (PARTITION BY INSPECT_TYPE) AS INSPECT_CNT
-    FROM INSPECT_PROGRESS 
-    WHERE DOC_CODE = '{item.INSPECT_IQCCODE}'
-        AND INSPECT_TYPE IN ('INSPECT_TYPE_002', 'INSPECT_TYPE_001', 'INSPECT_TYPE_003', 'INSPECT_TYPE_999', 'INSPECT_TYPE_000')
-    ORDER BY 
-        CASE INSPECT_TYPE 
-            WHEN 'INSPECT_TYPE_002' THEN 1
-            WHEN 'INSPECT_TYPE_001' THEN 2
-            WHEN 'INSPECT_TYPE_003' THEN 3
-            WHEN 'INSPECT_TYPE_999' THEN 4
-            WHEN 'INSPECT_TYPE_000' THEN 5
-        END
-), 0) AS INSPECT_CNT");
+                item.FCheckQty = item.FReceiveQty + item.FRefuseQty + item.DESQTY;
+//                item.FCheckQty = Db.Ado.GetDecimal(@$"SELECT COALESCE((
+//    SELECT TOP 1 
+//        MAX(CAST(INSPECT_CNT AS INT)) OVER (PARTITION BY INSPECT_TYPE) AS INSPECT_CNT
+//    FROM INSPECT_PROGRESS 
+//    WHERE DOC_CODE = '{item.INSPECT_IQCCODE}'
+//        AND INSPECT_TYPE IN ('INSPECT_TYPE_002', 'INSPECT_TYPE_001', 'INSPECT_TYPE_003', 'INSPECT_TYPE_999', 'INSPECT_TYPE_000')
+//    ORDER BY 
+//        CASE INSPECT_TYPE 
+//            WHEN 'INSPECT_TYPE_002' THEN 1
+//            WHEN 'INSPECT_TYPE_001' THEN 2
+//            WHEN 'INSPECT_TYPE_003' THEN 3
+//            WHEN 'INSPECT_TYPE_999' THEN 4
+//            WHEN 'INSPECT_TYPE_000' THEN 5
+//        END
+//), 0) AS INSPECT_CNT");
             }
             return list;
         }

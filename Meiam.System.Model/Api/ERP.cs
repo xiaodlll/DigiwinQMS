@@ -166,6 +166,9 @@ namespace Meiam.System.Model
         // 供应商编码
         public string SUPPCODE { get; set; }
 
+        // 供应商
+        public string SUPPID { get; set; }
+
         // 供应商名称
         public string SUPPNAME { get; set; }
 
@@ -550,6 +553,12 @@ namespace Meiam.System.Model
         /// 检验数量
         /// </summary>
         public decimal? FCheckQty { get; set; }
+
+        /// <summary>
+        /// 样本破坏数量
+        /// </summary>
+        public decimal? DESQTY { get; set; }
+        
     }
 
     /// <summary>

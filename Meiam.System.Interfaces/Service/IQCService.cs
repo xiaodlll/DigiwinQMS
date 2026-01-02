@@ -2985,7 +2985,7 @@ ORDER BY
                                             if (!string.IsNullOrEmpty(COLUM001ID)) {
                                                 byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                                             }
-                                            string fileNameColumn = "INSPECT_PROGRESSNAME";
+                                            string fileNameColumn = byName.Replace("REPORT_URL", "INSPECT_PROGRESSNAME");
                                             if (dtSource.Columns.Contains(byName)) {
                                                 List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
                                                 foreach (DataRow row in dtSource.Rows) {
@@ -3153,7 +3153,7 @@ ORDER BY
                                             if (!string.IsNullOrEmpty(COLUM001ID)) {
                                                 byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                                             }
-                                            string fileNameColumn = "INSPECT_PROGRESSNAME";
+                                            string fileNameColumn = byName.Replace("REPORT_URL", "INSPECT_PROGRESSNAME");
                                             if (dtSource.Columns.Contains(byName)) {
                                                 List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
                                                 foreach (DataRow row in dtSource.Rows) {
@@ -3320,7 +3320,7 @@ ORDER BY
                                             if (!string.IsNullOrEmpty(COLUM001ID)) {
                                                 byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
                                             }
-                                            string fileNameColumn = "INSPECT_PROGRESSNAME";
+                                            string fileNameColumn = byName.Replace("REPORT_URL", "INSPECT_PROGRESSNAME");
                                             if (dtSource.Columns.Contains(byName)) {
                                                 List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
                                                 foreach (DataRow row in dtSource.Rows) {

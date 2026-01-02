@@ -276,13 +276,13 @@
             <param name="request">登录参数</param>
             <returns>登录结果包含KDSVCSessionId</returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeSync">
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeOldSync">
             <summary>
             收料检验结果回传ERP(YNK)
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeNewSync(Meiam.System.Model.QmsLotNoticeResultRequest)">
+        <member name="M:Meiam.System.Hostd.Controllers.Business.YNKController.PostLotNoticeSync(Meiam.System.Model.QmsLotNoticeResultRequest)">
             <summary>
             收料检验结果回传ERP(YNK新)
             </summary>

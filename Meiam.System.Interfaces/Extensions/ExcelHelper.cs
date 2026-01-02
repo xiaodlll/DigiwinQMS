@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
+using ICSharpCode.SharpZipLib.Zip;
 using iText.Barcodes.Dmcode;
 using iText.Layout.Font;
 using Meiam.System.Common;
@@ -14,6 +15,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Xml;
 
 public class ExcelHelper : IDisposable {
     private readonly ExcelPackage _excelPackage;
@@ -235,23 +237,16 @@ public class ExcelHelper : IDisposable {
         // 设置基础样式
         cell.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Top;
         worksheet.Row(startRow).CustomHeight = true;
-        ExcelDrawing tempExcelDrawing = null;
         int countOnject = 0;
         foreach (var excelAttechFile in excelAttechFiles) {
             try {
                 var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, excelAttechFile, cellHeight, attMode);
                 foreach (var embedObject in embedObjects) {
                     var (actColumn, actStartLeft) = GetMergedCellLeft(worksheet, cell, startLeft);
-                    // 设置对象位置
-                    embedObject.SetPosition(
-                        startRow - 1,
-                        5,
-                        actColumn - 1,
-                        (int)(actStartLeft)
-                    );
+                    embedObject.SetPosition(startRow - 1, 5, actColumn - 1, (int)(actStartLeft));
+
                     startLeft += width + 5;
                     countOnject++;
-                    tempExcelDrawing = embedObject;
                 }
             }
             catch (Exception ex) {
@@ -1022,7 +1017,8 @@ public class ExcelHelper : IDisposable {
                         fileName,
                         parameters => {
                             // 在这里设置参数
-                            parameters.ProgId = "Word.Document";
+                            parameters.DisplayAsIcon = false; // 开启显示图标模式
+                            parameters.ProgId = "Word.Document"; // 添加这两行
                         }
                     );
                     oleObject.SetSize(width, width);
@@ -1061,10 +1057,12 @@ public class ExcelHelper : IDisposable {
                         fileName,
                     parameters => {
                         // 在这里设置参数
+                        parameters.DisplayAsIcon = true; // 开启显示图标模式
                         parameters.ProgId = "Excel.Sheet";
                     }
                     );
                     oleObject.SetSize(width, width);
+                    oleObject.Locked = true;
                     return (new ExcelDrawing[] { oleObject }, false, width);
                 }
             }
@@ -1100,10 +1098,12 @@ public class ExcelHelper : IDisposable {
                         fileStream, fileName,
                         parameters => {
                             // 在这里设置参数
+                            parameters.DisplayAsIcon = true; // 开启显示图标模式
                             parameters.ProgId = "AcroExch.Document";
                         }
                     );
                         oleObject.SetSize(width, width);
+                        oleObject.Locked = true;
                         return (new ExcelDrawing[] { oleObject }, false, width);
                     }
                 }
@@ -1159,10 +1159,12 @@ public class ExcelHelper : IDisposable {
                     fileStream, fileName,
                     parameters => {
                         // 在这里设置参数
+                        parameters.DisplayAsIcon = true; // 开启显示图标模式
                         parameters.ProgId = "Package";
                     }
                 );
                 oleObject.SetSize(width, width);
+                oleObject.Locked = true;
                 return (new ExcelDrawing[] { oleObject }, false, width);
             }
         }
