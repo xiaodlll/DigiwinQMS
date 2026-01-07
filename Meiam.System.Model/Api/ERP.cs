@@ -536,7 +536,9 @@ namespace Meiam.System.Model
         public string ITEMID { get; set; }
         public string UNIT { get; set; }
         public string SUPPNAME { get; set; }
-        
+
+        public string LOTNO { get; set; }
+
         public string FEntryID { get; set; }
 
         /// <summary>

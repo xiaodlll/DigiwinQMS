@@ -1231,11 +1231,13 @@ namespace Meiam.System.Interfaces.Service
                     }
                     else
                     {
+                        List<string> ngsList = new List<string>();
+                        ngsList.AddRange(data.NGS.Split(';'));
                         if (!data.NGS.Contains("A"))
                         {
                             resultValue = "NG";
                         }
-                        else if (data.NGS.Contains($"A{i + 1};"))
+                        else if (ngsList.Contains($"A{i + 1}"))
                         {
                             resultValue = "NG";
                         }
@@ -1290,11 +1292,13 @@ namespace Meiam.System.Interfaces.Service
                             }
                             else
                             {
+                                List<string> ngsList = new List<string>();
+                                ngsList.AddRange(data.NGS.Split(';'));
                                 if (!data.NGS.Contains("A"))
                                 {
                                     resultValue = "NG";
                                 }
-                                else if (!data.NGS.Contains($"A{j};"))
+                                else if (ngsList.Contains($"A{j}"))
                                 {
                                     resultValue = "NG";
                                 }

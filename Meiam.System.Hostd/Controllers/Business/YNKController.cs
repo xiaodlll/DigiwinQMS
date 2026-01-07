@@ -12,10 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -492,7 +494,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                 _logger.LogInformation($"成功获取KDSVCSessionId: {sessionId}");
 
                 //按FID将分组
-                var groupedByFid = requests.GroupBy(r => r.FID)
+                var groupedByFid = requests.GroupBy(r => r.INSPECT_IQCCODE)
                                     .Where(g => !string.IsNullOrEmpty(g.Key)) // 确保FID非空
                                     .ToList();
 
@@ -500,10 +502,11 @@ namespace Meiam.System.Hostd.Controllers.Business
 
                 int successCount = 0;
                 int failCount = 0;
+                string errString = string.Empty;
 
                 // 分组后的数据一单一单的传
                 foreach (var group in groupedByFid) {
-                    var fid = group.Key;
+                    var iqcCode = group.Key;
                     var entries = group.ToList();
 
                     try {
@@ -582,6 +585,9 @@ namespace Meiam.System.Hostd.Controllers.Business
                                             FStockId = new {
                                                 FNumber = ""
                                             },
+                                            FLot = new {
+                                                FNumber = entry.LOTNO
+                                            },
                                             FBaseUnqualifiedQty = entry.FRefuseQty, // 不合格数量
                                             FBaseQualifiedQty = entry.FReceiveQty, // 合格数量
                                             FBaseSampleDamageQty = entry.DESQTY,
@@ -599,7 +605,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                                             new {
                                                 FEntity_Link_FRuleId = "QM_PURReceive2Inspect",
                                                 FEntity_Link_FSTableName = "T_PUR_ReceiveEntry",
-                                                FEntity_Link_FSBillId = fid,
+                                                FEntity_Link_FSBillId = entry.FID,
                                                 FEntity_Link_FSId= entry.FEntryID,
                                                 FEntity_Link_FBaseInspectQty = entry.FCheckQty,
                                                 FEntity_Link_FBaseInspectQtyOld = entry.FCheckQty,
@@ -614,7 +620,7 @@ namespace Meiam.System.Hostd.Controllers.Business
                                 }
                             }
                         };
-                        _logger.LogInformation(@$"请求金蝶ERP接口: FID: {fid}, 包含 {entries.Count} 个明细行");
+                        _logger.LogInformation(@$"请求金蝶ERP接口: IQCCODE: {iqcCode}, 包含 {entries.Count} 个明细行");
 
                         string jsonRequest = JsonConvert.SerializeObject(erpRequestData);
                         _logger.LogInformation(@$"请求URL: {erpApiUrl}");
@@ -627,12 +633,47 @@ namespace Meiam.System.Hostd.Controllers.Business
                             sessionId
                         );
 
-                        _logger.LogInformation(@$"金蝶ERP接口响应 - FID: {fid}, 结果: {postResult}");
+                        _logger.LogInformation(@$"金蝶ERP接口响应 - IQCCODE: {iqcCode}, 结果: {postResult}");
 
                         // 解析响应结果
                         if (postResult.Contains("false")) {
                             failCount++;
-                            _logger.LogError($"单据 {fid} 回传失败: {postResult}");
+                            _logger.LogError($"单据 {iqcCode} 回传失败: {postResult}");
+
+                            try {
+                                // 1. 直接将JSON字符串解析为JObject（弱类型根对象）
+                                JObject rootJObj = JObject.Parse(postResult);
+
+                                // 2. 逐层获取节点（通过键名索引，无需实体类），每一步做空值判断避免异常
+                                // 获取Result节点 → ResponseStatus节点
+                                JObject resultJObj = rootJObj["Result"] as JObject;
+                                JObject responseStatusJObj = resultJObj?["ResponseStatus"] as JObject;
+
+                                if (responseStatusJObj != null) {
+                                    // 3. 获取Errors数组（JArray类型）
+                                    JArray errorsJArray = responseStatusJObj["Errors"] as JArray;
+
+                                    if (errorsJArray != null && errorsJArray.Count > 0) {
+                                        // 4. 遍历Errors数组，拼接所有Message字段
+                                        StringBuilder errorSb = new StringBuilder();
+                                        foreach (JObject errorJObj in errorsJArray) {
+                                            // 获取Message字段值，自动处理null情况
+                                            string errorMsg = errorJObj["Message"]?.ToString()?.Trim();
+                                            if (!string.IsNullOrEmpty(errorMsg)) {
+                                                errorSb.AppendLine(errorMsg); // 按行拼接多个错误信息
+                                            }
+                                        }
+                                        errString += errorSb.ToString().Trim();
+                                    }
+                                    else {
+                                        // 无Errors数组时，提取错误码兜底
+                                        int errorCode = (int)(responseStatusJObj["ErrorCode"] ?? 0);
+                                        errString += $"错误码：{errorCode}，请求失败，无具体错误描述";
+                                    }
+                                }
+                            }
+                            catch {
+                            }
                         }
                         else {
                             // 回传成功，更新所有相关明细行的状态
@@ -640,12 +681,12 @@ namespace Meiam.System.Hostd.Controllers.Business
                                 _ynkService.CallBackQmsLotNoticeResult(entry);
                             }
                             successCount++;
-                            _logger.LogInformation($"单据 {fid} 回传成功");
+                            _logger.LogInformation($"单据 {iqcCode} 回传成功");
                         }
                     }
                     catch (Exception ex) {
                         failCount++;
-                        _logger.LogError(ex, $"处理单据 {fid} 时发生异常:" + ex.ToString());
+                        _logger.LogError(ex, $"处理单据 {iqcCode} 时发生异常:" + ex.ToString());
                         // 继续处理其他单据
                         continue;
                     }
@@ -653,7 +694,7 @@ namespace Meiam.System.Hostd.Controllers.Business
 
                 return Ok(new ApiResponse {
                     Success = true,
-                    Message = $"处理完成！成功: {successCount} 个单据, 失败: {failCount} 个单据, 总计: {groupedByFid.Count} 个单据"
+                    Message = $"处理完成！成功: {successCount} 个单据, 失败: {failCount} 个单据, 总计: {groupedByFid.Count} 个单据 "+ errString
                 });
             }
             catch (Exception ex) {
