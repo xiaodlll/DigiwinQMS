@@ -663,12 +663,12 @@ namespace Meiam.System.Hostd.Controllers.Business
                                                 errorSb.AppendLine(errorMsg); // 按行拼接多个错误信息
                                             }
                                         }
-                                        errString += errorSb.ToString().Trim();
+                                        errString +=  $"{iqcCode}错误:" + errorSb.ToString().Trim() + Environment.NewLine;
                                     }
                                     else {
                                         // 无Errors数组时，提取错误码兜底
                                         int errorCode = (int)(responseStatusJObj["ErrorCode"] ?? 0);
-                                        errString += $"错误码：{errorCode}，请求失败，无具体错误描述";
+                                        errString += $"{iqcCode} 错误码：{errorCode}，请求失败，无具体错误描述";
                                     }
                                 }
                             }

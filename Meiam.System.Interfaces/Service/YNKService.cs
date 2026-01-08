@@ -398,7 +398,7 @@ namespace Meiam.System.Interfaces.Service
                             FID AS FID,
                             UNIT,SUPPID as SUPPNAME,
                             KEEID AS FEntryID,
-                            CASE 
+                            CASE
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
@@ -1076,10 +1076,9 @@ namespace Meiam.System.Interfaces.Service
                 }
                 var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ALL_REMARK3,ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
         CASE 
-            WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
-            WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
+            WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005') THEN '合格'
             WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
-            ELSE OQC_STATE
+            ELSE '不合格'
         END AS OQC_STATE
     FROM INSPECT_IQC
     WHERE INSPECT_IQCCODE=@DOC_CODE", parameters);
@@ -1223,16 +1222,15 @@ namespace Meiam.System.Interfaces.Service
             {
                 string resultValue = "OK";
                 //横向寻找NG
-                foreach (var data in dataList)
-                {
+                foreach (var data in dataList) {
+                    List<string> ngsList = new List<string>();
+                    ngsList.AddRange(data.NGS.Split(';'));
                     if (string.IsNullOrEmpty(data.NGS))
                     {
                         resultValue = data.InspectResult ?? "OK";
                     }
                     else
                     {
-                        List<string> ngsList = new List<string>();
-                        ngsList.AddRange(data.NGS.Split(';'));
                         if (!data.NGS.Contains("A"))
                         {
                             resultValue = "NG";
@@ -1280,8 +1278,9 @@ namespace Meiam.System.Interfaces.Service
                     columnData.Add(data.InspectCode ?? "");   // 检测编码
 
                     // 处理检测值
-                    if (data.CountType == "COUNTTYPE_001")
-                    {
+                    if (data.CountType == "COUNTTYPE_001") {
+                        List<string> ngsList = new List<string>();
+                        ngsList.AddRange(data.NGS.Split(';'));
                         // 计数类型处理
                         for (int j = 1; j <= data.InspectCnt; j++)
                         {
@@ -1292,8 +1291,6 @@ namespace Meiam.System.Interfaces.Service
                             }
                             else
                             {
-                                List<string> ngsList = new List<string>();
-                                ngsList.AddRange(data.NGS.Split(';'));
                                 if (!data.NGS.Contains("A"))
                                 {
                                     resultValue = "NG";
@@ -1312,10 +1309,30 @@ namespace Meiam.System.Interfaces.Service
                     }
                     else
                     {
+                        string redFormat = "<span style=\"color:red;\">{0}</span>";
                         // 其他类型直接添加值
-                        if (data.Values != null)
-                        {
-                            columnData.AddRange(data.Values);
+                        if (data.Values != null) {
+                            List<string> ngsList = new List<string>();
+                            ngsList.AddRange(data.NGS.Split(';'));
+                            for (int j = 1; j <= data.Values.Count; j++) {
+                                var item = data.Values[j - 1];
+                                string resultValue = item.ToString();
+                                if (string.IsNullOrEmpty(data.NGS)) {
+                                    if (data.InspectResult == "NG") {
+                                        resultValue = string.Format(redFormat, resultValue);
+                                    }
+                                }
+                                else {
+                                    if (!data.NGS.Contains("A")) {
+                                        resultValue = string.Format(redFormat, resultValue);
+                                    }
+                                    else if (ngsList.Contains($"A{j}")) {
+                                        resultValue = string.Format(redFormat, resultValue);
+                                    }
+                                }
+                                columnData.Add(resultValue);
+                            }
+                            //columnData.AddRange(data.Values);
                         }
                         // 填充剩余位置
                         while (columnData.Count < 3 + maxLength)

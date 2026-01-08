@@ -400,7 +400,7 @@
                 // 数据不足用空值补齐
                 const rowData = data.TableRows[i]?.Cells ?? [];
                 const paddedRow = padOrTruncate(rowData, totalCols); // 保证列数固定
-                paddedRow.forEach(c => tr.appendChild(createCell('td', c)));
+                paddedRow.forEach(c => tr.appendChild(createCell('td', c, {}, true)));
 
                 const judge = data.JudgeValues[i] ?? '';
                 tr.appendChild(createCell('td', judge)); // 评判列
