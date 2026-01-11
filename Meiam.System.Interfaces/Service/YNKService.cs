@@ -10,6 +10,7 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -1168,8 +1169,8 @@ namespace Meiam.System.Interfaces.Service
                 int pageRowCount = 13;
                 int pageColCount = 13;
                 // 分组逻辑
-                var groupedData = GroupData(dataList, pageColCount, pageRowCount);
-
+                var groupedData = GroupData(dataList, pageColCount, pageRowCount, ref OQC_STATE);
+                
                 // 构建最终的JSON结构
                 var result = new
                 {
@@ -1209,7 +1210,7 @@ namespace Meiam.System.Interfaces.Service
         }
 
         // 数据分组方法
-        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount)
+        private List<Dictionary<string, List<object>>> GroupData(List<InspectData> dataList, int pageColCount, int pageRowCount, ref string totalResult)
         {
             var result = new List<Dictionary<string, List<object>>>();
 
@@ -1250,6 +1251,11 @@ namespace Meiam.System.Interfaces.Service
                     }
                 }
                 dicColumnsAValues.Add(i, resultValue);
+            }
+
+            totalResult = "合格";
+            if (dicColumnsAValues.Values.Any(v => v == "NG")) {
+                totalResult = "不合格";
             }
 
             int columnIndex = 1;
@@ -1309,7 +1315,7 @@ namespace Meiam.System.Interfaces.Service
                     }
                     else
                     {
-                        string redFormat = "<span style=\"color:red;\">{0}</span>";
+                        string redFormat = "<span style=\"color:red;text-decoration:underline;\">{0}</span>";
                         // 其他类型直接添加值
                         if (data.Values != null) {
                             List<string> ngsList = new List<string>();
@@ -2013,16 +2019,9 @@ WHERE [STATE]='PSTATE_003'";
             }
             else if (input.SumType.ToLower() == "week")
             {
-                //本周的周一到周日
                 DateTime today = DateTime.Today;
-                // 计算本周周一的日期（如果今天是周一，则返回今天）
-                int delta = DayOfWeek.Monday - today.DayOfWeek;
-                DateTime monday = today.AddDays(delta);
-                // 如果今天是周日，delta会是-6，需要修正
-                if (delta > 0) monday = today.AddDays(delta - 7);
-                // 本周周日 = 周一 + 6天
-                DateTime sunday = monday.AddDays(6);
-                sql += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
+                DateTime beginDay = GetFirstWeekMonday(today);
+                sql += $" and INSPECT_IQCCREATEDATE >= '{beginDay:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{today.AddDays(1):yyyy-MM-dd}'";
             }
             else if (input.SumType.ToLower() == "day")
             {
@@ -2081,16 +2080,9 @@ WHERE [STATE]='PSTATE_003'";
             }
             else if (input.SumType.ToLower() == "week")
             {
-                //本周的周一到周日
                 DateTime today = DateTime.Today;
-                // 计算本周周一的日期（如果今天是周一，则返回今天）
-                int delta = DayOfWeek.Monday - today.DayOfWeek;
-                DateTime monday = today.AddDays(delta);
-                // 如果今天是周日，delta会是-6，需要修正
-                if (delta > 0) monday = today.AddDays(delta - 7);
-                // 本周周日 = 周一 + 6天
-                DateTime sunday = monday.AddDays(6);
-                sql += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
+                DateTime beginDay = GetFirstWeekMonday(today);
+                sql += $" and INSPECT_IQCCREATEDATE >= '{beginDay:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{today.AddDays(1):yyyy-MM-dd}'";
             }
             else if (input.SumType.ToLower() == "day")
             {
@@ -2150,134 +2142,275 @@ WHERE [STATE]='PSTATE_003'";
                 object result = null;
 
                 string sumType = input.SumType?.ToLower() ?? "";
-                if (sumType == "year")
-                {
-                    // 按月统计：每个人1-12月的数据（固定12元素数组）
-                    var yearStats = dataList
-                    .GroupBy(x => new {
-                        Year = x.CreateDate.Year,
-                        Month = x.CreateDate.Month
-                    })
-                    .OrderBy(g => g.Key.Year)
-                    .ThenBy(g => g.Key.Month)
-                    .Select(g => {
-                        var stateGroups = g.GroupBy(x => x.OQC_STATE);
-                        var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
-                        var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
-                        var totalBatches = g.Count();
-                        return new
-                        {
-                            XValue = $"{g.Key.Month:D2}",
-                            Statistics = new
-                            {
-                                OK = qualifiedCount,
-                                VIP = specialAdoptionCount,
-                                NG = rejectedCount,
-                                Total = totalBatches
-                            },
-                            Rate = totalBatches > 0
-                                ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
-                                : 0
-                        };
-                    }).ToList();
+                var currentDate = DateTime.Today;
+                if (sumType == "year") {
+                    // 步骤1：先将原有数据按月份分组并转为字典（键=月份，值=该月统计数据），方便后续匹配
+                    var monthStatsDict = dataList
+                        .GroupBy(x => new {
+                            Year = x.CreateDate.Year,
+                            Month = x.CreateDate.Month
+                        })
+                        .ToDictionary(
+                            g => g.Key.Month, // 字典键：月份（1-12）
+                            g => {
+                                // 统计该月的合格、特采、不合格数量
+                                var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                                var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                                var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                                var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
+                                var totalBatches = g.Count();
+                                // 计算合格率（保留2位小数）
+                                var rate = totalBatches > 0
+                                    ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                    : 0;
+                                return new {
+                                    OK = qualifiedCount,
+                                    VIP = specialAdoptionCount,
+                                    NG = rejectedCount,
+                                    Total = totalBatches,
+                                    Rate = rate
+                                };
+                            }
+                        );
+
+                    // 步骤2：生成1-12月的固定序列，确保返回12个元素
+                    var yearStats = Enumerable.Range(1, 12) // 强制生成1到12月
+                        .Select(month => {
+                            // 步骤3：匹配当前月份的统计数据，无数据则全部设为0
+                            if (monthStatsDict.TryGetValue(month, out var monthData)) {
+                                // 有数据：使用原有统计值
+                                return new {
+                                    XValue = $"{month:D2}", // 月份补零（如1→01，12→12）
+                                    Statistics = new {
+                                        OK = monthData.OK,
+                                        VIP = monthData.VIP,
+                                        NG = monthData.NG,
+                                        Total = monthData.Total
+                                    },
+                                    Rate = monthData.Rate
+                                };
+                            }
+                            else {
+                                // 无数据：所有统计值设为0，合格率也为0
+                                return new {
+                                    XValue = $"{month:D2}",
+                                    Statistics = new {
+                                        OK = 0,
+                                        VIP = 0,
+                                        NG = 0,
+                                        Total = 0
+                                    },
+                                    Rate = 0m // 明确为decimal类型，与原有逻辑一致
+                                };
+                            }
+                        }).ToList();
+
                     result = yearStats;
                 }
-                else if (sumType == "month")
-                {
-                    // 近7个月，按月分组
-                    var monthStats = dataList
-                    .GroupBy(x => new {
-                        Year = x.CreateDate.Year,
-                        Month = x.CreateDate.Month
-                    })
-                    .OrderBy(g => g.Key.Year)
-                    .ThenBy(g => g.Key.Month)
-                    .Select(g => {
-                        var stateGroups = g.GroupBy(x => x.OQC_STATE);
-                        var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
-                        var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
-                        var totalBatches = g.Count();
-                        return new
-                        {
-                            XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
-                            Statistics = new
-                            {
-                                OK = qualifiedCount,
-                                VIP = specialAdoptionCount,
-                                NG = rejectedCount,
-                                Total = totalBatches
-                            },
-                            Rate = totalBatches > 0
-                                ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
-                                : 0
-                        };
-                    }).ToList();
+                else if (sumType == "month") {
+                    // 步骤1：生成近7个月的年月列表（YYYY-MM，固定7个）
+                    var monthsToGet = 7;
+                    var recentMonths = new List<string>();
+                    for (int i = monthsToGet - 1; i >= 0; i--) {
+                        var targetDate = currentDate.AddMonths(-i);
+                        var yearMonth = $"{targetDate.Year}-{targetDate.Month:D2}";
+                        recentMonths.Add(yearMonth);
+                    }
+
+                    // 步骤2：原有数据按年月分组，转为字典（键=YYYY-MM）
+                    var monthStatsDict = dataList
+                        .GroupBy(x => new { Year = x.CreateDate.Year, Month = x.CreateDate.Month })
+                        .ToDictionary(
+                            g => $"{g.Key.Year}-{g.Key.Month:D2}",
+                            g => {
+                                var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                                var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                                var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                                var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
+                                var totalBatches = g.Count();
+                                var rate = totalBatches > 0
+                                    ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                    : 0m;
+                                return new {
+                                    OK = qualifiedCount,
+                                    VIP = specialAdoptionCount,
+                                    NG = rejectedCount,
+                                    Total = totalBatches,
+                                    Rate = rate
+                                };
+                            }
+                        );
+
+                    // 步骤3：遍历近7个月，无数据则补0
+                    var monthStats = recentMonths
+                        .Select(yearMonth => {
+                            if (monthStatsDict.TryGetValue(yearMonth, out var monthData)) {
+                                return new {
+                                    XValue = yearMonth,
+                                    Statistics = new {
+                                        OK = monthData.OK,
+                                        VIP = monthData.VIP,
+                                        NG = monthData.NG,
+                                        Total = monthData.Total
+                                    },
+                                    Rate = monthData.Rate
+                                };
+                            }
+                            else {
+                                // 无数据：所有统计值设为0
+                                return new {
+                                    XValue = yearMonth,
+                                    Statistics = new {
+                                        OK = 0,
+                                        VIP = 0,
+                                        NG = 0,
+                                        Total = 0
+                                    },
+                                    Rate = 0m // 明确为decimal类型，避免类型不一致
+                                };
+                            }
+                        }).ToList();
 
                     result = monthStats;
                 }
-                else if (sumType == "week")
-                {
-                    // 近7周，按周分组
-                    var weekStats = dataList
-                    .GroupBy(x => new {
-                        Week = x.CreateDate.DayOfWeek
-                    })
-                    .OrderBy(g => g.Key.Week)
-                    .Select(g => {
-                        var stateGroups = g.GroupBy(x => x.OQC_STATE);
-                        var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
-                        var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                        var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
-                        var totalBatches = g.Count();
-                        return new
-                        {
-                            XValue = $"{g.Key.Week}",
-                            Statistics = new
-                            {
-                                OK = qualifiedCount,
-                                VIP = specialAdoptionCount,
-                                NG = rejectedCount,
-                                Total = totalBatches
-                            },
-                            Rate = totalBatches > 0
-                                ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
-                                : 0
-                        };
-                    }).ToList();
+                else if (sumType == "week") {
+                    // 步骤1：生成近7周的标识（以每周周一为标识，YYYY-MM-dd，固定7个）
+                    var weeksToGet = 7;
+                    var recentWeeks = new List<string>();
+                    for (int i = weeksToGet - 1; i >= 0; i--) {
+                        // 往前推i周（7天）
+                        var targetDate = currentDate.AddDays(-(i * 7));
+                        // 计算目标天所在周的周一（简单兼容所有.NET版本）
+                        int daysToMonday = (int)targetDate.DayOfWeek - (int)DayOfWeek.Monday;
+                        if (daysToMonday < 0) daysToMonday += 7; // 处理周日的情况
+                        var weekStartDate = targetDate.AddDays(-daysToMonday);
+                        var weekKey = weekStartDate.ToString("yyyy-MM-dd");
+                        recentWeeks.Add(weekKey);
+                    }
+
+                    // 步骤2：原有数据按“所在周的周一”分组，转为字典（键=周一日期）
+                    var weekStatsDict = dataList
+                        .GroupBy(x => {
+                            // 计算每条数据所在周的周一
+                            int daysToMonday = (int)x.CreateDate.DayOfWeek - (int)DayOfWeek.Monday;
+                            if (daysToMonday < 0) daysToMonday += 7;
+                            var weekStartDate = x.CreateDate.AddDays(-daysToMonday);
+                            return weekStartDate.ToString("yyyy-MM-dd");
+                        })
+                        .ToDictionary(
+                            g => g.Key,
+                            g => {
+                                var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                                var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                                var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                                var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
+                                var totalBatches = g.Count();
+                                var rate = totalBatches > 0
+                                    ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                    : 0m;
+                                return new {
+                                    OK = qualifiedCount,
+                                    VIP = specialAdoptionCount,
+                                    NG = rejectedCount,
+                                    Total = totalBatches,
+                                    Rate = rate
+                                };
+                            }
+                        );
+
+                    // 步骤3：遍历近7周，无数据则补0
+                    var weekStats = recentWeeks
+                        .Select(weekKey => {
+                            if (weekStatsDict.TryGetValue(weekKey, out var weekData)) {
+                                return new {
+                                    XValue = weekKey, // 周标识：本周周一的日期（如2025-03-10）
+                                    Statistics = new {
+                                        OK = weekData.OK,
+                                        VIP = weekData.VIP,
+                                        NG = weekData.NG,
+                                        Total = weekData.Total
+                                    },
+                                    Rate = weekData.Rate
+                                };
+                            }
+                            else {
+                                return new {
+                                    XValue = weekKey,
+                                    Statistics = new {
+                                        OK = 0,
+                                        VIP = 0,
+                                        NG = 0,
+                                        Total = 0
+                                    },
+                                    Rate = 0m
+                                };
+                            }
+                        }).ToList();
 
                     result = weekStats;
                 }
-                else if (sumType == "day")
-                {
-                    // 近7天，按日分组
-                    var dayStats = dataList
-                     .GroupBy(x => new {
-                         Day = x.CreateDate.Date.ToString("yyyy-MM-dd")
-                     })
-                     .OrderBy(g => g.Key.Day)
-                     .Select(g => {
-                         var stateGroups = g.GroupBy(x => x.OQC_STATE);
-                         var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
-                         var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
-                         var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
-                         var totalBatches = g.Count();
-                         return new
-                         {
-                             XValue = $"{g.Key.Day}",
-                             Statistics = new
-                             {
-                                 OK = qualifiedCount,
-                                 VIP = specialAdoptionCount,
-                                 NG = rejectedCount,
-                                 Total = totalBatches
-                             },
-                             Rate = totalBatches > 0
-                                 ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
-                                 : 0
-                         };
-                     }).ToList();
+                else if (sumType == "day") {
+                    // 步骤1：生成近7天的日期列表（YYYY-MM-dd，固定7个）
+                    var daysToGet = 7;
+                    var recentDays = new List<string>();
+                    for (int i = daysToGet - 1; i >= 0; i--) {
+                        var targetDate = currentDate.AddDays(-i);
+                        var dayKey = targetDate.Date.ToString("yyyy-MM-dd");
+                        recentDays.Add(dayKey);
+                    }
+
+                    // 步骤2：原有数据按日期分组，转为字典（键=YYYY-MM-dd）
+                    var dayStatsDict = dataList
+                        .GroupBy(x => x.CreateDate.Date.ToString("yyyy-MM-dd"))
+                        .ToDictionary(
+                            g => g.Key,
+                            g => {
+                                var stateGroups = g.GroupBy(x => x.OQC_STATE);
+                                var qualifiedCount = stateGroups.FirstOrDefault(sg => sg.Key == "合格")?.Count() ?? 0;
+                                var specialAdoptionCount = stateGroups.FirstOrDefault(sg => sg.Key == "特采")?.Count() ?? 0;
+                                var rejectedCount = stateGroups.FirstOrDefault(sg => sg.Key == "不合格")?.Count() ?? 0;
+                                var totalBatches = g.Count();
+                                var rate = totalBatches > 0
+                                    ? Math.Round((decimal)(qualifiedCount + specialAdoptionCount) * 100 / totalBatches, 2)
+                                    : 0m;
+                                return new {
+                                    OK = qualifiedCount,
+                                    VIP = specialAdoptionCount,
+                                    NG = rejectedCount,
+                                    Total = totalBatches,
+                                    Rate = rate
+                                };
+                            }
+                        );
+
+                    // 步骤3：遍历近7天，无数据则补0
+                    var dayStats = recentDays
+                        .Select(dayKey => {
+                            if (dayStatsDict.TryGetValue(dayKey, out var dayData)) {
+                                return new {
+                                    XValue = dayKey,
+                                    Statistics = new {
+                                        OK = dayData.OK,
+                                        VIP = dayData.VIP,
+                                        NG = dayData.NG,
+                                        Total = dayData.Total
+                                    },
+                                    Rate = dayData.Rate
+                                };
+                            }
+                            else {
+                                return new {
+                                    XValue = dayKey,
+                                    Statistics = new {
+                                        OK = 0,
+                                        VIP = 0,
+                                        NG = 0,
+                                        Total = 0
+                                    },
+                                    Rate = 0m
+                                };
+                            }
+                        }).ToList();
 
                     result = dayStats;
                 }
@@ -2377,132 +2510,241 @@ WHERE [STATE]='PSTATE_003'";
                     .ToList();
 
                 object result = null;
+                var currentDate = DateTime.Today;
 
                 string sumType = input.SumType?.ToLower() ?? "";
-                if (sumType == "year")
-                {
+                if (sumType == "year") {
                     // 按月统计：每个人1-12月的数据（固定12元素数组）
-                    var yearStats = dataList
-                    .GroupBy(x => new {
-                        Year = x.CreateDate.Year,
-                        Month = x.CreateDate.Month
-                    })
-                    .OrderBy(g => g.Key.Year)
-                    .ThenBy(g => g.Key.Month)
-                    .Select(g => {
-                        // 动态统计每个项目的数量
-                        var itemCounts = new Dictionary<string, int>();
-                        foreach (var item in itemList)
-                        {
-                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
-                        }
-                        // 创建包含总数和各项目统计的字典
-                        var statisticsDict = new Dictionary<string, object>();
-                        // 添加每个项目的统计
-                        foreach (var item in itemList)
-                        {
-                            statisticsDict[item] = itemCounts[item];
-                        }
-                        return new
-                        {
-                            XValue = $"{g.Key.Month:D2}",
-                            Statistics = statisticsDict
-                        };
-                    }).ToList();
+                    // 步骤1：先获取原有数据的分组统计（转成字典，键为月份，方便后续匹配）
+                    var monthStatsDict = dataList
+                        .GroupBy(x => new {
+                            Year = x.CreateDate.Year,
+                            Month = x.CreateDate.Month
+                        })
+                        .ToDictionary(
+                            g => g.Key.Month, // 字典键：月份（1-12）
+                            g => {
+                                // 动态统计每个项目的数量
+                                var itemCounts = new Dictionary<string, int>();
+                                foreach (var item in itemList) {
+                                    itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                                }
+                                return itemCounts;
+                            }
+                        );
+
+                    // 步骤2：生成1-12月的固定序列，确保返回12个元素
+                    var yearStats = Enumerable.Range(1, 12) // 生成1到12的数字（对应1-12月）
+                        .Select(month => {
+                            // 步骤3：匹配当前月份的统计数据，无数据则初始化空字典（各项目为0）
+                            if (monthStatsDict.TryGetValue(month, out var itemCounts)) {
+                                // 有数据：使用原有统计值
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = itemCounts[item];
+                                }
+                                return new {
+                                    XValue = $"{month:D2}", // 月份补零（如1→01，12→12）
+                                    Statistics = statisticsDict
+                                };
+                            }
+                            else {
+                                // 无数据：所有项目统计值设为0
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = 0;
+                                }
+                                return new {
+                                    XValue = $"{month:D2}",
+                                    Statistics = statisticsDict
+                                };
+                            }
+                        }).ToList();
+
                     result = yearStats;
                 }
-                else if (sumType == "month")
-                {
-                    // 近7个月，按月分组
-                    var monthStats = dataList
-                    .GroupBy(x => new {
-                        Year = x.CreateDate.Year,
-                        Month = x.CreateDate.Month
-                    })
-                    .OrderBy(g => g.Key.Year)
-                    .ThenBy(g => g.Key.Month)
-                    .Select(g => {
-                        // 动态统计每个项目的数量
-                        var itemCounts = new Dictionary<string, int>();
-                        foreach (var item in itemList)
-                        {
-                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
-                        }
-                        // 创建包含总数和各项目统计的字典
-                        var statisticsDict = new Dictionary<string, object>();
-                        // 添加每个项目的统计
-                        foreach (var item in itemList)
-                        {
-                            statisticsDict[item] = itemCounts[item];
-                        }
-                        return new
-                        {
-                            XValue = $"{g.Key.Year}-{g.Key.Month:D2}",
-                            Statistics = statisticsDict
-                        };
-                    }).ToList();
+                else if (sumType == "month") {
+                    // 步骤1：计算近7个月的年月集合（当前月往前推6个月 + 当前月，共7个月）
+                    var monthsToGet = 7;
+                    var recentMonths = new List<string>(); // 存储格式："YYYY-MM"
+
+                    // 生成近7个月的年月（处理跨年、跨月情况）
+                    for (int i = monthsToGet - 1; i >= 0; i--) {
+                        var targetDate = currentDate.AddMonths(-i);
+                        var yearMonth = $"{targetDate.Year}-{targetDate.Month:D2}";
+                        recentMonths.Add(yearMonth);
+                    }
+
+                    // 步骤2：将原有数据按「年-月」分组并转为字典，方便后续匹配
+                    var monthStatsDict = dataList
+                        .GroupBy(x => new {
+                            Year = x.CreateDate.Year,
+                            Month = x.CreateDate.Month
+                        })
+                        .ToDictionary(
+                            g => $"{g.Key.Year}-{g.Key.Month:D2}", // 字典键："YYYY-MM"
+                            g => {
+                                // 动态统计每个项目的数量（原有逻辑）
+                                var itemCounts = new Dictionary<string, int>();
+                                foreach (var item in itemList) {
+                                    itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                                }
+                                return itemCounts;
+                            }
+                        );
+
+                    // 步骤3：遍历近7个月，确保返回7个元素，无数据则补0
+                    var monthStats = recentMonths
+                        .Select(yearMonth => {
+                            // 匹配当前年月的统计数据
+                            if (monthStatsDict.TryGetValue(yearMonth, out var itemCounts)) {
+                                // 有数据：使用原有统计值
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = itemCounts[item];
+                                }
+                                return new {
+                                    XValue = yearMonth,
+                                    Statistics = statisticsDict
+                                };
+                            }
+                            else {
+                                // 无数据：所有项目统计值设为0
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = 0;
+                                }
+                                return new {
+                                    XValue = yearMonth,
+                                    Statistics = statisticsDict
+                                };
+                            }
+                        }).ToList();
 
                     result = monthStats;
                 }
-                else if (sumType == "week")
-                {
-                    // 近7周，按周分组
-                    var weekStats = dataList
-                    .GroupBy(x => new {
-                        Week = x.CreateDate.DayOfWeek
-                    })
-                    .OrderBy(g => g.Key.Week)
-                    .Select(g => {
-                        // 动态统计每个项目的数量
-                        var itemCounts = new Dictionary<string, int>();
-                        foreach (var item in itemList)
-                        {
-                            itemCounts[item] = g.Count(x => x.ITEMKIND == item);
-                        }
-                        // 创建包含总数和各项目统计的字典
-                        var statisticsDict = new Dictionary<string, object>();
-                        // 添加每个项目的统计
-                        foreach (var item in itemList)
-                        {
-                            statisticsDict[item] = itemCounts[item];
-                        }
-                        return new
-                        {
-                            XValue = $"{g.Key.Week}",
-                            Statistics = statisticsDict
-                        };
-                    }).ToList();
+                else if (sumType == "week") {
+                    // 步骤1：简单计算近7周的周标识（以每周周一为标识，格式：yyyy-MM-dd）
+                    var weeksToGet = 7;
+                    var recentWeeks = new List<string>();
+
+                    // 生成近7周的周一日期（作为周标识，兼容所有.NET版本）
+                    for (int i = weeksToGet - 1; i >= 0; i--) {
+                        // 1. 往前推i*7天，得到目标天
+                        var targetDate = currentDate.AddDays(-(i * 7));
+                        // 2. 找到目标天所在周的周一（简单周计算核心：周一为每周第一天）
+                        // DayOfWeek.Monday=1，Sunday=0，所以计算偏移量
+                        int daysToMonday = (int)targetDate.DayOfWeek - (int)DayOfWeek.Monday;
+                        if (daysToMonday < 0) daysToMonday += 7; // 处理周日的情况（偏移量为-1 → +6）
+                        var weekStartDate = targetDate.AddDays(-daysToMonday);
+                        // 3. 周标识：用周一的日期（yyyy-MM-dd）
+                        var weekKey = weekStartDate.ToString("yyyy-MM-dd");
+                        recentWeeks.Add(weekKey);
+                    }
+
+                    // 步骤2：将数据按「所在周的周一」分组，转为字典（无特殊依赖）
+                    var weekStatsDict = dataList
+                        .GroupBy(x => {
+                            // 计算每条数据日期所在周的周一（和上面周标识逻辑一致）
+                            int daysToMonday = (int)x.CreateDate.DayOfWeek - (int)DayOfWeek.Monday;
+                            if (daysToMonday < 0) daysToMonday += 7;
+                            var weekStartDate = x.CreateDate.AddDays(-daysToMonday);
+                            return weekStartDate.ToString("yyyy-MM-dd");
+                        })
+                        .ToDictionary(
+                            g => g.Key, // 字典键：周的周一日期（yyyy-MM-dd）
+                            g => {
+                                // 动态统计每个项目的数量（原有逻辑不变）
+                                var itemCounts = new Dictionary<string, int>();
+                                foreach (var item in itemList) {
+                                    itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                                }
+                                return itemCounts;
+                            }
+                        );
+
+                    // 步骤3：遍历近7周，确保返回7个元素，无数据则补0
+                    var weekStats = recentWeeks
+                        .Select(weekKey => {
+                            if (weekStatsDict.TryGetValue(weekKey, out var itemCounts)) {
+                                // 有数据：使用原有统计值
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = itemCounts[item];
+                                }
+                                return new {
+                                    XValue = weekKey, // 周标识：本周周一的日期（如2025-03-10）
+                                    Statistics = statisticsDict
+                                };
+                            }
+                            else {
+                                // 无数据：所有项目统计值设为0
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = 0;
+                                }
+                                return new {
+                                    XValue = weekKey,
+                                    Statistics = statisticsDict
+                                };
+                            }
+                        }).ToList();
 
                     result = weekStats;
                 }
-                else if (sumType == "day")
-                {
-                    // 近7天，按日分组
-                    var dayStats = dataList
-                     .GroupBy(x => new {
-                         Day = x.CreateDate.Date.ToString("yyyy-MM-dd")
-                     })
-                     .OrderBy(g => g.Key.Day)
-                     .Select(g => {
-                         // 动态统计每个项目的数量
-                         var itemCounts = new Dictionary<string, int>();
-                         foreach (var item in itemList)
-                         {
-                             itemCounts[item] = g.Count(x => x.ITEMKIND == item);
-                         }
-                         // 创建包含总数和各项目统计的字典
-                         var statisticsDict = new Dictionary<string, object>();
-                         // 添加每个项目的统计
-                         foreach (var item in itemList)
-                         {
-                             statisticsDict[item] = itemCounts[item];
-                         }
-                         return new
-                         {
-                             XValue = $"{g.Key.Day}",
-                             Statistics = statisticsDict
-                         };
-                     }).ToList();
+                else if (sumType == "day") {
+                    // 步骤1：计算近7天的日期集合（格式：yyyy-MM-dd，当前日期往前推6天 + 今天，共7天）
+                    var daysToGet = 7;
+                    var recentDays = new List<string>();
+
+                    // 生成近7天的日期（自动处理跨月/跨年）
+                    for (int i = daysToGet - 1; i >= 0; i--) {
+                        var targetDate = currentDate.AddDays(-i);
+                        var dayKey = targetDate.Date.ToString("yyyy-MM-dd");
+                        recentDays.Add(dayKey);
+                    }
+
+                    // 步骤2：将原有数据按「日期」分组并转为字典，方便后续匹配
+                    var dayStatsDict = dataList
+                        .GroupBy(x => x.CreateDate.Date.ToString("yyyy-MM-dd"))
+                        .ToDictionary(
+                            g => g.Key, // 字典键：yyyy-MM-dd
+                            g => {
+                                // 动态统计每个项目的数量
+                                var itemCounts = new Dictionary<string, int>();
+                                foreach (var item in itemList) {
+                                    itemCounts[item] = g.Count(x => x.ITEMKIND == item);
+                                }
+                                return itemCounts;
+                            }
+                        );
+
+                    // 步骤3：遍历近7天，确保返回7个元素，无数据则补0
+                    var dayStats = recentDays
+                        .Select(dayKey => {
+                            if (dayStatsDict.TryGetValue(dayKey, out var itemCounts)) {
+                                // 有数据：使用原有统计值
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = itemCounts[item];
+                                }
+                                return new {
+                                    XValue = dayKey, // 日期：yyyy-MM-dd
+                                    Statistics = statisticsDict
+                                };
+                            }
+                            else {
+                                // 无数据：所有项目统计值设为0
+                                var statisticsDict = new Dictionary<string, object>();
+                                foreach (var item in itemList) {
+                                    statisticsDict[item] = 0;
+                                }
+                                return new {
+                                    XValue = dayKey,
+                                    Statistics = statisticsDict
+                                };
+                            }
+                        }).ToList();
 
                     result = dayStats;
                 }
@@ -2585,61 +2827,7 @@ WHERE [STATE]='PSTATE_003'";
         {
             try
             {
-                string sqlWhere = "1=1";
-                if (input.SumType.ToLower() == "year")
-                {
-                    sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
-                }
-                else if (input.SumType.ToLower() == "month")
-                {
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
-                }
-                else if (input.SumType.ToLower() == "week")
-                {
-                    //本周的周一到周日
-                    DateTime today = DateTime.Today;
-                    // 计算本周周一的日期（如果今天是周一，则返回今天）
-                    int delta = DayOfWeek.Monday - today.DayOfWeek;
-                    DateTime monday = today.AddDays(delta);
-                    // 如果今天是周日，delta会是-6，需要修正
-                    if (delta > 0) monday = today.AddDays(delta - 7);
-                    // 本周周日 = 周一 + 6天
-                    DateTime sunday = monday.AddDays(6);
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
-                }
-                else if (input.SumType.ToLower() == "day")
-                {
-                    DateTime endDate = DateTime.Today.AddDays(1); // 明天
-                    DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
-                }
-                else
-                {
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
-                }
-                sqlWhere += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
-                if (!string.IsNullOrEmpty(input.MaterialType))
-                {
-                    if (input.MaterialType == "2")
-                    {
-                        sqlWhere += " and LOTNO LIKE '%RD%'";
-                    }
-                    else if (input.MaterialType == "1")
-                    {
-                        sqlWhere += " and LOTNO NOT LIKE '%RD%'";
-                    }
-                }
-                if (!string.IsNullOrEmpty(input.MeterialNames))
-                {
-                    var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                               .Select(item => item.Trim())
-                                               .Where(item => !string.IsNullOrWhiteSpace(item));
-                    if (materialItems.Any())
-                    {
-                        var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                        sqlWhere += $" and ITEM.PROJECTID in ({materialParams})";
-                    }
-                }
+                string sqlWhere = GetSuppWhereSql(input);
                 string sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,
                            SUM(CASE 
                                 WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
@@ -2670,7 +2858,7 @@ GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
                 var dtA2 = await Db.Ado.GetDataTableAsync(sql);//不良率
 
-                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
+                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(1) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
@@ -2680,7 +2868,7 @@ GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
 order by VALUE DESC", sqlWhere);
                 var dtA3 = await Db.Ado.GetDataTableAsync(sql);//进料批数
 
-                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(cast(LOT_QTY as decimal)) VALUE
+                sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,SUM(1) VALUE
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
@@ -2721,63 +2909,8 @@ order by VALUE DESC", sqlWhere);
         /// </summary>
         public async Task<ApiResponse> GetSuppBatchRejectionDetailDataAsync(INSPECT_PERSONNELDATA input)
         {
-            try
-            {
-                string sqlWhere = "1=1";
-                if (input.SumType.ToLower() == "year")
-                {
-                    sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
-                }
-                else if (input.SumType.ToLower() == "month")
-                {
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
-                }
-                else if (input.SumType.ToLower() == "week")
-                {
-                    //本周的周一到周日
-                    DateTime today = DateTime.Today;
-                    // 计算本周周一的日期（如果今天是周一，则返回今天）
-                    int delta = DayOfWeek.Monday - today.DayOfWeek;
-                    DateTime monday = today.AddDays(delta);
-                    // 如果今天是周日，delta会是-6，需要修正
-                    if (delta > 0) monday = today.AddDays(delta - 7);
-                    // 本周周日 = 周一 + 6天
-                    DateTime sunday = monday.AddDays(6);
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{monday:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{sunday.AddDays(1):yyyy-MM-dd}'";
-                }
-                else if (input.SumType.ToLower() == "day")
-                {
-                    DateTime endDate = DateTime.Today.AddDays(1); // 明天
-                    DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
-                }
-                else
-                {
-                    sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
-                }
-                sqlWhere += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
-                if (!string.IsNullOrEmpty(input.MaterialType))
-                {
-                    if (input.MaterialType == "1")
-                    {
-                        sqlWhere += " and LOTNO LIKE '%RD%'";
-                    }
-                    else if (input.MaterialType == "2")
-                    {
-                        sqlWhere += " and LOTNO NOT LIKE '%RD%'";
-                    }
-                }
-                if (!string.IsNullOrEmpty(input.MeterialNames))
-                {
-                    var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                               .Select(item => item.Trim())
-                                               .Where(item => !string.IsNullOrWhiteSpace(item));
-                    if (materialItems.Any())
-                    {
-                        var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
-                        sqlWhere += $" and ITEM.PROJECTID in ({materialParams})";
-                    }
-                }
+            try {
+                string sqlWhere = GetSuppWhereSql(input);
                 string sql = string.Format(@"select INSPECT_IQCCODE,SUPP.SUPPNAME,INSPECT_IQC.ITEMID,INSPECT_IQC.ITEMNAME,ERP_ARRIVEDID,
 LOTNO,LOT_QTY,APPLY_DATE,INSPECT_IQCCREATEDATE,ALL_REMARK3
 from INSPECT_IQC 
@@ -2787,15 +2920,13 @@ LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
 LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
 WHERE {0}", sqlWhere);
-                if (!string.IsNullOrEmpty(input.SuppID))
-                {
+                if (!string.IsNullOrEmpty(input.SuppID)) {
                     sql += $" AND SUPP.SUPPID ='{input.SuppID}'";
                 }
                 var result = await Db.Ado.GetDataTableAsync(sql);
                 string jsonData = JsonConvert.SerializeObject(result);
 
-                return new ApiResponse
-                {
+                return new ApiResponse {
                     Success = true,
                     Message = "数据获取成功",
                     Data = jsonData
@@ -2809,6 +2940,112 @@ WHERE {0}", sqlWhere);
                     Message = $"数据获取失败：{ex.Message}"
                 };
             }
+        }
+
+        private string GetSuppWhereSql(INSPECT_PERSONNELDATA input) {
+            string sqlWhere = "1=1";
+            if (input.SumType.ToLower() == "year") {
+                sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+            }
+            else if (input.SumType.ToLower() == "month") {
+                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+            }
+            else if (input.SumType.ToLower() == "week") {
+                DateTime today = DateTime.Today;
+                DateTime beginDay = GetFirstWeekMonday(today);
+                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{beginDay:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{today.AddDays(1):yyyy-MM-dd}'";
+            }
+            else if (input.SumType.ToLower() == "day") {
+                DateTime endDate = DateTime.Today.AddDays(1); // 明天
+                DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
+                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+            }
+            else {
+                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+            }
+            sqlWhere += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
+            if (!string.IsNullOrEmpty(input.MaterialType)) {
+                if (input.MaterialType == "2") {
+                    sqlWhere += " and LOTNO LIKE '%RD%'";
+                }
+                else if (input.MaterialType == "1") {
+                    sqlWhere += " and LOTNO NOT LIKE '%RD%'";
+                }
+            }
+            if (!string.IsNullOrEmpty(input.MeterialNames)) {
+                var materialItems = input.MeterialNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                           .Select(item => item.Trim())
+                                           .Where(item => !string.IsNullOrWhiteSpace(item));
+                if (materialItems.Any()) {
+                    var materialParams = string.Join(",", materialItems.Select(item => $"'{item}'"));
+                    sqlWhere += $" and ITEM.PROJECTID in ({materialParams})";
+                }
+            }
+
+            return sqlWhere;
+        }
+
+        /// <summary>
+        /// 供应商的名称，批退率，批退批数
+        /// </summary>
+        public async Task<ApiResponse> GetTotalSuppRejectionDataAsync(INSPECT_PERSONNELDATA input) {
+            try {
+                string sqlWhere = GetSuppWhereSql(input);
+                string sql = string.Format(@"select SUPP.SUPPID,SUPP.SUPPNAME,
+                           SUM(CASE 
+                                WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
+                                ELSE 0
+                            END)*100.0/SUM(1) AS RejPercent , SUM(CASE 
+                                WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
+                                ELSE 0
+                            END) RejNum
+from INSPECT_IQC 
+LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
+LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
+LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID
+WHERE {0} AND SUPP.SUPPNAME Is not null
+GROUP BY SUPP.SUPPID,SUPP.SUPPNAME
+HAVING SUM(CASE WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1 ELSE 0 END) > 0
+order by RejPercent DESC", sqlWhere);
+                var result = await Db.Ado.GetDataTableAsync(sql);
+                string jsonData = JsonConvert.SerializeObject(result);
+
+                return new ApiResponse {
+                    Success = true,
+                    Message = "数据获取成功",
+                    Data = jsonData
+                };
+            }
+            catch (Exception ex) {
+                return new ApiResponse {
+                    Success = false,
+                    Message = $"数据获取失败：{ex.Message}"
+                };
+            }
+        }
+
+        private DateTime GetFirstWeekMonday(DateTime today) {
+            // 已知条件：本周是第7周，一周从周一开始
+            int currentWeekNumber = 7;
+
+            // 关键：设置文化信息，强制一周的第一天为周一
+            CultureInfo customCulture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+            customCulture.DateTimeFormat.FirstDayOfWeek = DayOfWeek.Monday;
+
+            // 计算今天在本周的第几天（转换为：周一=1，周二=2...周日=7）
+            int dayOfWeekValue = (int)customCulture.Calendar.GetDayOfWeek(today);
+            // 因为GetDayOfWeek返回的枚举中，周日是0，需要修正为7
+            if (dayOfWeekValue == 0) {
+                dayOfWeekValue = 7;
+            }
+
+            // 计算从第一周周一到今天的总天数
+            // 周差：7-1=6周 → 6*7=42天；本周已过天数：dayOfWeekValue-1天
+            int totalDaysFromFirstWeek = (currentWeekNumber - 1) * 7 + (dayOfWeekValue - 1);
+
+            // 计算第一周周一的日期（今天减去总天数）
+            DateTime firstWeekMonday = today.AddDays(-totalDaysFromFirstWeek);
+            return firstWeekMonday;
         }
 
         #endregion

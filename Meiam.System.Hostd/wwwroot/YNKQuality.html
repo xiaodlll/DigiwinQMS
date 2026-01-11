@@ -2840,7 +2840,7 @@
             };
 
             // 调用后端接口获取所有供应商数据
-            const data = await fetchData('/api/erp/GetSuppBatchRejectionDetailData', params);
+            const data = await fetchData('/api/erp/GetTotalSuppRejectionData', params);
 
             if (data) {
                 // 处理返回的数据（可能是JSON字符串或已经解析的对象）
@@ -2857,7 +2857,7 @@
 
                 // 确保是数组格式
                 if (Array.isArray(detailData)) {
-                    renderAllSuppliersDetailContent(detailData, content);
+                    renderTotalSuppRejectionDataContent(detailData, content);
                 } else {
                     content.innerHTML = `
                 <div style="padding: 40px; text-align: center;">
@@ -2887,7 +2887,7 @@
         }
     }
 
-    // 渲染全部供应商明细内容
+    // 渲染供应商明细内容
     function renderAllSuppliersDetailContent(detailData, contentElement) {
         if (!detailData || !Array.isArray(detailData) || detailData.length === 0) {
             contentElement.innerHTML = `
@@ -3020,6 +3020,135 @@
                 title="${item.ALL_REMARK3 || ''}">
                 ${item.ALL_REMARK3 || ''}
             </td>
+        </tr>
+    `;
+        });
+
+        html += `
+            </tbody>
+        </table>
+    </div>
+`;
+
+        contentElement.innerHTML = html;
+    }
+
+
+    // 渲染全部供应商批退率
+    function renderTotalSuppRejectionDataContent(detailData, contentElement) {
+        if (!detailData || !Array.isArray(detailData) || detailData.length === 0) {
+            contentElement.innerHTML = `
+        <div style="padding: 40px; background: #f5f7fa; border-radius: 6px; text-align: center;">
+            <i class="fas fa-database" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+            <p style="color: #999; font-size: 16px;">暂无数据</p>
+        </div>
+    `;
+            return;
+        }
+
+        // 统计信息
+        const totalRecords = detailData.length;
+        const suppliers = [...new Set(detailData.map(item => item.SUPPNAME || ''))].filter(name => name);
+        const supplierCount = suppliers.length;
+
+        let html = '';
+        // 添加数据表格样式
+        const style = `
+    <style>
+        .detail-table-container {
+            height: 500px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .detail-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .detail-table thead tr {
+            background: #f5f5f5 !important;
+        }
+
+        .detail-table th {
+            position: sticky;
+            top: 0;
+            background: #f5f5f5;
+            box-shadow: 0 1px 0 #ddd;
+            z-index: 10;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .detail-table th,
+        .detail-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .detail-table tbody tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .detail-table tbody tr:nth-child(odd) {
+            background: #fff;
+        }
+
+        .detail-table tbody tr:hover {
+            background: #f0f7ff !important;
+        }
+
+        .supplier-cell {
+            cursor: pointer;
+            color: #409eff;
+            text-decoration: underline;
+        }
+
+        .supplier-cell:hover {
+            color: #337ecc;
+        }
+    </style>
+`;
+
+        html += style;
+
+        // 开始表格
+        html += `
+    <div class="detail-table-container">
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th style="width: 150px;">供应商</th>
+                    <th style="width: 80px;">批退率</th>
+                    <th style="width: 80px;">批退批数</th>
+                </tr>
+            </thead>
+            <tbody>
+`;
+
+        // 添加表格数据行
+        detailData.forEach((item, index) => {
+            // 处理日期格式
+            const applyDate = item.APPLY_DATE ? formatDate(item.APPLY_DATE) : '';
+            const createDate = item.INSPECT_IQCCREATEDATE ? formatDate(item.INSPECT_IQCCREATEDATE) : '';
+
+            html += `
+        <tr>
+            <td>${item.SUPPNAME || ''}</td>
+            <td>${item.RejPercent || ''}</td>
+            <td>${item.RejNum || ''}</td>
         </tr>
     `;
         });

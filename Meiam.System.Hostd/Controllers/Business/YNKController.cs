@@ -1353,6 +1353,32 @@ namespace Meiam.System.Hostd.Controllers.Business
             }
             return BadRequest(result);
         }
+
+
+
+        /// <summary>
+        /// 全部供应商批退率数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetTotalSuppRejectionData")]
+        public async Task<IActionResult> GetTotalSuppRejectionData([FromBody] INSPECT_PERSONNELDATA input) {
+            if (!ModelState.IsValid) {
+                _logger.LogWarning("无效的请求参数: {@Errors}", ModelState);
+
+                return BadRequest(new ApiResponse {
+                    Success = false,
+                    Message = $"参数验证失败，原因：{ModelState}"
+                });
+            }
+
+            var result = await _ynkService.GetTotalSuppRejectionDataAsync(input);
+
+            if (result.Success) {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        
         #endregion
     }
 }
