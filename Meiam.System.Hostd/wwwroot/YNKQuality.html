@@ -157,22 +157,6 @@
                     border-color: #34495e;
                 }
 
-                .stats-container li.inspection-delay {
-                    /*display: flex !important;*/
-                }
-
-        .line-title {
-            padding-left: 12px;
-            display: flex;
-            align-items: center;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 12px;
-            border-left: 3px solid #2980b9;
-        }
-
         /* 图表容器样式 */
         .chart-container {
             width: calc(50% - 5px);
@@ -280,7 +264,91 @@
             display: none !important;
         }
 
-        /* 供应商质量排行样式 - 根据图片设计 */
+        /* 供应商质量排行样式 - 仅用于TOP5表格 */
+        .supplier-rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+        }
+
+            .supplier-rank-table th {
+                background: #f5f5f5;
+                padding: 12px 15px;
+                text-align: left;
+                font-weight: 600;
+                color: #333;
+                border-bottom: 2px solid #eee;
+                position: sticky;
+                top: 0;
+            }
+
+            .supplier-rank-table td {
+                padding: 12px 15px;
+                border-bottom: 1px solid #eee;
+                text-align: left;
+            }
+
+            .supplier-rank-table tbody tr {
+                transition: all 0.3s;
+            }
+
+                .supplier-rank-table tbody tr:hover {
+                    background: #f0f7ff;
+                }
+
+            .supplier-rank-table .rank-cell {
+                text-align: center;
+                font-weight: bold;
+                color: #666;
+                width: 80px;
+            }
+
+            .supplier-rank-table .supplier-name-cell {
+                color: #409eff;
+                cursor: pointer;
+                transition: color 0.3s;
+            }
+
+                .supplier-rank-table .supplier-name-cell:hover {
+                    color: #337ecc;
+                    text-decoration: underline;
+                }
+
+            .supplier-rank-table .reject-rate-cell {
+                color: #e74c3c;
+                font-weight: 600;
+                text-align: left;
+                width: 150px;
+            }
+
+            .supplier-rank-table .total-batches-cell {
+                color: #3498db;
+                text-align: left;
+                width: 150px;
+            }
+
+            .supplier-rank-table .reject-batches-cell {
+                color: #f39c12;
+                text-align: left;
+                font-weight: 600;
+                width: 150px;
+            }
+
+            .supplier-rank-table .no-data-cell {
+                text-align: center;
+                color: #999;
+            }
+
+        .no-data-row {
+            text-align: center;
+            color: #999;
+        }
+
+            .no-data-row td {
+                padding: 40px;
+            }
+
         .supplierRank-container {
             width: 100%;
             background: white;
@@ -312,90 +380,6 @@
                 color: #409eff;
             }
 
-        .supplierRank-content {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .supplierRank-block {
-            border: 1px solid #e4e7ed;
-            border-radius: 6px;
-            padding: 15px;
-            background: white;
-        }
-
-        .supplierRank-block-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .supplier-list {
-            list-style: none;
-        }
-
-        .supplier-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px dashed #f0f0f0;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-            .supplier-item:hover {
-                background: #f5f7fa;
-            }
-
-            .supplier-item:last-child {
-                border-bottom: none;
-            }
-
-        .supplierRank-number {
-            font-size: 14px;
-            color: #666;
-            margin-right: 8px;
-            min-width: 20px;
-        }
-
-        .supplier-name {
-            font-size: 14px;
-            color: #333;
-            flex: 1;
-            cursor: pointer;
-        }
-
-            .supplier-name:hover {
-                color: #409eff;
-                text-decoration: underline;
-            }
-
-        .supplier-value {
-            font-size: 14px;
-            color: #333;
-        }
-
-            .supplier-value.defect-rate {
-                color: #e74c3c;
-                font-weight: 600;
-            }
-
-            .supplier-value.incoming-batches {
-                color: #3498db;
-                font-weight: 600;
-            }
-
-            .supplier-value.reject-batches {
-                color: #f39c12;
-                font-weight: 600;
-            }
-
         .data-source-note {
             font-size: 12px;
             color: #999;
@@ -416,95 +400,6 @@
             padding-top: 15px;
             border-top: 1px dashed #e4e7ed;
         }
-
-        .material-name {
-            color: #333;
-        }
-
-        .supplier-name-cell {
-            color: #606266;
-            cursor: pointer;
-        }
-
-            .supplier-name-cell:hover {
-                color: #409eff;
-                text-decoration: underline;
-            }
-
-        .defect-type {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-            .defect-type.appearance {
-                background: #fff3cd;
-                color: #856404;
-                border: 1px solid #ffeaa7;
-            }
-
-            .defect-type.dimension {
-                background: #d1ecf1;
-                color: #0c5460;
-                border: 1px solid #bee5eb;
-            }
-
-            .defect-type.performance {
-                background: #f8d7da;
-                color: #721c24;
-                border: 1px solid #f5c6cb;
-            }
-
-            .defect-type.material {
-                background: #d4edda;
-                color: #155724;
-                border: 1px solid #c3e6cb;
-            }
-
-        .discovery-date {
-            color: #606266;
-        }
-
-        .priority {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-            .priority.high {
-                background: #f8d7da;
-                color: #721c24;
-                border: 1px solid #f5c6cb;
-            }
-
-            .priority.medium {
-                background: #fff3cd;
-                color: #856404;
-                border: 1px solid #ffeaa7;
-            }
-
-            .priority.low {
-                background: #d1ecf1;
-                color: #0c5460;
-                border: 1px solid #bee5eb;
-            }
-
-        .action-btn {
-            padding: 6px 12px;
-            background: #409eff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-
-            .action-btn:hover {
-                background: #337ecc;
-            }
 
         /* 统计详情模态框样式 */
         .stat-modal {
@@ -647,20 +542,12 @@
 
         /* 响应式调整 */
         @media (max-width: 1200px) {
-            .supplierRank-content {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
             .chart-container {
                 width: 100%;
             }
         }
 
         @media (max-width: 768px) {
-            .supplierRank-content {
-                grid-template-columns: 1fr;
-            }
-
             .stats-container {
                 flex-wrap: wrap;
             }
@@ -802,7 +689,7 @@
             <div class="supplierRank-header">
                 <div class="supplierRank-title">
                     <i class="fas fa-trophy"></i>
-                    供应商质量排行
+                    供应商质量排行（TOP5）
                 </div>
                 <div class="chart-controls">
                     <div class="project-selector">
@@ -835,38 +722,21 @@
                 <span>显示最近7日/周/月数据或自定义数据</span>
             </div>
 
-            <div class="supplierRank-content">
-                <!-- 供应商名称 -->
-                <div class="supplierRank-block">
-                    <div class="supplierRank-block-title">供应商名称</div>
-                    <ul class="supplier-list" id="supplier-name-list">
-                        <!-- 供应商名称数据将通过JS动态生成 -->
-                    </ul>
-                </div>
-
-                <!-- 不良率 -->
-                <div class="supplierRank-block">
-                    <div class="supplierRank-block-title">不良率</div>
-                    <ul class="supplier-list" id="defect-rate-list">
-                        <!-- 不良率数据将通过JS动态生成 -->
-                    </ul>
-                </div>
-
-                <!-- 进料批数 -->
-                <div class="supplierRank-block">
-                    <div class="supplierRank-block-title">进料批数</div>
-                    <ul class="supplier-list" id="incoming-batches-list">
-                        <!-- 进料批数数据将通过JS动态生成 -->
-                    </ul>
-                </div>
-
-                <!-- 批退批数 -->
-                <div class="supplierRank-block">
-                    <div class="supplierRank-block-title">批退批数</div>
-                    <ul class="supplier-list" id="reject-batches-list">
-                        <!-- 批退批数数据将通过JS动态生成 -->
-                    </ul>
-                </div>
+            <div class="supplierRank-content" id="supplier-rank-table-container">
+                <table class="supplier-rank-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>供应商名称</th>
+                            <th>批退率</th>
+                            <th>总进料批数</th>
+                            <th>批退批数</th>
+                        </tr>
+                    </thead>
+                    <tbody id="supplier-rank-body">
+                        <!-- TOP5数据将通过JS动态生成 -->
+                    </tbody>
+                </table>
             </div>
 
             <div class="show-all-btn">
@@ -1348,16 +1218,6 @@
                     background: #f0f7ff;
                 }
 
-                /* 固定第一列的样式（可选） */
-                /*
-                .sticky-table th:first-child,
-                .sticky-table td:first-child {
-                    position: sticky;
-                    left: 0;
-                    background: inherit;
-                    z-index: 5;
-                }
-                */
             </style>
         `;
 
@@ -2346,7 +2206,7 @@
         }
     }
 
-    // 获取供应商排行数据
+    // 获取供应商排行数据 -- TOP5
     async function loadSupplierRankData() {
         try {
             // 准备请求参数
@@ -2360,18 +2220,32 @@
             };
 
             // 调用后端接口获取供应商排行数据
-            const data = await fetchData('/api/erp/GetSuppBatchRejectionData', params);
+            const data = await fetchData('/api/erp/GetTotalSuppRejectionData', params);
 
-            if (data &&
-                (Array.isArray(data.RejectionRate) ||
-                    Array.isArray(data.DefectRate) ||
-                    Array.isArray(data.FeedLotQty) ||
-                    Array.isArray(data.ReturnLotQty))) {
+            if (data) {
                 // 处理返回的数据
-                const supplierRankData = processSupplierRankData(data);
-                // 渲染供应商排行数据
-                renderSupplierRankData(supplierRankData);
-                return supplierRankData;
+                let suppliersData = data;
+
+                // 如果返回的是字符串，尝试解析
+                if (typeof suppliersData === 'string') {
+                    try {
+                        suppliersData = JSON.parse(suppliersData);
+                    } catch (e) {
+                        console.warn('解析数据字符串失败:', e);
+                    }
+                }
+
+                // 确保是数组格式
+                if (Array.isArray(suppliersData)) {
+                    // 取前5条数据
+                    const top5Suppliers = suppliersData.slice(0, 5);
+                    // 渲染TOP5表格
+                    renderSupplierRankTable(top5Suppliers);
+                    // 保存完整数据供"显示全部"使用
+                    viewState.allSuppliersData = suppliersData;
+                } else {
+                    renderNoSupplierData();
+                }
             } else {
                 // 显示供应商排行暂无数据
                 renderNoSupplierData();
@@ -2384,89 +2258,73 @@
         }
     }
 
-    // 处理供应商排行数据
-    function processSupplierRankData(data) {
-        const supplierData = {
-            nameList: [],     // 供应商名称（来自 RejectionRate）
-            defectRateList: [], // 不良率（来自 DefectRate）
-            incomingBatchesList: [], // 进料批数（来自 FeedLotQty）
-            rejectBatchesList: []    // 批退批数（来自 ReturnLotQty）
-        };
+    // 渲染供应商排行数据表格 -- TOP5
+    function renderSupplierRankTable(suppliersData) {
+        const tableBody = document.getElementById('supplier-rank-body');
 
-        // 供应商名称 - 对应 RejectionRate
-        if (data.RejectionRate && Array.isArray(data.RejectionRate)) {
-            data.RejectionRate.forEach((row, index) => {
-                const suppId = row.SUPPID || '';
-                const suppName = row.SUPPNAME || '';
-                const value = Number((row.VALUE || 0).toFixed(2));
+        // 固定显示5行
+        let html = '';
 
-                supplierData.nameList.push({
-                    rank: index + 1,
-                    id: suppId,
-                    name: suppName,
-                    value: value
-                });
-            });
+        if (!suppliersData || suppliersData.length === 0) {
+            // 完全没有数据的情况
+            for (let i = 1; i <= 5; i++) {
+                html += `
+                <tr>
+                    <td class="rank-cell">${i}</td>
+                    <td class="no-data-cell" colspan="4" style="text-align: center; color: #999;">
+                        暂无供应商数据
+                    </td>
+                </tr>
+            `;
+            }
+        } else {
+            // 有部分数据的情况
+            for (let i = 0; i < 5; i++) {
+                const rank = i + 1;
+
+                if (i < suppliersData.length) {
+                    // 有数据
+                    const supplier = suppliersData[i];
+                    const supplierName = supplier.SUPPNAME || '未知供应商';
+                    const supplierId = supplier.SUPPID || '';
+                    const rejectRate = supplier.RejPercent ? Number(supplier.RejPercent).toFixed(2) + '%' : '0%';
+                    const totalBatches = supplier.TotalBatches || 0;
+                    const rejectBatches = supplier.RejNum || 0;
+
+                    html += `
+                    <tr>
+                        <td class="rank-cell">${rank}</td>
+                        <td>
+                            <span class="supplier-name-cell" 
+                                  data-supplier-id="${supplierId}"
+                                  data-supplier-name="${supplierName}">
+                                ${supplierName}
+                            </span>
+                        </td>
+                        <td class="reject-rate-cell">${rejectRate}</td>
+                        <td class="total-batches-cell">${totalBatches.toLocaleString()}</td>
+                        <td class="reject-batches-cell">${rejectBatches.toLocaleString()}</td>
+                    </tr>
+                `;
+                } else {
+                    // 数据不足5条，显示空行
+                    html += `
+                    <tr>
+                        <td class="rank-cell">${rank}</td>
+                        <td class="no-data-cell">-</td>
+                        <td class="no-data-cell">-</td>
+                        <td class="no-data-cell">-</td>
+                        <td class="no-data-cell">-</td>
+                    </tr>
+                `;
+                }
+            }
         }
 
-        // 不良率 - 对应 DefectRate
-        if (data.DefectRate && Array.isArray(data.DefectRate)) {
-            data.DefectRate.forEach((row, index) => {
-                const suppId = row.SUPPID || '';
-                const suppName = row.SUPPNAME || '';
-                const value = Number((row.VALUE || 0).toFixed(2));
-
-                supplierData.defectRateList.push({
-                    rank: index + 1,
-                    id: suppId,
-                    name: suppName,
-                    value: value
-                });
-            });
-        }
-
-        // 进料批数 - 对应 FeedLotQty
-        if (data.FeedLotQty && Array.isArray(data.FeedLotQty)) {
-            data.FeedLotQty.forEach((row, index) => {
-                const suppId = row.SUPPID || '';
-                const suppName = row.SUPPNAME || '';
-                const value = row.VALUE || 0;
-
-                supplierData.incomingBatchesList.push({
-                    rank: index + 1,
-                    id: suppId,
-                    name: suppName,
-                    value: value
-                });
-            });
-        }
-
-        // 批退批数 - 对应 ReturnLotQty
-        if (data.ReturnLotQty && Array.isArray(data.ReturnLotQty)) {
-            data.ReturnLotQty.forEach((row, index) => {
-                const suppId = row.SUPPID || '';
-                const suppName = row.SUPPNAME || '';
-                const value = row.VALUE || 0;
-
-                supplierData.rejectBatchesList.push({
-                    rank: index + 1,
-                    id: suppId,
-                    name: suppName,
-                    value: value
-                });
-            });
-        }
-
-        // 只取前5名
-        return {
-            nameList: supplierData.nameList.slice(0, 5),
-            defectRateList: supplierData.defectRateList.slice(0, 5),
-            incomingBatchesList: supplierData.incomingBatchesList.slice(0, 5),
-            rejectBatchesList: supplierData.rejectBatchesList.slice(0, 5)
-        };
+        tableBody.innerHTML = html;
     }
 
-    // 更新供应商数据来源说明
+    // 更新供应商排行数据来源说明 -- TOP5
     function updateDataSourceNote() {
         const noteElement = document.getElementById('supplier-data-note');
         let noteText = '';
@@ -2495,151 +2353,20 @@
         noteElement.innerHTML = `<i class="fas fa-info-circle"></i><span>${noteText}</span>`;
     }
 
-    // 渲染供应商排行暂无数据
+    // 渲染供应商排行暂无数据 -- TOP5
     function renderNoSupplierData() {
-        // 供应商名称列表
-        const nameList = document.getElementById('supplier-name-list');
-        nameList.innerHTML = `
-        <li class="supplier-item" style="justify-content: center; color: #999;">
-            暂无数据
-        </li>
-    `;
-
-        // 不良率列表
-        const defectRateList = document.getElementById('defect-rate-list');
-        defectRateList.innerHTML = `
-        <li class="supplier-item" style="justify-content: center; color: #999;">
-            暂无数据
-        </li>
-    `;
-
-        // 进料批数列表
-        const incomingBatchesList = document.getElementById('incoming-batches-list');
-        incomingBatchesList.innerHTML = `
-        <li class="supplier-item" style="justify-content: center; color: #999;">
-            暂无数据
-        </li>
-    `;
-
-        // 批退批数列表
-        const rejectBatchesList = document.getElementById('reject-batches-list');
-        rejectBatchesList.innerHTML = `
-        <li class="supplier-item" style="justify-content: center; color: #999;">
-            暂无数据
-        </li>
+        const tableBody = document.getElementById('supplier-rank-body');
+        tableBody.innerHTML = `
+        <tr class="no-data-row">
+            <td colspan="5">
+                <i class="fas fa-database" style="font-size: 24px; color: #ccc; margin-bottom: 10px; display: block;"></i>
+                暂无数据
+            </td>
+        </tr>
     `;
     }
 
-    // 渲染供应商排行数据
-    function renderSupplierRankData(supplierData) {
-        if (!supplierData ||
-            (!supplierData.nameList || supplierData.nameList.length === 0) &&
-            (!supplierData.defectRateList || supplierData.defectRateList.length === 0) &&
-            (!supplierData.incomingBatchesList || supplierData.incomingBatchesList.length === 0) &&
-            (!supplierData.rejectBatchesList || supplierData.rejectBatchesList.length === 0)) {
-            renderNoSupplierData();
-            return;
-        }
-        // 渲染供应商名称列表
-        const nameList = document.getElementById('supplier-name-list');
-        nameList.innerHTML = '';
-
-        if (supplierData.nameList && supplierData.nameList.length > 0) {
-            supplierData.nameList.forEach((supplier, index) => {
-                const li = document.createElement('li');
-                li.className = 'supplier-item';
-                li.innerHTML = `
-                <span class="supplierRank-number">${supplier.rank}</span>
-                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
-                <span class="supplier-value">${supplier.value}%</span>
-            `;
-                nameList.appendChild(li);
-            });
-        } else {
-            nameList.innerHTML = `
-            <li class="supplier-item" style="justify-content: center; color: #999;">
-                暂无数据
-            </li>
-        `;
-        }
-
-        // 渲染不良率列表
-        const defectRateList = document.getElementById('defect-rate-list');
-        defectRateList.innerHTML = '';
-
-        if (supplierData.defectRateList && supplierData.defectRateList.length > 0) {
-            supplierData.defectRateList.forEach((supplier, index) => {
-                const li = document.createElement('li');
-                li.className = 'supplier-item';
-                li.innerHTML = `
-                <span class="supplierRank-number">${supplier.rank}</span>
-                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
-                <span class="supplier-value defect-rate">${supplier.value}%</span>
-            `;
-                defectRateList.appendChild(li);
-            });
-        } else {
-            defectRateList.innerHTML = `
-            <li class="supplier-item" style="justify-content: center; color: #999;">
-                暂无数据
-            </li>
-        `;
-        }
-
-        // 渲染进料批数列表
-        const incomingBatchesList = document.getElementById('incoming-batches-list');
-        incomingBatchesList.innerHTML = '';
-
-        if (supplierData.incomingBatchesList && supplierData.incomingBatchesList.length > 0) {
-            supplierData.incomingBatchesList.forEach((supplier, index) => {
-                const li = document.createElement('li');
-                li.className = 'supplier-item';
-                li.innerHTML = `
-                <span class="supplierRank-number">${supplier.rank}</span>
-                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
-                <span class="supplier-value incoming-batches">${supplier.value.toLocaleString()}</span>
-            `;
-                incomingBatchesList.appendChild(li);
-            });
-        } else {
-            incomingBatchesList.innerHTML = `
-            <li class="supplier-item" style="justify-content: center; color: #999;">
-                暂无数据
-            </li>
-        `;
-        }
-
-        // 渲染批退批数列表
-        const rejectBatchesList = document.getElementById('reject-batches-list');
-        rejectBatchesList.innerHTML = '';
-
-        if (supplierData.rejectBatchesList && supplierData.rejectBatchesList.length > 0) {
-            supplierData.rejectBatchesList.forEach((supplier, index) => {
-                const li = document.createElement('li');
-                li.className = 'supplier-item';
-                li.innerHTML = `
-                <span class="supplierRank-number">${supplier.rank}</span>
-                <span class="supplier-name" data-supplier-id="${supplier.id}">${supplier.name}</span>
-                <span class="supplier-value reject-batches">${supplier.value.toLocaleString()}</span>
-            `;
-                rejectBatchesList.appendChild(li);
-            });
-        } else {
-            rejectBatchesList.innerHTML = `
-            <li class="supplier-item" style="justify-content: center; color: #999;">
-                暂无数据
-            </li>
-        `;
-        }
-
-        // 更新数据来源说明
-        updateDataSourceNote();
-
-        // 保存当前供应商数据到全局状态
-        viewState.currentSupplierData = supplierData;
-    }
-
-    // 显示供应商详情
+    // 显示供应商详情 -- TOP5查看详情
     async function showSupplierDetail(supplierId) {
         try {
             // 准备请求参数
@@ -2687,7 +2414,7 @@
         }
     }
 
-    // 渲染供应商详情内容
+    // 渲染供应商详情内容 -- TOP5查看详情
     function renderSupplierDetailContent(detailData, contentElement, supplierId) {
         let html = '';
 
@@ -2708,7 +2435,7 @@
 
         html = `
         <div style="margin-bottom: 20px;">
-            <h3 style="margin-bottom: 10px;">${supplierName} - 质量明细</h3>
+            <h3 style="margin-bottom: 10px;">${supplierName}</h3>
             <p style="color: #666; margin-bottom: 15px;">记录总数：${totalRecords}</p>
         </div>
     `;
@@ -2784,10 +2511,10 @@
                         <th>材料名称</th>
                         <th>到货单号</th>
                         <th>批号</th>
-                        <th>到货数量</th>
+                        <th>数量</th>
                         <th>进料日期</th>
-                        <th>创建时间</th>
-                        <th>备注</th>
+                        <th>检验日期</th>
+                        <th>批退原因</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -2796,7 +2523,19 @@
         detailData.forEach((item, index) => {
             html += `
             <tr>
-                <td>${item.INSPECT_IQCCODE || ''}</td>
+                <td>
+                    ${
+                                item.INSPECT_IQCCODE
+                                    ? `<a 
+                                href="http://10.32.11.24:6549/RMBASE/QMS/INSPECT_IQC/INSPECT_IQC_detail.html?COLUM002ID=INSPECT_IQC&TYPE=Q&keyName=INSPECT_IQCID&COLUM0A072_NAME=&COLUM0A49_NAME=&key=${encodeURIComponent(item.INSPECT_IQCCODE)}&MenuName=${encodeURIComponent(item.INSPECT_IQCCODE)}&mode=edit"
+                                target="_blank"
+                                style="color:#409EFF; text-decoration:none; font-weight:500;"
+                              >
+                                ${item.INSPECT_IQCCODE}
+                              </a>`
+                                    : ''
+                    }
+                </td>
                 <td>${item.SUPPNAME || ''}</td>
                 <td>${item.ITEMID || ''}</td>
                 <td>${item.ITEMNAME || ''}</td>
@@ -2804,8 +2543,8 @@
                 <td>${item.LOTNO || ''}</td>
                 <td>${item.LOT_QTY || ''}</td>
                 <td>${item.APPLY_DATE || ''}</td>
-                <td>${item.INSPECT_IQCCREATEDATE || ''}</td>
-                <td>${item.ALL_REMARK3 || ''}</td>
+                <td>${item.INSPECT_DATE || ''}</td>
+                <td>${item.REJECT_REASON || ''}</td>
             </tr>
         `;
         });
@@ -2819,7 +2558,7 @@
         contentElement.innerHTML = html;
     }
 
-    // 全部供应商数据
+    // 全部供应商数据 -- 按钮
     async function showAllSuppliers() {
         try {
             const modal = document.getElementById('all-suppliers-modal');
@@ -2887,154 +2626,7 @@
         }
     }
 
-    // 渲染供应商明细内容
-    function renderAllSuppliersDetailContent(detailData, contentElement) {
-        if (!detailData || !Array.isArray(detailData) || detailData.length === 0) {
-            contentElement.innerHTML = `
-        <div style="padding: 40px; background: #f5f7fa; border-radius: 6px; text-align: center;">
-            <i class="fas fa-database" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
-            <p style="color: #999; font-size: 16px;">暂无数据</p>
-        </div>
-    `;
-            return;
-        }
-
-        // 统计信息
-        const totalRecords = detailData.length;
-        const suppliers = [...new Set(detailData.map(item => item.SUPPNAME || ''))].filter(name => name);
-        const supplierCount = suppliers.length;
-
-        let html = '';
-        // 添加数据表格样式
-        const style = `
-    <style>
-        .detail-table-container {
-            height: 500px;
-            overflow-y: auto;
-            overflow-x: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            position: relative;
-        }
-
-        .detail-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1400px;
-        }
-
-        .detail-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .detail-table thead tr {
-            background: #f5f5f5 !important;
-        }
-
-        .detail-table th {
-            position: sticky;
-            top: 0;
-            background: #f5f5f5;
-            box-shadow: 0 1px 0 #ddd;
-            z-index: 10;
-            font-weight: 600;
-            text-align: left;
-        }
-
-        .detail-table th,
-        .detail-table td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            white-space: nowrap;
-            vertical-align: middle;
-            font-size: 14px;
-        }
-
-        .detail-table tbody tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-
-        .detail-table tbody tr:nth-child(odd) {
-            background: #fff;
-        }
-
-        .detail-table tbody tr:hover {
-            background: #f0f7ff !important;
-        }
-
-        .supplier-cell {
-            cursor: pointer;
-            color: #409eff;
-            text-decoration: underline;
-        }
-
-        .supplier-cell:hover {
-            color: #337ecc;
-        }
-    </style>
-`;
-
-        html += style;
-
-        // 开始表格
-        html += `
-    <div class="detail-table-container">
-        <table class="detail-table">
-            <thead>
-                <tr>
-                    <th style="min-width: 120px;">检验单号</th>
-                    <th style="min-width: 150px;">供应商</th>
-                    <th style="min-width: 100px;">品号</th>
-                    <th style="min-width: 150px;">材料名称</th>
-                    <th style="min-width: 120px;">到货单号</th>
-                    <th style="min-width: 100px;">批号</th>
-                    <th style="min-width: 80px;">到货数量</th>
-                    <th style="min-width: 100px;">进料日期</th>
-                    <th style="min-width: 100px;">创建时间</th>
-                    <th style="min-width: 200px;">备注</th>
-                </tr>
-            </thead>
-            <tbody>
-`;
-
-        // 添加表格数据行
-        detailData.forEach((item, index) => {
-            // 处理日期格式
-            const applyDate = item.APPLY_DATE ? formatDate(item.APPLY_DATE) : '';
-            const createDate = item.INSPECT_IQCCREATEDATE ? formatDate(item.INSPECT_IQCCREATEDATE) : '';
-
-            html += `
-        <tr>
-            <td>${item.INSPECT_IQCCODE || ''}</td>
-            <td>${item.SUPPNAME || ''}</td>
-            <td>${item.ITEMID || ''}</td>
-            <td>${item.ITEMNAME || ''}</td>
-            <td>${item.ERP_ARRIVEDID || ''}</td>
-            <td>${item.LOTNO || ''}</td>
-            <td>${item.LOT_QTY || ''}</td>
-            <td>${applyDate}</td>
-            <td>${createDate}</td>
-            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;"
-                title="${item.ALL_REMARK3 || ''}">
-                ${item.ALL_REMARK3 || ''}
-            </td>
-        </tr>
-    `;
-        });
-
-        html += `
-            </tbody>
-        </table>
-    </div>
-`;
-
-        contentElement.innerHTML = html;
-    }
-
-
-    // 渲染全部供应商批退率
+    // 渲染全部供应商明细内容 -- 按钮
     function renderTotalSuppRejectionDataContent(detailData, contentElement) {
         if (!detailData || !Array.isArray(detailData) || detailData.length === 0) {
             contentElement.innerHTML = `
@@ -3046,16 +2638,11 @@
             return;
         }
 
-        // 统计信息
-        const totalRecords = detailData.length;
-        const suppliers = [...new Set(detailData.map(item => item.SUPPNAME || ''))].filter(name => name);
-        const supplierCount = suppliers.length;
-
         let html = '';
         // 添加数据表格样式
         const style = `
     <style>
-        .detail-table-container {
+        .all-suppliers-table-container {
             height: 500px;
             overflow-y: auto;
             overflow-x: auto;
@@ -3064,22 +2651,22 @@
             position: relative;
         }
 
-        .detail-table {
+        .all-suppliers-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .detail-table thead {
+        .all-suppliers-table thead {
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
-        .detail-table thead tr {
+        .all-suppliers-table thead tr {
             background: #f5f5f5 !important;
         }
 
-        .detail-table th {
+        .all-suppliers-table th {
             position: sticky;
             top: 0;
             background: #f5f5f5;
@@ -3089,8 +2676,8 @@
             text-align: left;
         }
 
-        .detail-table th,
-        .detail-table td {
+        .all-suppliers-table th,
+        .all-suppliers-table td {
             padding: 12px;
             border: 1px solid #ddd;
             white-space: nowrap;
@@ -3098,41 +2685,67 @@
             font-size: 14px;
         }
 
-        .detail-table tbody tr:nth-child(even) {
+        .all-suppliers-table tbody tr:nth-child(even) {
             background: #f9f9f9;
         }
 
-        .detail-table tbody tr:nth-child(odd) {
+        .all-suppliers-table tbody tr:nth-child(odd) {
             background: #fff;
         }
 
-        .detail-table tbody tr:hover {
+        .all-suppliers-table tbody tr:hover {
             background: #f0f7ff !important;
         }
 
-        .supplier-cell {
-            cursor: pointer;
-            color: #409eff;
-            text-decoration: underline;
+        .all-suppliers-table .supplier-name-cell {
+            cursor: default;
+            color: #333;
+            text-decoration: none;
         }
 
-        .supplier-cell:hover {
-            color: #337ecc;
+        .all-suppliers-table .supplier-name-cell:hover {
+            color: #333;
+        }
+
+        .all-suppliers-table .reject-rate-cell {
+            color: #e74c3c;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .all-suppliers-table .total-batches-cell {
+            color: #3498db;
+            text-align: left;
+        }
+
+        .all-suppliers-table .reject-batches-cell {
+            color: #f39c12;
+            font-weight: 600;
+            text-align: left;
         }
     </style>
 `;
 
         html += style;
 
+        // 统计信息
+        const totalRecords = detailData.length;
+        html += `
+        <div style="margin-bottom: 20px;">
+            <p style="color: #666; margin-bottom: 15px;">共 ${totalRecords} 个供应商</p>
+        </div>
+    `;
+
         // 开始表格
         html += `
-    <div class="detail-table-container">
-        <table class="detail-table">
+    <div class="all-suppliers-table-container">
+        <table class="all-suppliers-table">
             <thead>
                 <tr>
-                    <th style="width: 150px;">供应商</th>
-                    <th style="width: 80px;">批退率</th>
-                    <th style="width: 80px;">批退批数</th>
+                    <th style="width: 150px;">供应商名称</th>
+                    <th style="width: 100px;">批退率</th>
+                    <th style="width: 100px;">总进料批数</th>
+                    <th style="width: 100px;">批退批数</th>
                 </tr>
             </thead>
             <tbody>
@@ -3140,15 +2753,18 @@
 
         // 添加表格数据行
         detailData.forEach((item, index) => {
-            // 处理日期格式
-            const applyDate = item.APPLY_DATE ? formatDate(item.APPLY_DATE) : '';
-            const createDate = item.INSPECT_IQCCREATEDATE ? formatDate(item.INSPECT_IQCCREATEDATE) : '';
+            const supplierName = item.SUPPNAME || '未知供应商';
+            const supplierId = item.SUPPID || '';
+            const rejectRate = item.RejPercent ? Number(item.RejPercent).toFixed(2) + '%' : '0%';
+            const totalBatches = item.TotalBatches || 0;
+            const rejectBatches = item.RejNum || 0;
 
             html += `
         <tr>
-            <td>${item.SUPPNAME || ''}</td>
-            <td>${item.RejPercent || ''}</td>
-            <td>${item.RejNum || ''}</td>
+            <td>${supplierName}</td>
+            <td class="reject-rate-cell">${rejectRate}</td>
+            <td class="total-batches-cell">${totalBatches.toLocaleString()}</td>
+            <td class="reject-batches-cell">${rejectBatches.toLocaleString()}</td>
         </tr>
     `;
         });
@@ -3316,17 +2932,10 @@
         // 供应商名称点击事件（委托事件处理）
         document.addEventListener('click', function (e) {
             // 供应商名称点击
-            if (e.target.classList.contains('supplier-name')) {
-                const supplierId = e.target.getAttribute('data-supplier-id');
-                showSupplierDetail(supplierId);
-            }
-
-            // 异常表格中的供应商名称点击
             if (e.target.classList.contains('supplier-name-cell')) {
-                const supplierName = e.target.getAttribute('data-supplier-name');
-                const supplier = supplierData.find(s => s.name === supplierName);
-                if (supplier) {
-                    showSupplierDetail(supplier.id);
+                const supplierId = e.target.getAttribute('data-supplier-id');
+                if (supplierId) {
+                    showSupplierDetail(supplierId);
                 }
             }
         });
@@ -3351,11 +2960,9 @@
 
         // 全部供应商表格中的供应商名称点击也可以跳到详情
         document.addEventListener('click', function (e) {
-            if (e.target.classList.contains('supplier-cell')) {
+            if (e.target.classList.contains('supplier-name-cell')) {
                 const supplierId = e.target.getAttribute('data-supplier-id');
                 if (supplierId) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     showSupplierDetail(supplierId);
                 }
             }

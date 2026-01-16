@@ -2992,13 +2992,13 @@ WHERE {0}", sqlWhere);
             try {
                 string sqlWhere = GetSuppWhereSql(input);
                 string sql = string.Format(@"select SUPP.SUPPID,SUPP.SUPPNAME,
-                           SUM(CASE 
+                           CAST(SUM(CASE 
                                 WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
                                 ELSE 0
-                            END)*100.0/SUM(1) AS RejPercent , SUM(CASE 
+                            END)*100.0/SUM(1) AS DECIMAL(10,2)) AS RejPercent , SUM(CASE 
                                 WHEN ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007' THEN 1
                                 ELSE 0
-                            END) RejNum
+                            END) RejNum , count(1) AS TotalBatches
 from INSPECT_IQC 
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
