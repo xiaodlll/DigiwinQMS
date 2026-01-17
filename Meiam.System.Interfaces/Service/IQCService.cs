@@ -2952,7 +2952,7 @@ ORDER BY
                     string COC_VLOOKID = dtZONE.Rows[0]["COC_VLOOKID"].ToString();
                     string CELLS_ZONE = dtZONE.Rows[0]["CELLS_ZONE"].ToString();
                     try {
-                        _logger.LogInformation($"GetCOCfile正在生成COC文件 通用区域[{SHEETNAME}]:VLOOK[{VLOOK}]");
+                        _logger.LogInformation($"GetCOCfile正在生成COC文件 通用区域[{SHEETNAME}]:COC_ZONEID[{COC_ZONEID}]");
                         DataTable dtSource = dicDataSource[COC_VLOOKID];
                         DataTable dtZONE_D = Db.Ado.GetDataTable($@"select * from COC_ZONE_D where COC_ZONEID='{COC_ZONEID}'
 ORDER BY 
@@ -2972,6 +2972,7 @@ ORDER BY
                                 string CELLS = drZONE_D["CELLS"].ToString();
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
+                                    _logger.LogInformation($"通用区域 [{SHEETNAME}] 单元格[{CELLS}]赋值:ANI[{ANI}] COLUM001ID[{COLUM001ID}].");
                                     if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
@@ -2984,6 +2985,7 @@ ORDER BY
                                             string byName = "附件合并值";
                                             if (!string.IsNullOrEmpty(COLUM001ID)) {
                                                 byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                                _logger.LogInformation($"通用区域 [{SHEETNAME}] 单元格[{CELLS}]赋值:附件合并值 BYNAME[{byName}].");
                                             }
                                             string fileNameColumn = byName.Replace("REPORT_URL", "INSPECT_PROGRESSNAME");
                                             if (dtSource.Columns.Contains(byName)) {
@@ -3039,6 +3041,7 @@ ORDER BY
                                     }
                                     else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        _logger.LogInformation($"通用区域 [{SHEETNAME}] 单元格[{CELLS}]赋值:数据源字段 BYNAME[{byName}].");
                                         if (dtSource.Columns.Contains(byName)) {
                                             if (byName != null && byName.Contains("REPORT_URL")) {
                                                 string textValue = drData[byName].ToString();
@@ -3100,10 +3103,10 @@ ORDER BY
                                 }
                             }
                         }
-                        _logger.LogInformation($"GetCOCfile生成COC文件 通用区域[{SHEETNAME}]:VLOOK[{VLOOK}]完成.");
+                        _logger.LogInformation($"GetCOCfile生成COC文件 通用区域[{SHEETNAME}]:COC_ZONEID[{COC_ZONEID}]完成.");
                     }
                     catch (Exception ex) {
-                        throw new Exception($"区域[{SHEETNAME}]:VLOOK[{VLOOK}]" + ex.ToString());
+                        throw new Exception($"区域[{SHEETNAME}]:COC_ZONEID[{COC_ZONEID}]" + ex.ToString());
                     }
                 }
                 //再向右边循环
@@ -3139,7 +3142,7 @@ ORDER BY
                                 string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
-
+                                    _logger.LogInformation($"向右循环 [{SHEETNAME}] 单元格[{CELLS}]赋值:ANI[{ANI}] COLUM001ID[{COLUM001ID}].");
                                     if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
                                         if (ANI == "ANI_001") {//样本合并值
                                             string byName = "样本合并值";
@@ -3304,6 +3307,7 @@ ORDER BY
                                 string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
                                 try {
+                                    _logger.LogInformation($"向下循环 [{SHEETNAME}] 单元格[{CELLS}]赋值:ANI[{ANI}] COLUM001ID[{COLUM001ID}].");
                                     if (ISSQ == "1") {
                                         excelHelper.AddTextToCell(SHEETNAME, CELLS, (i + 1).ToString());
                                     }
@@ -3319,6 +3323,7 @@ ORDER BY
                                             string byName = "附件合并值";
                                             if (!string.IsNullOrEmpty(COLUM001ID)) {
                                                 byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                                _logger.LogInformation($"向下循环 [{SHEETNAME}] 单元格[{CELLS}]赋值:附件合并值 BYNAME[{byName}].");
                                             }
                                             string fileNameColumn = byName.Replace("REPORT_URL", "INSPECT_PROGRESSNAME");
                                             if (dtSource.Columns.Contains(byName)) {
@@ -3374,6 +3379,7 @@ ORDER BY
                                     }
                                     else if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
                                         string byName = Db.Ado.GetString($@"select BYNAME from COLUM001_COC where COLUM001ID='{COLUM001ID}'");
+                                        _logger.LogInformation($"向下循环 [{SHEETNAME}] 单元格[{CELLS}]赋值:数据源字段 BYNAME[{byName}].");
                                         if (dtSource.Columns.Contains(byName)) {
                                             if (byName != null && byName.Contains("REPORT_URL")) {
                                                 string textValue = drData[byName].ToString();
