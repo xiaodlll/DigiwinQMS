@@ -2971,6 +2971,7 @@ ORDER BY
                                 string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = drZONE_D["CELLS"].ToString();
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
+                                bool attConvertPic = drZONE_D["CONVERT_PIC"].ToString() == "1" ? true : false;
                                 try {
                                     _logger.LogInformation($"通用区域 [{SHEETNAME}] 单元格[{CELLS}]赋值:ANI[{ANI}] COLUM001ID[{COLUM001ID}].");
                                     if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
@@ -3035,7 +3036,7 @@ ORDER BY
                                                         }
                                                     }
                                                 }
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode, attConvertPic);
                                             }
                                         }
                                     }
@@ -3089,7 +3090,7 @@ ORDER BY
                                                         excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = attach });
                                                     }
                                                 }
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode, attConvertPic);
                                             }
                                             else {
                                                 string textValue = F_FIX + drData[byName].ToString() + E_FIX;
@@ -3141,6 +3142,7 @@ ORDER BY
                                 string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = GetAddColumnsValue(drZONE_D["CELLS"].ToString(), copyColumns.Length * i);
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
+                                bool attConvertPic = drZONE_D["CONVERT_PIC"].ToString() == "1" ? true : false;
                                 try {
                                     _logger.LogInformation($"向右循环 [{SHEETNAME}] 单元格[{CELLS}]赋值:ANI[{ANI}] COLUM001ID[{COLUM001ID}].");
                                     if (!string.IsNullOrEmpty(ANI)) { //汇总栏位
@@ -3204,7 +3206,7 @@ ORDER BY
                                                         }
                                                     }
                                                 }
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode, attConvertPic);
                                             }
                                         }
                                     }else  if (!string.IsNullOrEmpty(COLUM001ID)) { //数据源字段
@@ -3255,7 +3257,7 @@ ORDER BY
                                                     excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = attach });
                                                 }
                                             }
-                                            excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                            excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode, attConvertPic);
                                         }
                                         else if (dtSource.Columns.Contains(byName)) {
                                             string textValue = F_FIX + drData[byName].ToString() + E_FIX;
@@ -3306,6 +3308,7 @@ ORDER BY
                                 string E_FIX = drZONE_D["E_FIX"].ToString();
                                 string CELLS = GetAddRowsValue(drZONE_D["CELLS"].ToString(), copyRows.Length * i);
                                 bool attMode = drZONE_D["ATT_MODE"].ToString() == "1" ? true : false;
+                                bool attConvertPic = drZONE_D["CONVERT_PIC"].ToString() == "1" ? true : false;
                                 try {
                                     _logger.LogInformation($"向下循环 [{SHEETNAME}] 单元格[{CELLS}]赋值:ANI[{ANI}] COLUM001ID[{COLUM001ID}].");
                                     if (ISSQ == "1") {
@@ -3373,7 +3376,7 @@ ORDER BY
                                                         }
                                                     }
                                                 }
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode, attConvertPic);
                                             }
                                         }
                                     }
@@ -3427,7 +3430,7 @@ ORDER BY
                                                         excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = attach });
                                                     }
                                                 }
-                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode);
+                                                excelHelper.AddAttachsToCell(SHEETNAME, CELLS, excelAttechFilesList.ToArray(), attMode, attConvertPic);
                                             }
                                             else {
                                                 string textValue = F_FIX + drData[byName].ToString() + E_FIX;

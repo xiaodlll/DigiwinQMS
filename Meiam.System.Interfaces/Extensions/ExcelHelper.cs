@@ -208,7 +208,7 @@ public class ExcelHelper : IDisposable {
         return format.Contains("0") || format.Contains("#") || format.Contains("?");
     }
 
-    public void AddAttachsToCell(string sheetName, string cellAddress, ExcelAttechFile[] excelAttechFiles, bool attMode = false) {
+    public void AddAttachsToCell(string sheetName, string cellAddress, ExcelAttechFile[] excelAttechFiles, bool attMode = false, bool attConvertPic = false) {
 
         if (excelAttechFiles.Length == 0)
             return;
@@ -222,9 +222,13 @@ public class ExcelHelper : IDisposable {
             }
         }
 
-        if ((excelAttechFiles[0].FilePath.EndsWith(".xlsx") || excelAttechFiles[0].FilePath.EndsWith(".xls")) && !attMode) {
-            CopySheet(excelAttechFiles, sheetName, cellAddress);
-            return;
+        if ((excelAttechFiles[0].FilePath.EndsWith(".xlsx") || excelAttechFiles[0].FilePath.EndsWith(".xls")) ) {
+            if (!attMode) {
+                if (!attConvertPic) {
+                    CopySheet(excelAttechFiles, sheetName, cellAddress);
+                    return;
+                }
+            }
         }
 
         var worksheet = GetOrCreateWorksheet(sheetName);

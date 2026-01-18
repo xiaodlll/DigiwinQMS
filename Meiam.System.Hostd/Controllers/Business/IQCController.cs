@@ -228,16 +228,10 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             string[] sourceExcelPaths = new string[] {
                 @"C:/Users/Administrator/Desktop/Temp/22.doc" ,@"C:/Users/Administrator/Desktop/Temp/2.5.xlsx"};
             List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
-            excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[0] });
             excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[1] });
 
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
-                    excelHelper.AddTextToCell("尺寸数据", "J255", "11.5");
-                    excelHelper.AddTextToCell("尺寸数据", "J256", "11.6");
-                    excelHelper.AddTextToCell("尺寸数据", "J257", "11.7");
-                    excelHelper.AddTextToCell("尺寸数据", "J258", "11.8");
-                    excelHelper.AddTextToCell("尺寸数据", "J259", "11.9");
 
                     //excelHelper.CopyColumnsCells("CPK", "C21:D30", 5);
                     //excelHelper.CopySheet(sourceExcelPaths, "ROS", "A1");
@@ -245,7 +239,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                     //excelHelper.CopyRows("原材料COC", "A6:O6", 3);
                     //string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
                     //string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
-                    excelHelper.AddAttachsToCell("FTIR", "D7", excelAttechFilesList.ToArray(), true);
+                    excelHelper.AddAttachsToCell("FTIR", "B7", excelAttechFilesList.ToArray(), false, true);
                     //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {
