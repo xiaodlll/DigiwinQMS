@@ -2501,59 +2501,62 @@
 
         html += style;
         html += `
-        <div class="table-container">
-            <table class="sticky-table">
-                <thead>
-                    <tr>
-                        <th>检验单号</th>
-                        <th>供应商</th>
-                        <th>品号</th>
-                        <th>材料名称</th>
-                        <th>到货单号</th>
-                        <th>批号</th>
-                        <th>数量</th>
-                        <th>进料日期</th>
-                        <th>检验日期</th>
-                        <th>批退原因</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+<div class="table-container">
+    <table class="sticky-table">
+        <thead>
+            <tr>
+                <th>检验单号</th>
+                <th>供应商</th>
+                <th>品号</th>
+                <th>材料名称</th>
+                <th>到货单号</th>
+                <th>批号</th>
+                <th>数量</th>
+                <th>进料日期</th>
+                <th>检验日期</th>
+                <th>批退原因</th>
+            </tr>
+        </thead>
+        <tbody>
+`;
 
         detailData.forEach((item, index) => {
+            // 定义非第一个td的样式：OQC_STATE=0时文字变红
+            const tdStyle = item.OQC_STATE === 0 ? 'color: red;' : '';
             html += `
-            <tr>
-                <td>
-                    ${
-                                item.INSPECT_IQCCODE
-                                    ? `<a 
-                                href="http://10.32.11.24:6549/RMBASE/QMS/INSPECT_IQC/INSPECT_IQC_detail.html?COLUM002ID=INSPECT_IQC&TYPE=Q&keyName=INSPECT_IQCID&COLUM0A072_NAME=&COLUM0A49_NAME=&key=${encodeURIComponent(item.INSPECT_IQCCODE)}&MenuName=${encodeURIComponent(item.INSPECT_IQCCODE)}&mode=edit"
-                                target="_blank"
-                                style="color:#409EFF; text-decoration:none; font-weight:500;"
-                              >
-                                ${item.INSPECT_IQCCODE}
-                              </a>`
-                                    : ''
-                    }
-                </td>
-                <td>${item.SUPPNAME || ''}</td>
-                <td>${item.ITEMID || ''}</td>
-                <td>${item.ITEMNAME || ''}</td>
-                <td>${item.ERP_ARRIVEDID || ''}</td>
-                <td>${item.LOTNO || ''}</td>
-                <td>${item.LOT_QTY || ''}</td>
-                <td>${item.APPLY_DATE || ''}</td>
-                <td>${item.INSPECT_DATE || ''}</td>
-                <td>${item.REJECT_REASON || ''}</td>
-            </tr>
-        `;
+    <tr>
+        <!-- 第一个td（检验单号）：不应用红色样式，保持原样 -->
+        <td>
+            ${item.INSPECT_IQCCODE
+                    ? `<a 
+                href="http://10.32.11.24:6549/RMBASE/QMS/INSPECT_IQC/INSPECT_IQC_detail.html?COLUM002ID=INSPECT_IQC&TYPE=Q&keyName=INSPECT_IQCID&COLUM0A072_NAME=&COLUM0A49_NAME=&key=${encodeURIComponent(item.INSPECT_IQCCODE)}&MenuName=${encodeURIComponent(item.INSPECT_IQCCODE)}&mode=edit"
+                target="_blank"
+                style="color:#409EFF; text-decoration:none; font-weight:500;"
+              >
+                ${item.INSPECT_IQCCODE}
+              </a>`
+                    : ''
+                }
+        </td>
+        <!-- 第二个及以后的td：应用红色样式判断 -->
+        <td style="${tdStyle}">${item.SUPPNAME || ''}</td>
+        <td style="${tdStyle}">${item.ITEMID || ''}</td>
+        <td style="${tdStyle}">${item.ITEMNAME || ''}</td>
+        <td style="${tdStyle}">${item.ERP_ARRIVEDID || ''}</td>
+        <td style="${tdStyle}">${item.LOTNO || ''}</td>
+        <td style="${tdStyle}">${item.LOT_QTY || ''}</td>
+        <td style="${tdStyle}">${item.APPLY_DATE || ''}</td>
+        <td style="${tdStyle}">${item.INSPECT_DATE || ''}</td>
+        <td style="${tdStyle}">${item.REJECT_REASON || ''}</td>
+    </tr>
+`;
         });
 
         html += `
-                </tbody>
-            </table>
-        </div>
-    `;
+        </tbody>
+    </table>
+</div>
+`;
 
         contentElement.innerHTML = html;
     }
