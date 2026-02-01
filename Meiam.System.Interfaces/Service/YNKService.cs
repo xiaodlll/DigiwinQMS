@@ -1448,7 +1448,7 @@ namespace Meiam.System.Interfaces.Service
         private async Task<DataTable> GetPersonnelData(INSPECT_PERSONNELDATA input)
         {
             if (input == null) return null;
-            string sql = @"SELECT INSPECT_IQCCREATEDATE,COMP_DATE,LOT_QTY,ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,PROGRESS.INSPECTOR
+            string sql = @$"SELECT CAST({iqcDateKey} AS DATETIME) as INSPECT_IQCCREATEDATE,COMP_DATE,LOT_QTY,ITEM_GROUP.ITEM_GROUPNAME ITEMKIND,PROGRESS.INSPECTOR
 from INSPECT_IQC 
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
 LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
@@ -1457,19 +1457,19 @@ LEFT JOIN USER_ on USER_.User_Account=INSPECT_PROGRESS.INSPECT_PROGRESSMODIFYUSE
 WHERE DOC_CODE  is not null
 GROUP by DOC_CODE having (max(USER_.USER_NAME) is not null 
 and max(USER_.USER_NAME)!= '管理员' and max(USER_.USER_NAME)!= '管理员1')) PROGRESS ON PROGRESS.DOC_CODE=INSPECT_IQC.INSPECT_IQCCODE
-where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金属件','电子件','辅料','包材','成品外购标准件')";
+where COMP_DATE is not null AND {iqcDateKey}<>'' and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金属件','电子料','辅料','包材','其他(机加工原材料)')";
 
             if (input.SumType.ToLower() == "year")
             {
-                sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+                sql += $" and year({iqcDateKey}) = '{DateTime.Today.Year}'";
             }
             else if (input.SumType.ToLower() == "month")
             {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.Year}-{DateTime.Today.Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                sql += $" and {iqcDateKey} >= '{DateTime.Today.Year}-{DateTime.Today.Month}-01' and {iqcDateKey} < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
             else
             {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+                sql += $" and {iqcDateKey} >= '{input.StartDate}' and {iqcDateKey} < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
             if (!string.IsNullOrEmpty(input.MeterialNames))
             {
@@ -1720,10 +1720,10 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                 {
                     { "塑胶件", 3 },
                     { "金属件", 3 },
-                    { "电子件", 0.5m },
+                    { "电子料", 0.5m },
                     { "辅料", 1 },
                     { "包材", 0.5m },
-                    { "成品外购件", 2 },
+                    { "其他(机加工原材料)", 2 },
                     { "", 0 }
                 };
 
@@ -1852,8 +1852,8 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                         whereSql += " and LOTNO NOT LIKE '%RD%'";
                     }
                 }
-                string sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'  --已完成
-  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
+                string sql = @$"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_003'  --已完成
+  AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE())" + whereSql;
                 var count = await Db.Ado.GetIntAsync(sql);
                 object A1 = new
                 {
@@ -1861,8 +1861,8 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'  --待检验
-  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
+                sql = @$"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')='PSTATE_001'  --待检验
+  AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A2 = new
                 {
@@ -1870,8 +1870,8 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_004'  --待判定
-  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
+                sql = @$"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_004'  --待判定
+  AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A3 = new
                 {
@@ -1879,8 +1879,8 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')=''  --待维护
-  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
+                sql = @$"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.[STATE],'')=''  --待维护
+  AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A4 = new
                 {
@@ -1888,8 +1888,8 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007'  --当月批退数
-  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
+                sql = @$"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and ISNULL(INSPECT_IQC.OQC_STATE,'')='OQC_STATE_007'  --当月批退数
+  AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A5 = new
                 {
@@ -1897,8 +1897,8 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
                     value = count
                 };
 
-                sql = @"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and dbo.GetWorkDaysBetweenDates_SQL2008(INSPECT_IQCCREATEDATE,INSPECT_IQCNAME) >5  --检验延迟
-  AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE())" + whereSql;
+                sql = @$"select count(*) from INSPECT_IQC where ISNULL(DeleteMark, '0')<> '1' and dbo.GetWorkDaysBetweenDates_SQL2008(INSPECT_IQCCREATEDATE,INSPECT_IQCNAME) >5  --检验延迟
+  AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE())" + whereSql;
                 count = await Db.Ado.GetIntAsync(sql);
                 object A6 = new
                 {
@@ -1933,13 +1933,13 @@ where COMP_DATE is not null and ITEM_GROUP.ITEM_GROUPNAME in ('塑胶件','金�
         {
             try
             {
-                string sql = @"select INSPECT_IQCCODE,PROJECT.PROJECTNAME,SUPP.SUPPNAME,ERP_ARRIVEDID,SYSM002.SYSM002NAME PSTATE,ISSY,ITEMID,ITEMNAME, 
+                string sql = @$"select INSPECT_IQCCODE,PROJECT.PROJECTNAME,SUPP.SUPPNAME,ERP_ARRIVEDID,SYSM002.SYSM002NAME PSTATE,ISSY,ITEMID,ITEMNAME, 
 LOTNO,ROUND(LOT_QTY, 2) AS LOT_QTY,APPLY_DATE,INSPECT_IQCCREATEDATE,INSPECT_IQCNAME,ALL_REMARK3
 from INSPECT_IQC 
 LEFT JOIN PROJECT ON PROJECT.PROJECTID=INSPECT_IQC.PROJECTID
 LEFT JOIN SUPP ON SUPP.SUPPID=INSPECT_IQC.SUPPID
 LEFT JOIN SYSM002 ON SYSM002.SYSM002ID=INSPECT_IQC.STATE
-WHERE INSPECT_IQC.LOTNO <>'' AND ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR(INSPECT_IQCCREATEDATE) = YEAR(GETDATE()) AND MONTH(INSPECT_IQCCREATEDATE) = MONTH(GETDATE()) ";
+WHERE INSPECT_IQC.LOTNO <>'' AND ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND YEAR({iqcDateKey}) = YEAR(GETDATE()) AND MONTH({iqcDateKey}) = MONTH(GETDATE()) ";
                 switch (input.CardType)
                 {
                     case "VerifiedQty":
@@ -1998,40 +1998,40 @@ WHERE INSPECT_IQC.LOTNO <>'' AND ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND Y
         private async Task<DataTable> GetComingQualifiedData(INSPECT_PERSONNELDATA input)
         {
             if (input == null) return null;
-            string sql = @"SELECT CASE 
+            string sql = @$"SELECT CASE 
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_011') THEN '合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
                                 WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_008','OQC_STATE_010') THEN '特采'
                                 ELSE '不合格'
-                            END AS OQC_STATE,ROUND(LOT_QTY, 2) AS LOT_QTY,ITEM.PROJECTID ITEMKIND,INSPECT_IQCCREATEDATE
+                            END AS OQC_STATE,ROUND(LOT_QTY, 2) AS LOT_QTY,ITEM.PROJECTID ITEMKIND,CAST({iqcDateKey} AS DATETIME) as INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
 LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
-WHERE [STATE]='PSTATE_003'";
+WHERE [STATE]='PSTATE_003' AND {iqcDateKey}<>''";
 
             if (input.SumType.ToLower() == "year")
             {
-                sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+                sql += $" and year({iqcDateKey}) = '{DateTime.Today.Year}'";
             }
             else if (input.SumType.ToLower() == "month")
             {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                sql += $" and {iqcDateKey} >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and {iqcDateKey} < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
             else if (input.SumType.ToLower() == "week")
             {
                 DateTime today = DateTime.Today;
                 DateTime beginDay = GetFirstWeekMonday(today);
-                sql += $" and INSPECT_IQCCREATEDATE >= '{beginDay:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{today.AddDays(1):yyyy-MM-dd}'";
+                sql += $" and {iqcDateKey} >= '{beginDay:yyyy-MM-dd}' and {iqcDateKey} < '{today.AddDays(1):yyyy-MM-dd}'";
             }
             else if (input.SumType.ToLower() == "day")
             {
                 DateTime endDate = DateTime.Today.AddDays(1); // 明天
                 DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
-                sql += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+                sql += $" and {iqcDateKey} >= '{startDate:yyyy-MM-dd}' and {iqcDateKey} < '{endDate:yyyy-MM-dd}'";
             }
             else
             {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+                sql += $" and {iqcDateKey} >= '{input.StartDate}' and {iqcDateKey} < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
             if (!string.IsNullOrEmpty(input.MeterialNames))
             {
@@ -2064,35 +2064,35 @@ WHERE [STATE]='PSTATE_003'";
         private async Task<DataTable> GetComingProjectData(INSPECT_PERSONNELDATA input)
         {
             if (input == null) return null;
-            string sql = @"SELECT ITEM.PROJECTID ITEMKIND,LOT_QTY,INSPECT_IQCCREATEDATE
+            string sql = @$"SELECT ITEM.PROJECTID ITEMKIND,LOT_QTY,CAST({iqcDateKey} AS DATETIME) as INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
 LEFT JOIN ITEM on ITEM.ITEMID=INSPECT_IQC.ITEMID
 LEFT JOIN ITEM_GROUP on ITEM_GROUP.ITEM_GROUPID=ITEM.ITEM_GROUPID 
-WHERE [STATE]='PSTATE_003'";
+WHERE [STATE]='PSTATE_003' AND {iqcDateKey}<>''";
 
             if (input.SumType.ToLower() == "year")
             {
-                sql += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+                sql += $" and year({iqcDateKey}) = '{DateTime.Today.Year}'";
             }
             else if (input.SumType.ToLower() == "month")
             {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                sql += $" and {iqcDateKey} >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and {iqcDateKey} < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
             else if (input.SumType.ToLower() == "week")
             {
                 DateTime today = DateTime.Today;
                 DateTime beginDay = GetFirstWeekMonday(today);
-                sql += $" and INSPECT_IQCCREATEDATE >= '{beginDay:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{today.AddDays(1):yyyy-MM-dd}'";
+                sql += $" and {iqcDateKey} >= '{beginDay:yyyy-MM-dd}' and {iqcDateKey} < '{today.AddDays(1):yyyy-MM-dd}'";
             }
             else if (input.SumType.ToLower() == "day")
             {
                 DateTime endDate = DateTime.Today.AddDays(1); // 明天
                 DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
-                sql += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+                sql += $" and {iqcDateKey} >= '{startDate:yyyy-MM-dd}' and {iqcDateKey} < '{endDate:yyyy-MM-dd}'";
             }
             else
             {
-                sql += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+                sql += $" and {iqcDateKey} >= '{input.StartDate}' and {iqcDateKey} < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
             if (!string.IsNullOrEmpty(input.MeterialNames))
             {
@@ -2491,7 +2491,7 @@ WHERE [STATE]='PSTATE_003'";
                 {
                     if (input.MaterialType == "2")
                     {
-                        itemList.AddRange(new string[] { "机器人", "骨刀", "通用" });
+                        itemList.AddRange(new string[] { "机器人", "骨刀", "超声刀", "电刀", "超乳", "干眼仪", "通用" });
                     }
                     else if (input.MaterialType == "1")
                     {
@@ -2946,26 +2946,27 @@ WHERE {0}", sqlWhere);
             }
         }
 
+        private string iqcDateKey = "INSPECT_IQCNAME";
         private string GetSuppWhereSql(INSPECT_PERSONNELDATA input) {
             string sqlWhere = "1=1";
             if (input.SumType.ToLower() == "year") {
-                sqlWhere += $" and year(INSPECT_IQCCREATEDATE) = '{DateTime.Today.Year}'";
+                sqlWhere += $" and year({iqcDateKey}) = '{DateTime.Today.Year}'";
             }
             else if (input.SumType.ToLower() == "month") {
-                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and INSPECT_IQCCREATEDATE < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
+                sqlWhere += $" and {iqcDateKey} >= '{DateTime.Today.AddMonths(-6).Year}-{DateTime.Today.AddMonths(-6).Month}-01' and {iqcDateKey} < '{DateTime.Today.AddMonths(1).Year}-{DateTime.Today.AddMonths(1).Month}-01'";
             }
             else if (input.SumType.ToLower() == "week") {
                 DateTime today = DateTime.Today;
                 DateTime beginDay = GetFirstWeekMonday(today);
-                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{beginDay:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{today.AddDays(1):yyyy-MM-dd}'";
+                sqlWhere += $" and {iqcDateKey} >= '{beginDay:yyyy-MM-dd}' and {iqcDateKey} < '{today.AddDays(1):yyyy-MM-dd}'";
             }
             else if (input.SumType.ToLower() == "day") {
                 DateTime endDate = DateTime.Today.AddDays(1); // 明天
                 DateTime startDate = DateTime.Today.AddDays(-6); // 7天前
-                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{startDate:yyyy-MM-dd}' and INSPECT_IQCCREATEDATE < '{endDate:yyyy-MM-dd}'";
+                sqlWhere += $" and {iqcDateKey} >= '{startDate:yyyy-MM-dd}' and {iqcDateKey} < '{endDate:yyyy-MM-dd}'";
             }
             else {
-                sqlWhere += $" and INSPECT_IQCCREATEDATE >= '{input.StartDate}' and INSPECT_IQCCREATEDATE < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
+                sqlWhere += $" and {iqcDateKey} >= '{input.StartDate}' and {iqcDateKey} < '{DateTime.Parse(input.EndDate).AddDays(1).ToString("yyyy-MM-dd")}'";
             }
             sqlWhere += " AND LOTNO <>'' AND SUBSTRING(LOTNO,1,1)<>'H' and SUBSTRING(LOTNO,1,1)<>'Z'";
             if (!string.IsNullOrEmpty(input.MaterialType)) {

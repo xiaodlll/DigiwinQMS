@@ -3,8 +3,9 @@
 <head>
     <title>效率看板</title>
     <script src="/lib/echarts/echarts.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="/lib/echarts/flatpickr.min.css">
+    <script src="/lib/echarts/flatpickr.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -190,8 +191,8 @@
                                 <label for="material-metal">金属件</label>
                             </div>
                             <div class="material-option">
-                                <input type="checkbox" id="material-electronic" value="电子件" checked>
-                                <label for="material-electronic">电子件</label>
+                                <input type="checkbox" id="material-electronic" value="电子料" checked>
+                                <label for="material-electronic">电子料</label>
                             </div>
                             <div class="material-option">
                                 <input type="checkbox" id="material-accessory" value="辅料" checked>
@@ -202,8 +203,8 @@
                                 <label for="material-packaging">包材</label>
                             </div>
                             <div class="material-option">
-                                <input type="checkbox" id="material-standard" value="成品外购标准件" checked>
-                                <label for="material-standard">成品外购标准件</label>
+                                <input type="checkbox" id="material-standard" value="其他(机加工原材料)" checked>
+                                <label for="material-standard">其他(机加工原材料)</label>
                             </div>
                             <button class="btn" id="material-apply" style="width: 100%; margin-top: 10px;">确定</button>
                         </div>

@@ -3,9 +3,9 @@
 <head>
     <title>质量看板</title>
     <script src="/lib/echarts/echarts.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/lib/echarts/flatpickr.min.css">
+    <script src="/lib/echarts/flatpickr.js"></script>
+    <link rel="stylesheet" href="/lib/echarts/all.min.css">
 
     <style type="text/css">
         * {
@@ -840,7 +840,7 @@
     // 项目选项配置
     const projectOptions = {
         massProduction: ['超乳', '超声刀', '电刀', '通用'],
-        rd: ['机器人', '骨刀', '通用']
+        rd: ['机器人', '骨刀', '超声刀', '电刀', '超乳', '干眼仪', '通用']
     };
 
     // 初始化ECharts实例
