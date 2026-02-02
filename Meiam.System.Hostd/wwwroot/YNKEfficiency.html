@@ -270,6 +270,43 @@
             }
         };
 
+        // 全局颜色映射表 - 确保相同人员使用相同颜色
+        let colorMap = {};
+
+        // 预定义的颜色列表（足够多的颜色，避免重复）
+        const colorList = [
+            '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
+            '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#60acfc',
+            '#f04864', '#d7504b', '#c6e579', '#f4e001', '#f0805a',
+            '#26c0c0', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'
+        ];
+
+        // 获取或分配人员颜色
+        function getPersonColor(personName) {
+            // 如果已有颜色，直接返回
+            if (colorMap[personName]) {
+                return colorMap[personName];
+            }
+
+            // 否则分配新颜色
+            // 按顺序分配，如果颜色不够用则循环使用
+            const colorIndex = Object.keys(colorMap).length % colorList.length;
+            colorMap[personName] = colorList[colorIndex];
+            return colorMap[personName];
+        }
+
+        // 更新颜色映射表
+        function updateColorMap(data) {
+            if (!data || !Array.isArray(data)) return;
+
+            // 遍历数据中的所有人员，确保每个人都有颜色
+            data.forEach(item => {
+                if (item && item.name) {
+                    getPersonColor(item.name);
+                }
+            });
+        }
+
         // 初始化日期选择器
         flatpickr("#efficiency-start-date", {
             dateFormat: "Y-m-d",
@@ -483,6 +520,9 @@
 
             const efficiencyData = await fetchData('/api/erp/GetPersonnelEfficiencyData', params);
             if (efficiencyData && Array.isArray(efficiencyData) && efficiencyData.length > 0) {
+                // 更新颜色映射表
+                updateColorMap(efficiencyData);
+
                 // 生成x轴标签
                 let xAxisData = [];
                 if (viewState.efficiency.type === 'year') {
@@ -495,18 +535,26 @@
                 }
 
                 // 处理系列数据
-                const series = efficiencyData.map(item => ({
-                    name: item.name,
-                    type: 'bar',
-                    data: item.data,
-                    label: { 
-                        show: true, 
-                        position: "top",
-                        formatter: function(params) {
-                            return params.value !== null && params.value !== undefined ? params.value : '0';
+                const series = efficiencyData.map(item => {
+                    const personName = item.name;
+                    const personColor = getPersonColor(personName);
+
+                    return {
+                        name: personName,
+                        type: 'bar',
+                        data: item.data,
+                        itemStyle: {
+                            color: personColor
+                        },
+                        label: {
+                            show: true,
+                            position: "top",
+                            formatter: function (params) {
+                                return params.value !== null && params.value !== undefined ? params.value : '0';
+                            }
                         }
-                    }
-                }));
+                    };
+                });
 
                 const effOption = {
                     grid: {
@@ -545,6 +593,7 @@
                         name: '效率',
                         min: 0
                     },
+                    color: colorList, // 设置图表颜色列表
                     series: series
                 };
                 effChart.setOption(effOption, true);
@@ -581,6 +630,9 @@
             };
             const durationData = await fetchData('/api/erp/GetPersonnelDurationData', params);
             if (durationData && Array.isArray(durationData) && durationData.length > 0) {
+                // 更新颜色映射表
+                updateColorMap(durationData);
+
                 // 生成x轴标签
                 let xAxisData = [];
                 if (viewState.duration.type === 'year') {
@@ -593,18 +645,26 @@
                 }
 
                 // 处理系列数据
-                const series = durationData.map(item => ({
-                    name: item.name,
-                    type: 'bar',
-                    data: item.data,
-                    label: { 
-                        show: true, 
-                        position: "top",
-                        formatter: function(params) {
-                            return params.value !== null && params.value !== undefined ? params.value : '0';
+                const series = durationData.map(item => {
+                    const personName = item.name;
+                    const personColor = getPersonColor(personName);
+
+                    return {
+                        name: personName,
+                        type: 'bar',
+                        data: item.data,
+                        itemStyle: {
+                            color: personColor
+                        },
+                        label: {
+                            show: true,
+                            position: "top",
+                            formatter: function (params) {
+                                return params.value !== null && params.value !== undefined ? params.value : '0';
+                            }
                         }
-                    }
-                }));
+                    };
+                });
 
                 const duraOption = {
                     grid: {
@@ -643,6 +703,7 @@
                         name: '检验时长',
                         min: 0
                     },
+                    color: colorList, // 设置图表颜色列表
                     series: series
                 };
                 duraChart.setOption(duraOption, true);
@@ -671,7 +732,10 @@
         }
 
         // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
+            // 重置颜色映射表
+            colorMap = {};
+
             setDefaultDateRange();
             updateEfficiencyChart();
             updateDurationChart();
