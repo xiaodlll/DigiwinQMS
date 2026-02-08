@@ -400,9 +400,9 @@ namespace Meiam.System.Interfaces.Service
                             UNIT,SUPPID as SUPPNAME,
                             KEEID AS FEntryID,
                             CASE
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
+                                WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN '合格'
+                                WHEN OQC_STATE = 'OQC_STATE_007' THEN '不合格'
+                                WHEN OQC_STATE = 'OQC_STATE_010' THEN '免检'
                                 ELSE '不合格'
                             END AS OQC_STATE,
                             ISNULL(TRY_CAST(FQC_CNT AS DECIMAL), 0) AS FReceiveQty,       -- 不可转换时返回0
@@ -410,28 +410,14 @@ namespace Meiam.System.Interfaces.Service
                             ISNULL(TRY_CAST(DESQTY AS DECIMAL), 0) AS DESQTY     -- 不可转换时返回0
                         FROM INSPECT_IQC
                         WHERE (ISSY <> '1' OR ISSY IS NULL) 
-                            AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
+                            AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
+                            AND SQM_STATE = 'OQC_STATE_012'
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<LotNoticeResultRequestYNK>(sql);
             foreach (var item in list)
             {
                 item.FCheckQty = item.FReceiveQty + item.FRefuseQty + item.DESQTY;
-//                item.FCheckQty = Db.Ado.GetDecimal(@$"SELECT COALESCE((
-//    SELECT TOP 1 
-//        MAX(CAST(INSPECT_CNT AS INT)) OVER (PARTITION BY INSPECT_TYPE) AS INSPECT_CNT
-//    FROM INSPECT_PROGRESS 
-//    WHERE DOC_CODE = '{item.INSPECT_IQCCODE}'
-//        AND INSPECT_TYPE IN ('INSPECT_TYPE_002', 'INSPECT_TYPE_001', 'INSPECT_TYPE_003', 'INSPECT_TYPE_999', 'INSPECT_TYPE_000')
-//    ORDER BY 
-//        CASE INSPECT_TYPE 
-//            WHEN 'INSPECT_TYPE_002' THEN 1
-//            WHEN 'INSPECT_TYPE_001' THEN 2
-//            WHEN 'INSPECT_TYPE_003' THEN 3
-//            WHEN 'INSPECT_TYPE_999' THEN 4
-//            WHEN 'INSPECT_TYPE_000' THEN 5
-//        END
-//), 0) AS INSPECT_CNT");
             }
             return list;
         }
@@ -452,7 +438,8 @@ namespace Meiam.System.Interfaces.Service
                         FROM SCANDOC 
                             LEFT JOIN INSPECT_IQC IQC ON INSPECT_IQCID=SCANDOC.PEOPLEID
                             WHERE (SCANDOC.ISSY <> '1' OR SCANDOC.ISSY IS NULL) 
-                            AND COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
+                            AND OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_007', 'OQC_STATE_008', 'OQC_STATE_010', 'OQC_STATE_011')
+                           AND SQM_STATE='OQC_STATE_012'
                         ORDER BY INSPECT_IQCCREATEDATE DESC;";
 
             var list = Db.Ado.SqlQuery<AttachmentResultRequestYNK>(sql);
@@ -1077,11 +1064,12 @@ namespace Meiam.System.Interfaces.Service
                 }
                 var dataMain = await Db.Ado.GetDataTableAsync(@"SELECT TOP 1 ALL_REMARK3,ITEMID,ITEMNAME,LOTNO,LOT_QTY,INSPECT_IQCNAME,
         CASE 
-            WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005') THEN '合格'
-            WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN '免检'
+            WHEN OQC_STATE IN ('OQC_STATE_005') THEN '合格'
+            WHEN OQC_STATE = 'OQC_STATE_010' THEN '免检'
             ELSE '不合格'
-        END AS OQC_STATE
+        END AS OQC_STATE,USER_.User_Name AS Reviewer,ISNULL(CONVERT(varchar(10), INSPECT_IQCMODIFYDATE, 23), '') AS ReviewerDate
     FROM INSPECT_IQC
+	LEFT JOIN USER_ ON USER_.User_ID=INSPECT_IQC.F_User_ID
     WHERE INSPECT_IQCCODE=@DOC_CODE", parameters);
                 string ITEMID = string.Empty;
                 string ITEMNAME = string.Empty;
@@ -1090,6 +1078,8 @@ namespace Meiam.System.Interfaces.Service
                 string OQC_STATE = string.Empty;
                 string Inspector = string.Empty;
                 string InspectorDate = string.Empty;
+                string Reviewer = string.Empty;
+                string ReviewerDate = string.Empty;
                 string remark = string.Empty;
                 if (dataMain != null && dataMain.Rows.Count > 0)
                 {
@@ -1100,6 +1090,8 @@ namespace Meiam.System.Interfaces.Service
                     OQC_STATE = dataMain.Rows[0]["OQC_STATE"].ToString();
                     InspectorDate = dataMain.Rows[0]["INSPECT_IQCNAME"].ToString();
                     remark = dataMain.Rows[0]["ALL_REMARK3"].ToString();
+                    Reviewer = dataMain.Rows[0]["Reviewer"].ToString();
+                    ReviewerDate = dataMain.Rows[0]["ReviewerDate"].ToString();
                 }
                 var originalData = await Db.Ado.GetDataTableAsync(@"SELECT INSPECT_PROGRESS.INSPECT_CNT,
         INSPECT_PROGRESSNAME, INSPECT_TYPE, CASE 
@@ -1186,8 +1178,8 @@ namespace Meiam.System.Interfaces.Service
                     Remark = remark,
                     Inspector = Inspector,
                     InspectorDate = InspectorDate,
-                    Reviewer = "",
-                    ReviewerDate = "",
+                    Reviewer = Reviewer,
+                    ReviewerDate = ReviewerDate,
                     DataValues = groupedData
                 };
                 string jsonData = JsonConvert.SerializeObject(result);
@@ -2001,9 +1993,9 @@ WHERE INSPECT_IQC.LOTNO <>'' AND ISNULL(INSPECT_IQC.DeleteMark, '0')<> '1' AND Y
         {
             if (input == null) return null;
             string sql = @$"SELECT CASE 
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_011') THEN '合格'
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN '不合格'
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_008','OQC_STATE_010') THEN '特采'
+                                WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008','OQC_STATE_011') THEN '合格'
+                                WHEN OQC_STATE = 'OQC_STATE_007' THEN '不合格'
+                                WHEN OQC_STATE = 'OQC_STATE_010' THEN '特采'
                                 ELSE '不合格'
                             END AS OQC_STATE,ROUND(LOT_QTY, 2) AS LOT_QTY,ITEM.PROJECTID ITEMKIND,CAST({iqcDateKey} AS DATETIME) as INSPECT_IQCCREATEDATE
 from INSPECT_IQC 
@@ -2846,9 +2838,9 @@ order by VALUE DESC", sqlWhere); //  批退条件
 
                 sql = string.Format(@"select TOP 5 SUPP.SUPPID,SUPP.SUPPNAME,
                            SUM(CASE 
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN 1
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_007' THEN 0
-                                WHEN COALESCE(SQM_STATE, OQC_STATE) = 'OQC_STATE_010' THEN 1
+                                WHEN OQC_STATE IN ('OQC_STATE_005', 'OQC_STATE_006', 'OQC_STATE_008', 'OQC_STATE_011') THEN 1
+                                WHEN OQC_STATE = 'OQC_STATE_007' THEN 0
+                                WHEN OQC_STATE = 'OQC_STATE_010' THEN 1
                                 ELSE 0
                             END)*100.0/SUM(1) AS VALUE
 from INSPECT_IQC 
