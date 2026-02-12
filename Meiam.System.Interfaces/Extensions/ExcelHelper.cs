@@ -1040,10 +1040,8 @@ public class ExcelHelper : IDisposable {
                           Guid.NewGuid().ToString(),
                           stream
                         );
-                        if (imageTypes.Contains(extension)) {
-                            // 添加图片后立即缩放
-                            width = ScaleImageToCell(picture, targetRowHeight);
-                        }
+                        // 添加图片后立即缩放
+                        width = ScaleImageToCell(picture, targetRowHeight);
                         list.Add(picture);
                     }
                 }
@@ -1081,10 +1079,8 @@ public class ExcelHelper : IDisposable {
                           Guid.NewGuid().ToString(),
                           stream
                         );
-                        if (imageTypes.Contains(extension)) {
-                            // 添加图片后立即缩放
-                            width = ScaleImageToCell(picture, targetRowHeight);
-                        }
+                        // 添加图片后立即缩放
+                        width = ScaleImageToCell(picture, targetRowHeight);
                         list.Add(picture);
                     }
                 }
@@ -1148,10 +1144,8 @@ public class ExcelHelper : IDisposable {
                       Guid.NewGuid().ToString(),
                       stream
                     );
-                    if (imageTypes.Contains(extension)) {
-                        // 添加图片后立即缩放
-                        width = ScaleImageToCell(picture, targetRowHeight);
-                    }
+                    // 添加图片后立即缩放
+                    width = ScaleImageToCell(picture, targetRowHeight);
                     return (new ExcelDrawing[] { picture }, true, width);
                 }
             }
@@ -1174,15 +1168,22 @@ public class ExcelHelper : IDisposable {
         }
     }
     private int ScaleImageToCell(ExcelPicture picture, double cellHeightPoints) {
-        // 精确单位转换（点→像素）
-        double cellHeightPixels = (cellHeightPoints - 5) * 96 / 72; // 96 DPI标准
+        //    偏移量越大，图片最终高度越小
+        double offset = 8;
+        // 2. 可选：增加高度缩放系数（0.9表示缩放到计算高度的90%，避免顶满）
+        double heightScaleFactor = 0.9;
 
-        // 等比缩放计算
+        // 精确单位转换（点→像素）：先减偏移量，再乘以缩放系数
+        double cellHeightPixels = (cellHeightPoints - offset) * 96 / 72 * heightScaleFactor; // 96 DPI标准
+
+        // 等比缩放计算（避免图片变形）
         double scale = cellHeightPixels / picture.Image.Bounds.Height;
         int newWidth = (int)(picture.Image.Bounds.Width * scale);
 
-        // 设置最终尺寸
-        picture.SetSize(newWidth, (int)cellHeightPixels);
+        // 设置最终尺寸（高度取整，避免小数像素导致的显示问题）
+        int newHeight = (int)Math.Round(cellHeightPixels);
+        picture.SetSize(newWidth, newHeight);
+
         return newWidth;
     }
 }

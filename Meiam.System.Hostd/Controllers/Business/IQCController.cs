@@ -226,9 +226,9 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
             string filePath = @"C:\Users\Administrator\Desktop\Temp\222.xlsx";
             string filePath2 = @"C:\Users\Administrator\Desktop\Temp\22.doc";
             string[] sourceExcelPaths = new string[] {
-                @"C:/Users/Administrator/Desktop/Temp/22.doc" ,@"C:/Users/Administrator/Desktop/Temp/2.5.xlsx"};
+                @"C:/Users/Administrator/Desktop/Temp/2.5.xlsx"};
             List<ExcelAttechFile> excelAttechFilesList = new List<ExcelAttechFile>();
-            excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[1] });
+            excelAttechFilesList.Add(new ExcelAttechFile() { FileName = null, FilePath = sourceExcelPaths[0] });
 
             try {
                 using (ExcelHelper excelHelper = new ExcelHelper(filePath)) {
