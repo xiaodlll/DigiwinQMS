@@ -15,12 +15,12 @@ public class FileToImageHelper {
     /// <param name="pdfPath">PDF 文件路径</param>
     /// <param name="dpi">渲染分辨率（DPI）</param>
     /// <returns>包含 PNG 图片的 MemoryStream</returns>
-    public static MemoryStream ConvertFirstPageToImageStream(string pdfPath, int dpi = 150) {
+    public static MemoryStream ConvertFirstPageToImageStream(string pdfPath, int dpi = 300) {
         // 加载 PDF 文档
         using var document = PdfDocument.Load(pdfPath);
-        
+
         // 渲染第一页（页码从0开始）
-        using var image = document.Render(0, dpi, dpi, PdfRenderFlags.Annotations);
+        using var image = document.Render(0, dpi, dpi, PdfRenderFlags.CorrectFromDpi);
 
         // 写入图片到内存流
         var stream = new MemoryStream();
@@ -35,22 +35,17 @@ public class FileToImageHelper {
     /// <param name="pdfPath">PDF 文件路径</param>
     /// <param name="dpi">渲染分辨率（DPI）</param>
     /// <returns>包含所有页 PNG 图片的 MemoryStream 列表</returns>
-    public static List<MemoryStream> ConvertAllPagesToImageStreams(string pdfPath, int dpi = 150) {
+    public static List<MemoryStream> ConvertAllPagesToImageStreams(string pdfPath, int dpi = 300) {
         var imageStreams = new List<MemoryStream>();
 
-        // 加载 PDF 文档
         using var document = PdfDocument.Load(pdfPath);
 
-        // 遍历所有页（页码从0开始）
         for (int pageIndex = 0; pageIndex < document.PageCount; pageIndex++) {
-            // 渲染当前页
-            using var image = document.Render(pageIndex, dpi, dpi, PdfRenderFlags.Annotations);
-
-            // 写入当前页图片到内存流
+           
+            using var image = document.Render(pageIndex, dpi, dpi, PdfRenderFlags.CorrectFromDpi);
             var stream = new MemoryStream();
             image.Save(stream, ImageFormat.Png);
-            stream.Position = 0; // 重置流位置，确保读取时从开头开始
-
+            stream.Position = 0;
             imageStreams.Add(stream);
         }
 

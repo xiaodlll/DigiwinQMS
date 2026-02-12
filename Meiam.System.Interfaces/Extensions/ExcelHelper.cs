@@ -208,7 +208,7 @@ public class ExcelHelper : IDisposable {
         return format.Contains("0") || format.Contains("#") || format.Contains("?");
     }
 
-    public void AddAttachsToCell(string sheetName, string cellAddress, ExcelAttechFile[] excelAttechFiles, bool attMode = false, bool attConvertPic = false) {
+    public void AddAttachsToCell(string sheetName, string cellAddress, ExcelAttechFile[] excelAttechFiles, bool attMode = false, bool attConvertPic = false, bool picISWID = false) {
 
         if (excelAttechFiles.Length == 0)
             return;
@@ -235,7 +235,10 @@ public class ExcelHelper : IDisposable {
         var cell = worksheet.Cells[cellAddress];
         var startRow = cell.Start.Row;
         var startCol = cell.Start.Column;
-        double cellHeight = GetMergedCellHeight(worksheet, startRow, startCol);
+        double cellObjectHeight = GetMergedCellHeight(worksheet, startRow, startCol);
+        if (picISWID) {
+            cellObjectHeight = GetMergedCellWidth(worksheet, startRow, startCol);
+        }
         double startLeft = 5;
 
         // 设置基础样式
@@ -244,7 +247,7 @@ public class ExcelHelper : IDisposable {
         int countOnject = 0;
         foreach (var excelAttechFile in excelAttechFiles) {
             try {
-                var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, excelAttechFile, cellHeight, attMode);
+                var (embedObjects, isImage, width) = CreateEmbedObject(worksheet, excelAttechFile, cellObjectHeight, attMode);
                 foreach (var embedObject in embedObjects) {
                     var (actColumn, actStartLeft) = GetMergedCellLeft(worksheet, cell, startLeft);
                     embedObject.SetPosition(startRow - 1, 5, actColumn - 1, (int)(actStartLeft));
@@ -341,6 +344,40 @@ public class ExcelHelper : IDisposable {
 
         // 如果不是合并单元格，返回当前行的高度
         return worksheet.Row(row).Height;
+    }
+
+    /// <summary>
+    /// 获取指定单元格的宽（如果是合并单元格，则返回合并区域的总宽）
+    /// </summary>
+    /// <param name="worksheet">工作表</param>
+    /// <param name="row">行索引</param>
+    /// <param name="column">列索引</param>
+    /// <returns>单元格或合并区域的总宽（以磅为单位）</returns>
+    private double GetMergedCellWidth(ExcelWorksheet worksheet, int row, int column) {
+        // 检查单元格是否属于合并区域
+        ExcelRangeBase mergedRange = null;
+        foreach (var range in worksheet.MergedCells) {
+            if (string.IsNullOrEmpty(range))
+                continue;
+            var merged = worksheet.Cells[range];
+            if (merged.Start.Row <= row && merged.End.Row >= row &&
+                merged.Start.Column <= column && merged.End.Column >= column) {
+                mergedRange = merged;
+                break;
+            }
+        }
+
+        // 如果是合并单元格，计算合并区域的总高度
+        if (mergedRange != null) {
+            double totalWidth = 0;
+            for (int r = mergedRange.Start.Column; r <= mergedRange.End.Column; r++) {
+                totalWidth += worksheet.Column(r).Width; // 使用默认行高（如果未设置）
+            }
+            return totalWidth * 9;
+        }
+
+        // 如果不是合并单元格，返回当前行的高度
+        return worksheet.Column(column).Width * 9;
     }
 
     public void InsertRows(string sheetName, int rowCount, int targetRow) {

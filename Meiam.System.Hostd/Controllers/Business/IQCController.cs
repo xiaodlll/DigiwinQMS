@@ -239,7 +239,7 @@ namespace Meiam.System.Hostd.Controllers.Bisuness {
                     //excelHelper.CopyRows("原材料COC", "A6:O6", 3);
                     //string pdfPath1 = excelHelper.ConvertExcelToPdf(filePath);
                     //string pdfPath2 = excelHelper.ConvertWordToPdf(filePath2);
-                    excelHelper.AddAttachsToCell("FTIR", "B7", excelAttechFilesList.ToArray(), false, true);
+                    excelHelper.AddAttachsToCell("FTIR", "B7", excelAttechFilesList.ToArray(), false, true, false);
                     //excelHelper.InsertRows("出货报告", 3, 40);
                     #region 替换公式
                     //if (isReplaceFormula) {
